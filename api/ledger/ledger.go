@@ -38,10 +38,22 @@ func (s *Server) GetGenerals(ctx context.Context, in *npool.GetGeneralsRequest) 
 	}, nil
 }
 
-func (s *Server) GetInterval(ctx context.Context, in *npool.GetIntervalRequest) (*npool.GetIntervalResponse, error) {
-	return &npool.GetIntervalResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
+func (s *Server) GetIntervalGenerals(
+	ctx context.Context, in *npool.GetIntervalGeneralsRequest,
+) (
+	*npool.GetIntervalGeneralsResponse, error,
+) {
+	return &npool.GetIntervalGeneralsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
 }
 
 func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*npool.GetDetailsResponse, error) {
 	return &npool.GetDetailsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
+}
+
+func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*npool.GetProfitsResponse, error) {
+	return &npool.GetProfitsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
+}
+
+func (s *Server) GetIntervalProfits(ctx context.Context, in *npool.GetIntervalProfitsRequest) (*npool.GetIntervalProfitsResponse, error) {
+	return &npool.GetIntervalProfitsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
 }
