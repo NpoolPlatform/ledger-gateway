@@ -11,6 +11,8 @@ import (
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 	ledgermgrprofitpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/profit"
 
+	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 
@@ -72,11 +74,79 @@ func GetIntervalGenerals(
 ) (
 	[]*npool.General, uint32, error,
 ) {
-	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
+	generals, total, err := ledgermwcli.GetIntervalGenerals(ctx, appID, userID, start, end, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coinMap := map[string]*coininfopb.CoinInfo{}
+	for _, coin := range coins {
+		coinMap[coin.ID] = coin
+	}
+
+	infos := []*npool.General{}
+	for _, info := range generals {
+		coin, ok := coinMap[info.CoinTypeID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid coin")
+		}
+
+		infos = append(infos, &npool.General{
+			CoinTypeID: info.CoinTypeID,
+			CoinName:   coin.Name,
+			CoinLogo:   coin.Logo,
+			CoinUnit:   coin.Unit,
+			Incoming:   info.Incoming,
+			Locked:     info.Locked,
+			Outcoming:  info.Outcoming,
+			Spendable:  info.Spendable,
+		})
+	}
+
+	return infos, total, nil
 }
 
 func GetDetails(ctx context.Context, appID, userID string, start, end uint32, offset, limit int32) ([]*npool.Detail, uint32, error) {
-	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
+	details, total, err := ledgermwcli.GetIntervalDetails(ctx, appID, userID, start, end, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coinMap := map[string]*coininfopb.CoinInfo{}
+	for _, coin := range coins {
+		coinMap[coin.ID] = coin
+	}
+
+	infos := []*npool.Detail{}
+	for _, info := range details {
+		coin, ok := coinMap[info.CoinTypeID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid coin")
+		}
+
+		infos = append(infos, &npool.Detail{
+			CoinTypeID: info.CoinTypeID,
+			CoinName:   coin.Name,
+			CoinLogo:   coin.Logo,
+			CoinUnit:   coin.Unit,
+			IOType:     info.IOType.String(),
+			IOSubType:  info.IOSubType.String(),
+			Amount:     info.Amount,
+			IOExtra:    info.IOExtra,
+		})
+	}
+
+	return infos, total, nil
 }
 
 func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.Profit, uint32, error) {
@@ -130,5 +200,36 @@ func GetIntervalProfits(
 ) (
 	[]*npool.Profit, uint32, error,
 ) {
-	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
+	details, total, err := ledgermwcli.GetIntervalDetails(ctx, appID, userID, start, end, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coinMap := map[string]*coininfopb.CoinInfo{}
+	for _, coin := range coins {
+		coinMap[coin.ID] = coin
+	}
+
+	infos := []*npool.Profit{}
+	for _, info := range details {
+		coin, ok := coinMap[info.CoinTypeID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid coin")
+		}
+
+		infos = append(infos, &npool.Profit{
+			CoinTypeID: info.CoinTypeID,
+			CoinName:   coin.Name,
+			CoinLogo:   coin.Logo,
+			CoinUnit:   coin.Unit,
+			Incoming:   info.Amount,
+		})
+	}
+
+	return infos, total, nil
 }
