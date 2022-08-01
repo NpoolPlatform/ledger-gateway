@@ -65,10 +65,22 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 	return generals, total, nil
 }
 
-func GetInterval(ctx context.Context, appID, userID string, start, end uint32, offset, limit int32) ([]*npool.General, uint32, error) {
+func GetIntervalGenerals(
+	ctx context.Context, appID, userID string, start, end uint32, offset, limit int32,
+) (
+	[]*npool.General, uint32, error,
+) {
 	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
 }
 
 func GetDetails(ctx context.Context, appID, userID string, start, end uint32, offset, limit int32) ([]*npool.Detail, uint32, error) {
+	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
+}
+
+func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
+	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
+}
+
+func GetIntervalProfits(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
 	return nil, 0, fmt.Errorf("NOT IMPLEMENTED")
 }
