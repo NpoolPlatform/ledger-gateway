@@ -7,8 +7,8 @@ import (
 	"context"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+	"github.com/NpoolPlatform/ledger-gateway/pkg/version"
 	npool "github.com/NpoolPlatform/message/npool"
-	"github.com/NpoolPlatform/service-template/pkg/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

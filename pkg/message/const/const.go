@@ -1,3 +1,3 @@
 package constant
 
-const ServiceName = "service-template.npool.top"
+const ServiceName = "ledger-gateway.npool.top"

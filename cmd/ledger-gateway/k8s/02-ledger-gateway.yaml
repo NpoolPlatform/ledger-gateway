@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ledger-gateway
+  namespace: kube-system
+  annotations:
+    "sidecar.jaegertracing.io/inject": "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ledger-gateway
+  template:
+    metadata:
+      labels:
+        app: ledger-gateway
+    spec:
+      containers:
+        - name: ledger-gateway
+          image: uhub.service.ucloud.cn/entropypool/ledger-gateway:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: service-config
+              mountPath: /etc/LedgerGateway
+          env:
+            - name: ENV_ENVIRONMENT_TARGET
+              valueFrom:
+                configMapKeyRef:
+                  name: system-environment
+                  key: environment.target
+            - name: ENV_CONSUL_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: system-environment
+                  key: environment.consul_host
+            - name: ENV_CONSUL_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: system-environment
+                  key: environment.consul_port
+            - name: ENV_CLUSTER_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+      volumes:
+        - name: service-config
+          configMap:
+            name: ledger-gateway-config
+            items:
+              - key: service-conf
+                path: LedgerGateway.viper.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ledger-gateway
+  namespace: kube-system
+spec:
+  ports:
+    - name: http
+      port: 50410
+      targetPort: 50410
+    - name: grpc
+      port: 50411
+      targetPort: 50411
+    - name: healthz
+      port: 50412
+      targetPort: 50412
+    - name: prometheus
+      port: 50413
+      targetPort: 50413
+  selector:
+    app: ledger-gateway
