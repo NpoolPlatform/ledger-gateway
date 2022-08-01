@@ -75,7 +75,26 @@ func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*
 }
 
 func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*npool.GetProfitsResponse, error) {
-	return &npool.GetProfitsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("GetProfits", "AppID", in.GetAppID(), "error", err)
+		return &npool.GetProfitsResponse{}, status.Error(codes.InvalidArgument, "AppID is invalid")
+	}
+
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("GetProfits", "UserID", in.GetUserID(), "error", err)
+		return &npool.GetProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
+	}
+
+	infos, n, err := ledger1.GetProfits(ctx, in.GetAppID(), in.GetUserID(), in.GetOffset(), in.GetLimit())
+	if err != nil {
+		logger.Sugar().Errorw("GetProfits", "error", err)
+		return &npool.GetProfitsResponse{}, status.Error(codes.Internal, "fail get generals")
+	}
+
+	return &npool.GetProfitsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
 }
 
 func (s *Server) GetIntervalProfits(
@@ -83,5 +102,29 @@ func (s *Server) GetIntervalProfits(
 ) (
 	*npool.GetIntervalProfitsResponse, error,
 ) {
-	return &npool.GetIntervalProfitsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("GetIntervalProfits", "AppID", in.GetAppID(), "error", err)
+		return &npool.GetIntervalProfitsResponse{}, status.Error(codes.InvalidArgument, "AppID is invalid")
+	}
+
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("GetIntervalProfits", "UserID", in.GetUserID(), "error", err)
+		return &npool.GetIntervalProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
+	}
+
+	infos, n, err := ledger1.GetIntervalProfits(
+		ctx,
+		in.GetAppID(), in.GetUserID(),
+		in.GetStartAt(), in.GetEndAt(),
+		in.GetOffset(), in.GetLimit(),
+	)
+	if err != nil {
+		logger.Sugar().Errorw("GetIntervalProfits", "error", err)
+		return &npool.GetIntervalProfitsResponse{}, status.Error(codes.Internal, "fail get generals")
+	}
+
+	return &npool.GetIntervalProfitsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
 }
