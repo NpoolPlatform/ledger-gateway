@@ -5,7 +5,10 @@ go 1.17
 require (
 	github.com/NpoolPlatform/api-manager v0.0.0-20220328101926-8907b2f76c6d
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20220722111225-08c2156ac8bf
-	github.com/NpoolPlatform/message v0.0.0-20220801063100-d9c143f57e65
+	github.com/NpoolPlatform/ledger-manager v0.0.0-20220731090115-b20794cf8236
+	github.com/NpoolPlatform/libent-cruder v0.0.0-20220729123015-41e5340448dd
+	github.com/NpoolPlatform/message v0.0.0-20220801065125-50b45d8dfffb
+	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
