@@ -71,7 +71,31 @@ func (s *Server) GetIntervalGenerals(
 }
 
 func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*npool.GetDetailsResponse, error) {
-	return &npool.GetDetailsResponse{}, status.Error(codes.Internal, "NOT IMPLEMENTED")
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("GetDetails", "AppID", in.GetAppID(), "error", err)
+		return &npool.GetDetailsResponse{}, status.Error(codes.InvalidArgument, "AppID is invalid")
+	}
+
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("GetDetails", "UserID", in.GetUserID(), "error", err)
+		return &npool.GetDetailsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
+	}
+
+	infos, n, err := ledger1.GetDetails(
+		ctx,
+		in.GetAppID(), in.GetUserID(),
+		in.GetStartAt(), in.GetEndAt(),
+		in.GetOffset(), in.GetLimit(),
+	)
+	if err != nil {
+		logger.Sugar().Errorw("GetDetails", "error", err)
+		return &npool.GetDetailsResponse{}, status.Error(codes.Internal, "fail get generals")
+	}
+
+	return &npool.GetDetailsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
 }
 
 func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*npool.GetProfitsResponse, error) {
