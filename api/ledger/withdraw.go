@@ -3,12 +3,14 @@ package ledger
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	ledger1 "github.com/NpoolPlatform/ledger-gateway/pkg/ledger"
-	withdrawvalidator "github.com/NpoolPlatform/ledger-manager/api/withdraw"
 
 	"github.com/google/uuid"
 
@@ -17,12 +19,37 @@ import (
 )
 
 func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawRequest) (*npool.CreateWithdrawResponse, error) {
-	if err := withdrawvalidator.Validate(in.GetInfo()); err != nil {
-		logger.Sugar().Errorw("CreateWithdraw", "error", err)
-		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, "Info is invalid")
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("validate", "AppID", in.GetUserID(), "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("AppID is invalid: %v", err))
 	}
 
-	info, err := ledger1.CreateWithdraw(ctx, in.GetInfo())
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("validate", "UserID", in.GetUserID(), "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("UserID is invalid: %v", err))
+	}
+
+	if _, err := uuid.Parse(in.GetCoinTypeID()); err != nil {
+		logger.Sugar().Errorw("validate", "CoinTypeID", in.GetCoinTypeID(), "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("CoinTypeID is invalid: %v", err))
+	}
+
+	if _, err := uuid.Parse(in.GetAccountID()); err != nil {
+		logger.Sugar().Errorw("validate", "AccountID", in.GetAccountID(), "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("AccountID is invalid: %v", err))
+	}
+
+	if _, err := decimal.NewFromString(in.GetAmount()); err != nil {
+		logger.Sugar().Errorw("validate", "Amount", in.GetAmount(), "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("Amount is invalid: %v", err))
+	}
+
+	info, err := ledger1.CreateWithdraw(
+		ctx,
+		in.GetAppID(), in.GetUserID(),
+		in.GetCoinTypeID(), in.GetAccountID(),
+		decimal.RequireFromString(in.GetAmount()),
+	)
 	if err != nil {
 		logger.Sugar().Errorw("CreateWithdraw", "error", err)
 		return &npool.CreateWithdrawResponse{}, status.Error(codes.Internal, "fail create withdraw")

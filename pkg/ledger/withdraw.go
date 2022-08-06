@@ -72,18 +72,24 @@ func coinLimit(ctx context.Context, coin *coininfopb.CoinInfo, setting *billingp
 	return limit, nil
 }
 
-func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*npool.Withdraw, error) { //nolint
+// nolint
+func CreateWithdraw(
+	ctx context.Context,
+	appID, userID, coinTypeID, accountID string,
+	amount decimal.Decimal,
+) (
+	*npool.Withdraw, error,
+) {
 	// Try lock balance
 	if err := ledgermwcli.LockBalance(
 		ctx,
-		in.GetAppID(), in.GetUserID(), in.GetCoinTypeID(),
-		decimal.RequireFromString(in.GetAmount()),
+		appID, userID, coinTypeID, amount,
 	); err != nil {
 		return nil, err
 	}
 
 	// Check account
-	account, err := billingcli.GetAccount(ctx, in.GetAccountID())
+	account, err := billingcli.GetAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +98,7 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 	}
 
 	// Check account is belong to user and used for withdraw
-	was, err := billingcli.GetWithdrawAccounts(ctx, in.GetAppID(), in.GetUserID())
+	was, err := billingcli.GetWithdrawAccounts(ctx, appID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +116,7 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
 
 	// Check hot wallet balance
-	coin, err := coininfocli.GetCoinInfo(ctx, in.GetCoinTypeID())
+	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,13 +152,12 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 	}
 
 	balance := decimal.RequireFromString(bal.BalanceStr)
-	amount := decimal.RequireFromString(in.GetAmount())
 	if balance.Cmp(amount) <= 0 {
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFunds
 	}
 
 	// Check auto review threshold
-	ws, err := billingcli.GetWithdrawSetting(ctx, in.GetAppID(), in.GetCoinTypeID())
+	ws, err := billingcli.GetWithdrawSetting(ctx, appID, coinTypeID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,16 +186,24 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 	const feeUSDAmount = 2
 	feeAmount := feeUSDAmount / price
 
+	amountS := amount.String()
+
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
-	info, err := ledgermgrwithdrawcli.CreateWithdraw(ctx, in)
+	info, err := ledgermgrwithdrawcli.CreateWithdraw(ctx, &ledgermgrwithdrawpb.WithdrawReq{
+		AppID:      &appID,
+		UserID:     &userID,
+		CoinTypeID: &coinTypeID,
+		AccountID:  &accountID,
+		Amount:     &amountS,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Create review
 	rv, err := reviewcli.CreateReview(ctx, &reviewpb.Review{
-		AppID:      in.GetAppID(),
+		AppID:      appID,
 		Domain:     constant.ServiceName,
 		ObjectType: reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
 		ObjectID:   info.ID,
@@ -209,9 +222,9 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 
 		// TODO: should be in dtm
 		tx, err := billingcli.CreateTransaction(ctx, &billingpb.CoinAccountTransaction{
-			AppID:          in.GetAppID(),
-			UserID:         in.GetUserID(),
-			CoinTypeID:     in.GetCoinTypeID(),
+			AppID:          appID,
+			UserID:         userID,
+			CoinTypeID:     coinTypeID,
 			GoodID:         uuid.UUID{}.String(),
 			FromAddressID:  hotacc.ID,
 			ToAddressID:    account.ID,
@@ -223,13 +236,12 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 			return nil, err
 		}
 
-		in.ID = &info.ID
-		in.PlatformTransactionID = &tx.ID
-
 		state := ledgermgrwithdrawpb.WithdrawState_Transferring
-		in.State = &state
-
-		if _, err := ledgermgrwithdrawcli.UpdateWithdraw(ctx, in); err != nil {
+		if _, err := ledgermgrwithdrawcli.UpdateWithdraw(ctx, &ledgermgrwithdrawpb.WithdrawReq{
+			ID:                    &info.ID,
+			PlatformTransactionID: &tx.ID,
+			State:                 &state,
+		}); err != nil {
 			return nil, err
 		}
 	}
