@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/shopspring/decimal"
 
@@ -16,6 +17,9 @@ import (
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 
+	sphinxproxypb "github.com/NpoolPlatform/message/npool/sphinxproxy"
+	sphinxproxycli "github.com/NpoolPlatform/sphinx-proxy/pkg/client"
+
 	billingcli "github.com/NpoolPlatform/cloud-hashing-billing/pkg/client"
 	billingpb "github.com/NpoolPlatform/message/npool/cloud-hashing-billing"
 
@@ -28,9 +32,11 @@ import (
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
+
+	"github.com/google/uuid"
 )
 
-func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*npool.Withdraw, error) {
+func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*npool.Withdraw, error) { //nolint
 	// Try lock balance
 	if err := ledgermwcli.LockBalance(
 		ctx,
@@ -40,8 +46,88 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 		return nil, err
 	}
 
+	// Check account
+	account, err := billingcli.GetAccount(ctx, in.GetAccountID())
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
+		return nil, fmt.Errorf("invalid account")
+	}
+
+	// Check account is belong to user and used for withdraw
+	was, err := billingcli.GetWithdrawAccounts(ctx, in.GetAppID(), in.GetUserID())
+	if err != nil {
+		return nil, err
+	}
+	found := false
+	for _, wa := range was {
+		if wa.AccountID == account.ID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("not user's withdraw address")
+	}
+
+	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
+
 	// Check hot wallet balance
+	coin, err := coininfocli.GetCoinInfo(ctx, in.GetCoinTypeID())
+	if err != nil {
+		return nil, err
+	}
+	if coin == nil {
+		return nil, fmt.Errorf("invalid coin")
+	}
+
+	cs, err := billingcli.GetCoinSetting(ctx, coin.ID)
+	if err != nil {
+		return nil, err
+	}
+	if cs == nil {
+		return nil, fmt.Errorf("invalid coin setting")
+	}
+
+	hotacc, err := billingcli.GetAccount(ctx, cs.UserOnlineAccountID)
+	if err != nil {
+		return nil, err
+	}
+	if hotacc == nil {
+		return nil, fmt.Errorf("invalid account")
+	}
+
+	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
+		Name:    coin.Name,
+		Address: hotacc.Address,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err == nil {
+		return nil, fmt.Errorf("invalid balance")
+	}
+
+	balance := decimal.RequireFromString(bal.BalanceStr)
+	amount := decimal.RequireFromString(in.GetAmount())
+	if balance.Cmp(amount) <= 0 {
+		reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFunds
+	}
+
 	// Check auto review threshold
+	ws, err := billingcli.GetWithdrawSetting(ctx, in.GetAppID(), in.GetCoinTypeID())
+	if err != nil {
+		return nil, err
+	}
+	if ws == nil {
+		return nil, fmt.Errorf("invalid withdraw setting")
+	}
+
+	threshold := decimal.NewFromFloat(ws.WithdrawAutoReviewCoinAmount)
+	if amount.Cmp(threshold) > 0 && reviewTrigger != reviewmgrpb.ReviewTriggerType_AutoReviewed {
+		reviewTrigger = reviewmgrpb.ReviewTriggerType_LargeAmount
+	}
 
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
@@ -51,15 +137,48 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 	}
 
 	// Create review
-	_, err = reviewcli.CreateReview(ctx, &reviewpb.Review{
+	rv, err := reviewcli.CreateReview(ctx, &reviewpb.Review{
 		AppID:      in.GetAppID(),
 		Domain:     constant.ServiceName,
 		ObjectType: reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
 		ObjectID:   info.ID,
 		State:      reviewmgrpb.ReviewState_Wait.String(),
+		Trigger:    reviewTrigger.String(),
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
+		rv.State = reviewmgrpb.ReviewState_Approved.String()
+		if _, err := reviewcli.UpdateReview(ctx, rv); err != nil {
+			return nil, err
+		}
+
+		// TODO: should be in dtm
+		tx, err := billingcli.CreateTransaction(ctx, &billingpb.CoinAccountTransaction{
+			AppID:         in.GetAppID(),
+			UserID:        in.GetUserID(),
+			CoinTypeID:    in.GetCoinTypeID(),
+			GoodID:        uuid.UUID{}.String(),
+			FromAddressID: hotacc.ID,
+			ToAddressID:   account.ID,
+			Amount:        amount.InexactFloat64(),
+			Message:       fmt.Sprintf("user withdraw at %v", time.Now()),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		in.ID = &info.ID
+		in.PlatformTransactionID = &tx.ID
+
+		state := ledgermgrwithdrawpb.WithdrawState_Transferring
+		in.State = &state
+
+		if _, err := ledgermgrwithdrawcli.UpdateWithdraw(ctx, in); err != nil {
+			return nil, err
+		}
 	}
 
 	// Get withdraw
@@ -105,7 +224,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		return nil, err
 	}
 
-	state := npool.WithdrawState_Reviewing
+	state := ledgermgrwithdrawpb.WithdrawState_Reviewing
 	waitTs := uint32(0)
 	rejectedTs := uint32(0)
 	message := ""
@@ -129,10 +248,10 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	}
 
 	if waitTs > rejectedTs {
-		state = npool.WithdrawState_Reviewing
+		state = ledgermgrwithdrawpb.WithdrawState_Reviewing
 		message = ""
 	} else {
-		state = npool.WithdrawState_Rejected
+		state = ledgermgrwithdrawpb.WithdrawState_Rejected
 	}
 
 	for _, r := range reviews {
@@ -140,7 +259,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		case reviewconst.StateApproved:
 			fallthrough //nolint
 		case reviewmgrpb.ReviewState_Approved.String():
-			state = npool.WithdrawState_Successful
+			state = ledgermgrwithdrawpb.WithdrawState_Successful
 			message = ""
 		}
 	}
@@ -212,7 +331,7 @@ func GetWithdraws(
 		return nil, 0, err
 	}
 
-	stateMap := map[string]npool.WithdrawState{}
+	stateMap := map[string]ledgermgrwithdrawpb.WithdrawState{}
 	waitTsMap := map[string]uint32{}
 	rejectedTsMap := map[string]uint32{}
 
@@ -238,10 +357,10 @@ func GetWithdraws(
 
 	for _, r := range reviews {
 		if waitTsMap[r.ObjectID] < rejectedTsMap[r.ObjectID] {
-			stateMap[r.ObjectID] = npool.WithdrawState_Reviewing
+			stateMap[r.ObjectID] = ledgermgrwithdrawpb.WithdrawState_Reviewing
 			continue
 		}
-		stateMap[r.ObjectID] = npool.WithdrawState_Rejected
+		stateMap[r.ObjectID] = ledgermgrwithdrawpb.WithdrawState_Rejected
 	}
 
 	for _, r := range reviews {
@@ -249,7 +368,7 @@ func GetWithdraws(
 		case reviewconst.StateApproved:
 			fallthrough //nolint
 		case reviewmgrpb.ReviewState_Approved.String():
-			stateMap[r.ObjectID] = npool.WithdrawState_Successful
+			stateMap[r.ObjectID] = ledgermgrwithdrawpb.WithdrawState_Successful
 		}
 	}
 
