@@ -4,11 +4,13 @@ go 1.17
 
 require (
 	github.com/NpoolPlatform/api-manager v0.0.0-20220328101926-8907b2f76c6d
+	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220805071726-cd7dee48ed0a
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20220722111225-08c2156ac8bf
-	github.com/NpoolPlatform/ledger-manager v0.0.0-20220801083606-458fa4cd2fbe
+	github.com/NpoolPlatform/ledger-manager v0.0.0-20220806064644-28e007454f84
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220801152744-bbf4b22c8810
-	github.com/NpoolPlatform/libent-cruder v0.0.0-20220729123015-41e5340448dd
-	github.com/NpoolPlatform/message v0.0.0-20220801151049-9fc1aca6505b
+	github.com/NpoolPlatform/libent-cruder v0.0.0-20220801075201-cab5db8b6290
+	github.com/NpoolPlatform/message v0.0.0-20220806084213-b8acd05be3d6
+	github.com/NpoolPlatform/review-service v0.0.0-20220806074328-d3e24fd1ab67
 	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
@@ -30,14 +32,13 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/coocood/freecache v1.0.1 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-chassis/go-archaius v1.5.3 // indirect
 	github.com/go-chassis/openlog v1.1.3 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/consul/api v1.12.0 // indirect
