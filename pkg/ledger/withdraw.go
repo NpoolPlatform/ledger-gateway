@@ -30,11 +30,47 @@ import (
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
+	currency "github.com/NpoolPlatform/oracle-manager/pkg/middleware/currency"
+
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
 
 	"github.com/google/uuid"
 )
+
+const (
+	defaultLimitAmount = 10000.0
+	leastLimitAmount   = 0.001
+)
+
+func coinLimit(ctx context.Context, coin *coininfopb.CoinInfo, setting *billingpb.AppWithdrawSetting) (float64, error) {
+	limit := defaultLimitAmount
+
+	if setting != nil {
+		// TODO: use decimal for amount
+		limit = setting.WithdrawAutoReviewCoinAmount
+	}
+
+	if limit == 0 {
+		psetting, err := billingcli.GetPlatformSetting(ctx)
+		if err != nil {
+			return defaultLimitAmount, err
+		}
+
+		price, err := currency.USDPrice(ctx, coin.Name)
+		if err != nil {
+			return defaultLimitAmount, err
+		}
+
+		limit = psetting.WithdrawAutoReviewUSDAmount / price
+	}
+
+	if limit < leastLimitAmount {
+		return leastLimitAmount, nil
+	}
+
+	return limit, nil
+}
 
 func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*npool.Withdraw, error) { //nolint
 	// Try lock balance
@@ -124,7 +160,12 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 		return nil, fmt.Errorf("invalid withdraw setting")
 	}
 
-	threshold := decimal.NewFromFloat(ws.WithdrawAutoReviewCoinAmount)
+	limit, err := coinLimit(ctx, coin, ws)
+	if err != nil {
+		return nil, err
+	}
+
+	threshold := decimal.NewFromFloat(limit)
 	if amount.Cmp(threshold) > 0 && reviewTrigger != reviewmgrpb.ReviewTriggerType_AutoReviewed {
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_LargeAmount
 	}
