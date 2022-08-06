@@ -8,12 +8,30 @@ import (
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	ledger1 "github.com/NpoolPlatform/ledger-gateway/pkg/ledger"
+	withdrawvalidator "github.com/NpoolPlatform/ledger-manager/api/withdraw"
 
 	"github.com/google/uuid"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawRequest) (*npool.CreateWithdrawResponse, error) {
+	if err := withdrawvalidator.Validate(in.GetInfo()); err != nil {
+		logger.Sugar().Errorw("CreateWithdraw", "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, "Info is invalid")
+	}
+
+	info, err := ledger1.CreateWithdraw(ctx, in.GetInfo())
+	if err != nil {
+		logger.Sugar().Errorw("CreateWithdraw", "error", err)
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.Internal, "fail create withdraw")
+	}
+
+	return &npool.CreateWithdrawResponse{
+		Info: info,
+	}, nil
+}
 
 func (s *Server) GetWithdraws(ctx context.Context, in *npool.GetWithdrawsRequest) (*npool.GetWithdrawsResponse, error) {
 	if _, err := uuid.Parse(in.GetAppID()); err != nil {
