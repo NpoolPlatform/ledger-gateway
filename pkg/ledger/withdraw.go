@@ -170,6 +170,17 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_LargeAmount
 	}
 
+	price, err := currency.USDPrice(ctx, coin.Name)
+	if err != nil {
+		return nil, err
+	}
+	if price <= 0 {
+		return nil, fmt.Errorf("invalid coin price")
+	}
+
+	const feeUSDAmount = 2
+	feeAmount := feeUSDAmount / price
+
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
 	info, err := ledgermgrwithdrawcli.CreateWithdraw(ctx, in)
@@ -198,14 +209,15 @@ func CreateWithdraw(ctx context.Context, in *ledgermgrwithdrawpb.WithdrawReq) (*
 
 		// TODO: should be in dtm
 		tx, err := billingcli.CreateTransaction(ctx, &billingpb.CoinAccountTransaction{
-			AppID:         in.GetAppID(),
-			UserID:        in.GetUserID(),
-			CoinTypeID:    in.GetCoinTypeID(),
-			GoodID:        uuid.UUID{}.String(),
-			FromAddressID: hotacc.ID,
-			ToAddressID:   account.ID,
-			Amount:        amount.InexactFloat64(),
-			Message:       fmt.Sprintf("user withdraw at %v", time.Now()),
+			AppID:          in.GetAppID(),
+			UserID:         in.GetUserID(),
+			CoinTypeID:     in.GetCoinTypeID(),
+			GoodID:         uuid.UUID{}.String(),
+			FromAddressID:  hotacc.ID,
+			ToAddressID:    account.ID,
+			Amount:         amount.InexactFloat64(),
+			TransactionFee: feeAmount,
+			Message:        fmt.Sprintf("user withdraw at %v", time.Now()),
 		})
 		if err != nil {
 			return nil, err
@@ -314,7 +326,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		CreatedAt:     info.CreatedAt,
 		Address:       account.Address,
 		AddressLabels: "TODO: to be filled",
-		State:         state, // TODO: get transactions for Transfering/TransactionFail state
+		State:         state, // TODO: get transactions for Transferring/TransactionFail state
 		Message:       message,
 	}, nil
 }
@@ -439,7 +451,7 @@ func GetWithdraws(
 			CreatedAt:     info.CreatedAt,
 			Address:       acc.Address,
 			AddressLabels: "TODO: to be filled",
-			State:         state, // TODO: get transactions for Transfering/TransactionFail state
+			State:         state, // TODO: get transactions for Transferring/TransactionFail state
 			Message:       messageMap[info.ID],
 		})
 	}
