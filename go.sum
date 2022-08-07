@@ -78,7 +78,11 @@ github.com/NpoolPlatform/api-manager v0.0.0-20220328101926-8907b2f76c6d/go.mod h
 github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220806102703-0570e7231a6c h1:I3zn1vZrs8RPPEE0HFbEzlqkgKA9dFups6tMCKULXfs=
 github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220806102703-0570e7231a6c/go.mod h1:RpChPk9kWRo2oO0UdaB6VkRdz5InZ2yqVoQyCiRbTQc=
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20211224023221-a715aef93510/go.mod h1:YcH4tmsnOFfsFeBG6tqT6W5Z6yKvQA2W+b9RBhSAzMo=
+github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98 h1:f5MqcCkX3mAOdBRxg/mjiFsTzrRbjAAATIIfaot3/+s=
+github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98/go.mod h1:aFvLR1M7HtXB2A0hyC7q83/H8WPv9jJaw30XrhSKNFI=
 github.com/NpoolPlatform/cloud-hashing-inspire v0.0.0-20211224023242-bd6da3111653/go.mod h1:VBiNGga8uFzy0Pt3Epzx4Dg7RxzM0Y4lzsr+9a7icU8=
+github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111 h1:ZAdFQi0hfyrgWGUH5S5m4VaHYnMAwB2Aiuh7+nB4Cdw=
+github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111/go.mod h1:Tyx/tHnAHxgRhAxqOzlJs8PHzVLdbpqs57eRGgdj3cw=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20211222114515-4928e6cf3f1f/go.mod h1:kR7v9OYmi38GLucJoVUOxLYiA3xtLp5TY/fWqrR6WRw=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220120091626-4e8035637592/go.mod h1:JqrktA7gNQe/Uprnr6DCs5UCFpheCZ30lDd0OkyRtC4=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220726144547-41aefeaea336 h1:LQtAbTaGZKrGT/AwUKLGx2ojoksqp0XQGtf4RcRx9ME=
@@ -92,8 +96,8 @@ github.com/NpoolPlatform/libent-cruder v0.0.0-20220801075201-cab5db8b6290/go.mod
 github.com/NpoolPlatform/message v0.0.0-20220120075427-38182760a780/go.mod h1:tnsf7zHQ5Mv2uG0ezOwCfm/bxluiRW10DeuIl4SjG4Y=
 github.com/NpoolPlatform/message v0.0.0-20220121040326-31d316062cdc/go.mod h1:tnsf7zHQ5Mv2uG0ezOwCfm/bxluiRW10DeuIl4SjG4Y=
 github.com/NpoolPlatform/message v0.0.0-20220501030927-34f296682c0c/go.mod h1:i/F/sQWjQk44RGvfgEB0zH0oAK/0qLvgJ1AsJDZQDkk=
-github.com/NpoolPlatform/message v0.0.0-20220806131725-012b87e85bc6 h1:b3T8r8rFVMRRGOuqG4UGYzaHYALaVzwTzeMHhBYXjLg=
-github.com/NpoolPlatform/message v0.0.0-20220806131725-012b87e85bc6/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
+github.com/NpoolPlatform/message v0.0.0-20220807053011-e4adf0693380 h1:+SRXfq9nLRi94qFQz7aHpN1UC5mZ6WEOQl/aF1BL5zc=
+github.com/NpoolPlatform/message v0.0.0-20220807053011-e4adf0693380/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
 github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5 h1:oiRkGjKBLYY33K0ryuHXY9c0RIv44g8uQrEQPn4FVrI=
 github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5/go.mod h1:f9Seypsw5N+Kc0P13IurAD/WNHXhzYsBt+d/R17oLfA=
 github.com/NpoolPlatform/review-service v0.0.0-20220806103714-e9b6fbf81671 h1:gUbsXQzCMh/09XcqzP6dlscdU5sh6vBeQoT7jYbP0r4=
@@ -118,6 +122,7 @@ github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129/go.mod h1:rFgp
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/aokoli/goutils v1.0.1/go.mod h1:SijmP0QR8LtwsmDs8Yii5Z/S4trXFGFC2oO5g9DP+DQ=
 github.com/apparentlymart/go-dump v0.0.0-20180507223929-23540a00eaa3/go.mod h1:oL81AME2rN47vu18xqj1S1jPIPuN7afo62yKTNn3XMM=
+github.com/apparentlymart/go-textseg v1.0.0 h1:rRmlIsPEEhUTIKQb7T++Nz/A5Q6C9IuX2wFoYVvnCs0=
 github.com/apparentlymart/go-textseg v1.0.0/go.mod h1:z96Txxhf3xSFMPmb5X/1W05FF/Nj9VFpLOpjS5yuumk=
 github.com/apparentlymart/go-textseg/v13 v13.0.0 h1:Y+KvPE1NYz0xl601PVImeQfFyEy6iT90AvPUL1NNfNw=
 github.com/apparentlymart/go-textseg/v13 v13.0.0/go.mod h1:ZK2fH7c4NqDTLtiYLvIkEghdlcqw7yxLeM89kiTRPUo=

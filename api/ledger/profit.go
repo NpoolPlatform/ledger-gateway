@@ -69,3 +69,35 @@ func (s *Server) GetIntervalProfits(
 		Total: n,
 	}, nil
 }
+
+func (s *Server) GetGoodProfits(
+	ctx context.Context, in *npool.GetGoodProfitsRequest,
+) (
+	*npool.GetGoodProfitsResponse, error,
+) {
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("GetGoodProfits", "AppID", in.GetAppID(), "error", err)
+		return &npool.GetGoodProfitsResponse{}, status.Error(codes.InvalidArgument, "AppID is invalid")
+	}
+
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("GetGoodProfits", "UserID", in.GetUserID(), "error", err)
+		return &npool.GetGoodProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
+	}
+
+	infos, n, err := ledger1.GetGoodProfits(
+		ctx,
+		in.GetAppID(), in.GetUserID(),
+		in.GetStartAt(), in.GetEndAt(),
+		in.GetOffset(), in.GetLimit(),
+	)
+	if err != nil {
+		logger.Sugar().Errorw("GetGoodProfits", "error", err)
+		return &npool.GetGoodProfitsResponse{}, status.Error(codes.Internal, "fail get generals")
+	}
+
+	return &npool.GetGoodProfitsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
+}
