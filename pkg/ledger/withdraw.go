@@ -426,12 +426,14 @@ func GetWithdraws(
 		}
 	}
 
-	for _, r := range reviews {
-		if waitTsMap[r.ObjectID] < rejectedTsMap[r.ObjectID] {
-			stateMap[r.ObjectID] = ledgermgrwithdrawpb.WithdrawState_Reviewing
+	for oid, waitTs := range waitTsMap {
+		rejectedTs, ok := rejectedTsMap[oid]
+		if !ok || waitTs > rejectedTs {
+			stateMap[oid] = ledgermgrwithdrawpb.WithdrawState_Reviewing
+			messageMap[oid] = ""
 			continue
 		}
-		stateMap[r.ObjectID] = ledgermgrwithdrawpb.WithdrawState_Rejected
+		stateMap[oid] = ledgermgrwithdrawpb.WithdrawState_Rejected
 	}
 
 	for _, r := range reviews {
