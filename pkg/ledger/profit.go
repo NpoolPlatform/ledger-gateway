@@ -257,15 +257,16 @@ func GetGoodProfits(
 		gp, ok := infos[order.GoodID]
 		if !ok {
 			gp = &npool.GoodProfit{
-				CoinTypeID: good.CoinInfoID,
-				CoinName:   coin.Name,
-				CoinLogo:   coin.Logo,
-				CoinUnit:   coin.Unit,
-				GoodID:     order.GoodID,
-				GoodName:   good.Title,
-				GoodUnit:   good.Unit,
-				Units:      0,
-				Incoming:   decimal.NewFromInt(0).String(),
+				CoinTypeID:            good.CoinInfoID,
+				CoinName:              coin.Name,
+				CoinLogo:              coin.Logo,
+				CoinUnit:              coin.Unit,
+				GoodID:                order.GoodID,
+				GoodName:              good.Title,
+				GoodUnit:              good.Unit,
+				GoodServicePeriodDays: uint32(good.DurationDays),
+				Units:                 0,
+				Incoming:              decimal.NewFromInt(0).String(),
 			}
 			total += 1
 		}
