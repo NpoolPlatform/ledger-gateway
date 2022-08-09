@@ -215,7 +215,6 @@ func GetGoodProfits(
 	}
 
 	type extra struct {
-		GoodID      string
 		BenefitDate string
 		OrderID     string
 	}
@@ -227,7 +226,10 @@ func GetGoodProfits(
 		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
 			continue
 		}
-		if info.IOSubType != ledgermgrdetailpb.IOSubType_MiningBenefit {
+		switch info.IOSubType {
+		case ledgermgrdetailpb.IOSubType_MiningBenefit:
+		case ledgermgrdetailpb.IOSubType_Payment:
+		default:
 			continue
 		}
 
@@ -242,24 +244,24 @@ func GetGoodProfits(
 			return nil, 0, fmt.Errorf("invalid io extra")
 		}
 
-		good, ok := goodMap[e.GoodID]
-		if !ok {
-			return nil, 0, fmt.Errorf("invalid good")
-		}
-
 		order, ok := orderMap[e.OrderID]
 		if !ok {
 			return nil, 0, fmt.Errorf("invalid order")
 		}
 
-		gp, ok := infos[e.GoodID]
+		good, ok := goodMap[order.GoodID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid good")
+		}
+
+		gp, ok := infos[order.GoodID]
 		if !ok {
 			gp = &npool.GoodProfit{
 				CoinTypeID: info.CoinTypeID,
 				CoinName:   coin.Name,
 				CoinLogo:   coin.Logo,
 				CoinUnit:   coin.Unit,
-				GoodID:     e.GoodID,
+				GoodID:     order.GoodID,
 				GoodName:   good.Title,
 				GoodUnit:   good.Unit,
 				Units:      0,
@@ -268,12 +270,14 @@ func GetGoodProfits(
 			total += 1
 		}
 
-		gp.Incoming = decimal.RequireFromString(gp.Incoming).
-			Add(decimal.RequireFromString(info.Amount)).
-			String()
+		if info.IOSubType == ledgermgrdetailpb.IOSubType_MiningBenefit {
+			gp.Incoming = decimal.RequireFromString(gp.Incoming).
+				Add(decimal.RequireFromString(info.Amount)).
+				String()
+		}
 		gp.Units += order.Units
 
-		infos[e.GoodID] = gp
+		infos[order.GoodID] = gp
 	}
 
 	profits := []*npool.GoodProfit{}
