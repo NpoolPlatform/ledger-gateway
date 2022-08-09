@@ -227,11 +227,6 @@ func GetGoodProfits(
 			continue
 		}
 
-		coin, ok := coinMap[info.CoinTypeID]
-		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
-		}
-
 		e := extra{}
 		err := json.Unmarshal([]byte(info.IOExtra), &e)
 		if err != nil {
@@ -248,10 +243,15 @@ func GetGoodProfits(
 			return nil, 0, fmt.Errorf("invalid order")
 		}
 
+		coin, ok := coinMap[good.CoinInfoID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid coin")
+		}
+
 		gp, ok := infos[e.GoodID]
 		if !ok {
 			gp = &npool.GoodProfit{
-				CoinTypeID: info.CoinTypeID,
+				CoinTypeID: good.CoinInfoID,
 				CoinName:   coin.Name,
 				CoinLogo:   coin.Logo,
 				CoinUnit:   coin.Unit,
