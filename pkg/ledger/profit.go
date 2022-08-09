@@ -80,12 +80,23 @@ func GetIntervalProfits(
 	[]*npool.Profit, uint32, error,
 ) {
 	// TODO: move to middleware with aggregate
-	// TODO: here offset / limit is actually for coin type
-	details, total, err := ledgermwcli.GetIntervalDetails(
-		ctx, appID, userID, start, end, offset, limit,
-	)
-	if err != nil {
-		return nil, 0, err
+	details := []*ledgermgrdetailpb.Detail{}
+	ofs := int32(0)
+	lim := limit
+
+	for {
+		ds, _, err := ledgermwcli.GetIntervalDetails(
+			ctx, appID, userID, start, end, ofs, lim,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(ds) == 0 {
+			break
+		}
+
+		details = append(details, ds...)
+		ofs += lim
 	}
 
 	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
@@ -99,6 +110,7 @@ func GetIntervalProfits(
 	}
 
 	infos := map[string]*npool.Profit{}
+	total := uint32(0)
 
 	for _, info := range details {
 		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
@@ -122,6 +134,7 @@ func GetIntervalProfits(
 				CoinUnit:   coin.Unit,
 				Incoming:   decimal.NewFromInt(0).String(),
 			}
+			total += 1
 		}
 
 		p.Incoming = decimal.RequireFromString(p.Incoming).
