@@ -159,12 +159,24 @@ func GetGoodProfits(
 	[]*npool.GoodProfit, uint32, error,
 ) {
 	// TODO: move to middleware with aggregate
-	// TODO: here offset / limit is actually for good type
-	details, total, err := ledgermwcli.GetIntervalDetails(
-		ctx, appID, userID, start, end, offset, limit,
-	)
-	if err != nil {
-		return nil, 0, err
+	// TODO: move to middleware with aggregate
+	details := []*ledgermgrdetailpb.Detail{}
+	ofs := int32(0)
+	lim := limit
+
+	for {
+		ds, _, err := ledgermwcli.GetIntervalDetails(
+			ctx, appID, userID, start, end, ofs, lim,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(ds) == 0 {
+			break
+		}
+
+		details = append(details, ds...)
+		ofs += lim
 	}
 
 	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
@@ -205,6 +217,7 @@ func GetGoodProfits(
 	}
 
 	infos := map[string]*npool.GoodProfit{}
+	total := uint32(0)
 
 	for _, info := range details {
 		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
@@ -248,6 +261,7 @@ func GetGoodProfits(
 				Units:      0,
 				Incoming:   decimal.NewFromInt(0).String(),
 			}
+			total += 1
 		}
 
 		gp.Incoming = decimal.RequireFromString(gp.Incoming).
