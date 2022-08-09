@@ -14,7 +14,7 @@ metadata:
       kube-system-headers-appid-to-body@kubernetescrd,
       kube-system-headers-userid-to-body@kubernetescrd,
       kube-system-headers-app-login-token-to-body@kubernetescrd,
-      kube-system-app-rbac-auth@kubernetescrd
+      kube-system-app-user-role-rbac-auth@kubernetescrd
 
 spec:
   rules:
