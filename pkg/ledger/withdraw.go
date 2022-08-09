@@ -188,6 +188,10 @@ func CreateWithdraw(
 
 	amountS := amount.String()
 
+	if amount.Cmp(decimal.NewFromFloat(feeAmount)) < 0 {
+		return nil, fmt.Errorf("invalid amount")
+	}
+
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
 	info, err := ledgermgrwithdrawcli.CreateWithdraw(ctx, &ledgermgrwithdrawpb.WithdrawReq{
@@ -215,7 +219,9 @@ func CreateWithdraw(
 	}
 
 	if reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
-		rv.State = reviewmgrpb.ReviewState_Approved.String()
+		// Formatted to use formatted approved
+		// rv.State = reviewmgrpb.ReviewState_Approved.String()
+		rv.State = reviewconst.StateApproved
 		if _, err := reviewcli.UpdateReview(ctx, rv); err != nil {
 			return nil, err
 		}
