@@ -44,11 +44,17 @@ func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawReq
 		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("Amount is invalid: %v", err))
 	}
 
+	amount := decimal.RequireFromString(in.GetAmount())
+	if amount.Cmp(decimal.NewFromInt(0)) <= 0 {
+		logger.Sugar().Errorw("validate", "Amount", in.GetAmount())
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("Amount is less than 0"))
+	}
+
 	info, err := ledger1.CreateWithdraw(
 		ctx,
 		in.GetAppID(), in.GetUserID(),
 		in.GetCoinTypeID(), in.GetAccountID(),
-		decimal.RequireFromString(in.GetAmount()),
+		amount,
 	)
 	if err != nil {
 		logger.Sugar().Errorw("CreateWithdraw", "error", err)

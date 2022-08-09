@@ -147,7 +147,7 @@ func CreateWithdraw(
 	if err != nil {
 		return nil, err
 	}
-	if err == nil {
+	if bal == nil {
 		return nil, fmt.Errorf("invalid balance")
 	}
 
