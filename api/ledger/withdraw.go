@@ -47,7 +47,7 @@ func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawReq
 	amount := decimal.RequireFromString(in.GetAmount())
 	if amount.Cmp(decimal.NewFromInt(0)) <= 0 {
 		logger.Sugar().Errorw("validate", "Amount", in.GetAmount())
-		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("Amount is less than 0"))
+		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, "Amount is less than 0")
 	}
 
 	info, err := ledger1.CreateWithdraw(
