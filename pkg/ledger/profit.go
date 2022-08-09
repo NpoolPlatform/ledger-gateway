@@ -84,6 +84,10 @@ func GetIntervalProfits(
 	ofs := int32(0)
 	lim := limit
 
+	if lim == 0 {
+		lim = 1000 //nolint
+	}
+
 	for {
 		ds, _, err := ledgermwcli.GetIntervalDetails(
 			ctx, appID, userID, start, end, ofs, lim,
