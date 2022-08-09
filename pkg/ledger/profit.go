@@ -85,7 +85,7 @@ func GetIntervalProfits(
 	lim := limit
 
 	if lim == 0 {
-		lim = 1000 //nolint
+		lim = 1000
 	}
 
 	for {
