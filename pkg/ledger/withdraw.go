@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -429,46 +430,17 @@ func GetWithdraws(
 		return nil, 0, err
 	}
 
-	stateMap := map[string]ledgermgrwithdrawpb.WithdrawState{}
-	waitTsMap := map[string]uint32{}
-	rejectedTsMap := map[string]uint32{}
-
 	messageMap := map[string]string{}
+	sort.SliceStable(reviews, func(i, j int) bool {
+		return reviews[i].CreateAt > reviews[j].CreateAt
+	})
 
 	for _, r := range reviews {
 		switch r.State {
-		case reviewconst.StateWait:
-			fallthrough //nolint
-		case reviewmgrpb.ReviewState_Wait.String():
-			if waitTsMap[r.ObjectID] < r.CreateAt {
-				waitTsMap[r.ObjectID] = r.CreateAt
-			}
 		case reviewconst.StateRejected:
 			fallthrough //nolint
 		case reviewmgrpb.ReviewState_Rejected.String():
-			if rejectedTsMap[r.ObjectID] < r.CreateAt {
-				rejectedTsMap[r.ObjectID] = r.CreateAt
-				messageMap[r.ObjectID] = r.Message
-			}
-		}
-	}
-
-	for oid, waitTs := range waitTsMap {
-		rejectedTs, ok := rejectedTsMap[oid]
-		if !ok || waitTs > rejectedTs {
-			stateMap[oid] = ledgermgrwithdrawpb.WithdrawState_Reviewing
-			messageMap[oid] = ""
-			continue
-		}
-		stateMap[oid] = ledgermgrwithdrawpb.WithdrawState_Rejected
-	}
-
-	for _, r := range reviews {
-		switch r.State {
-		case reviewconst.StateApproved:
-			fallthrough //nolint
-		case reviewmgrpb.ReviewState_Approved.String():
-			stateMap[r.ObjectID] = ledgermgrwithdrawpb.WithdrawState_Successful
+			messageMap[r.ObjectID] = r.Message
 		}
 	}
 
@@ -489,11 +461,6 @@ func GetWithdraws(
 			return nil, 0, fmt.Errorf("invalid withdraw account")
 		}
 
-		state, ok := stateMap[info.ID]
-		if !ok {
-			return nil, 0, fmt.Errorf("invalid review state")
-		}
-
 		withdraws = append(withdraws, &npool.Withdraw{
 			CoinTypeID:    info.CoinTypeID,
 			CoinName:      coin.Name,
@@ -503,7 +470,7 @@ func GetWithdraws(
 			CreatedAt:     info.CreatedAt,
 			Address:       acc.Address,
 			AddressLabels: strings.Join(wacc.Labels, ","),
-			State:         state, // TODO: get transactions for Transferring/TransactionFail state
+			State:         info.State, // TODO: get transactions for Transferring/TransactionFail state
 			Message:       messageMap[info.ID],
 		})
 	}
