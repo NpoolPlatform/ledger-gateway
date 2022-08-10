@@ -46,6 +46,7 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 			IOSubType:  info.IOSubType.String(),
 			Amount:     info.Amount,
 			IOExtra:    info.IOExtra,
+			CreatedAt:  info.CreatedAt,
 		})
 	}
 
