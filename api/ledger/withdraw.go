@@ -55,6 +55,9 @@ func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawReq
 		in.GetAppID(), in.GetUserID(),
 		in.GetCoinTypeID(), in.GetAccountID(),
 		amount,
+		in.GetAccountType(),
+		in.GetAccount(),
+		in.GetVerificationCode(),
 	)
 	if err != nil {
 		logger.Sugar().Errorw("CreateWithdraw", "error", err)

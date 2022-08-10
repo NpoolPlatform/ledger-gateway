@@ -11,11 +11,12 @@ require (
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20220809070830-be4ca34ea535
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220809141338-91c5abaabc76
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20220801075201-cab5db8b6290
-	github.com/NpoolPlatform/message v0.0.0-20220809121819-59415908d52b
+	github.com/NpoolPlatform/message v0.0.0-20220810041811-1c1cbdc58be4
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
 	github.com/NpoolPlatform/review-service v0.0.0-20220806103714-e9b6fbf81671
 	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b
+	github.com/NpoolPlatform/third-gateway v0.0.0-20220810044045-511bd4090498
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0
