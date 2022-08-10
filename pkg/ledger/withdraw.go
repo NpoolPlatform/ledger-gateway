@@ -151,6 +151,7 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("invalid balance")
 	}
 
+	// TODO: also check gas insufficient
 	balance := decimal.RequireFromString(bal.BalanceStr)
 	if balance.Cmp(amount) <= 0 {
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFunds
@@ -171,7 +172,7 @@ func CreateWithdraw(
 	}
 
 	threshold := decimal.NewFromFloat(limit)
-	if amount.Cmp(threshold) > 0 && reviewTrigger != reviewmgrpb.ReviewTriggerType_AutoReviewed {
+	if amount.Cmp(threshold) > 0 && reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_LargeAmount
 	}
 
