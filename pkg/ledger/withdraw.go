@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -407,6 +408,16 @@ func GetWithdraws(
 		accMap[acc.ID] = acc
 	}
 
+	waccounts, err := billingcli.GetWithdrawAccounts(ctx, appID, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	waccMap := map[string]*billingpb.UserWithdraw{}
+	for _, acc := range waccounts {
+		waccMap[acc.AccountID] = acc
+	}
+
 	// TODO: also add account labels
 
 	// TODO: move to review middleware
@@ -473,6 +484,11 @@ func GetWithdraws(
 			return nil, 0, fmt.Errorf("invalid account")
 		}
 
+		wacc, ok := waccMap[info.AccountID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid withdraw account")
+		}
+
 		state, ok := stateMap[info.ID]
 		if !ok {
 			return nil, 0, fmt.Errorf("invalid review state")
@@ -486,7 +502,7 @@ func GetWithdraws(
 			Amount:        info.Amount,
 			CreatedAt:     info.CreatedAt,
 			Address:       acc.Address,
-			AddressLabels: "TODO: to be filled",
+			AddressLabels: strings.Join(wacc.Labels, ","),
 			State:         state, // TODO: get transactions for Transferring/TransactionFail state
 			Message:       messageMap[info.ID],
 		})
