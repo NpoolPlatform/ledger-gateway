@@ -116,8 +116,8 @@ github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc/go.m
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b h1:p6fukOlIC+Hh5qC94Ai+qBq4mQ/Rz35Q13AnZ0x/rIg=
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b/go.mod h1:WV8KW4JtPNg2auCRqkoUV+35jkyT4LPPqr+JqsNjHa4=
 github.com/NpoolPlatform/third-gateway v0.0.0-20220205094704-a585d53bd025/go.mod h1:NZxtQVYHNvgKZp0NAegcDOMNDSjJGQ18gvmOP1hZrH4=
-github.com/NpoolPlatform/third-gateway v0.0.0-20220810044045-511bd4090498 h1:mvNqO6HwxDlk0U+9FmET+i601uv0fT1kcU5sq0pCD0M=
-github.com/NpoolPlatform/third-gateway v0.0.0-20220810044045-511bd4090498/go.mod h1:aQEK3XEMbquqHuarqB4vUYeMg+zrKld8FD/gsz/st30=
+github.com/NpoolPlatform/third-gateway v0.0.0-20220810052824-77db6bdd52ef h1:lsl5oRV3Q5LWyp5jp0i0RceNVkCSWACBfoga4dV9QqU=
+github.com/NpoolPlatform/third-gateway v0.0.0-20220810052824-77db6bdd52ef/go.mod h1:aQEK3XEMbquqHuarqB4vUYeMg+zrKld8FD/gsz/st30=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shonminh/apollo-client v0.4.0 h1:AXGp4wOahrEKjheMXehgsG9B8dEfLQHttRLHeEefvus=
