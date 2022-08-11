@@ -3,6 +3,7 @@ package ledger
 
 import (
 	"context"
+	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -24,6 +25,11 @@ func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*
 	if _, err := uuid.Parse(in.GetUserID()); err != nil {
 		logger.Sugar().Errorw("GetDetails", "UserID", in.GetUserID(), "error", err)
 		return &npool.GetDetailsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
+	}
+
+	endAt := in.GetEndAt()
+	if endAt == 0 {
+		endAt = uint32(time.Now().Unix())
 	}
 
 	infos, n, err := ledger1.GetDetails(
