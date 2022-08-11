@@ -35,7 +35,7 @@ func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*
 	infos, n, err := ledger1.GetDetails(
 		ctx,
 		in.GetAppID(), in.GetUserID(),
-		in.GetStartAt(), in.GetEndAt(),
+		in.GetStartAt(), endAt,
 		in.GetOffset(), in.GetLimit(),
 	)
 	if err != nil {
