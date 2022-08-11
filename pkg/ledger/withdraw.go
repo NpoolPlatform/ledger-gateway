@@ -274,7 +274,6 @@ func CreateWithdraw(
 	return GetWithdraw(ctx, info.ID)
 }
 
-// nolint
 func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	info, err := ledgermgrwithdrawcli.GetWithdraw(ctx, id)
 	if err != nil {
@@ -302,55 +301,31 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 
 	// TODO: also add account labels
 
-	// TODO: move to review middleware
-	reviews, err := reviewcli.GetObjectReviews(
-		ctx,
-		info.AppID, constant.ServiceName,
-		reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
-		info.ID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	state := ledgermgrwithdrawpb.WithdrawState_Reviewing
-	waitTs := uint32(0)
-	rejectedTs := uint32(0)
 	message := ""
 
-	for _, r := range reviews {
-		switch r.State {
-		case reviewconst.StateWait:
-			fallthrough //nolint
-		case reviewmgrpb.ReviewState_Wait.String():
-			if waitTs < r.CreateAt {
-				waitTs = r.CreateAt
-			}
-		case reviewconst.StateRejected:
-			fallthrough //nolint
-		case reviewmgrpb.ReviewState_Rejected.String():
-			if rejectedTs < r.CreateAt {
-				rejectedTs = r.CreateAt
+	// TODO: move to review middleware
+	if info.State == ledgermgrwithdrawpb.WithdrawState_Rejected {
+		reviews, err := reviewcli.GetDomainReviews(
+			ctx,
+			info.AppID, constant.ServiceName, reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, r := range reviews {
+			switch r.State {
+			case reviewconst.StateRejected:
+				fallthrough //nolint
+			case reviewmgrpb.ReviewState_Rejected.String():
 				message = r.Message
 			}
 		}
 	}
 
-	if waitTs > rejectedTs {
-		state = ledgermgrwithdrawpb.WithdrawState_Reviewing
-		message = ""
-	} else {
-		state = ledgermgrwithdrawpb.WithdrawState_Rejected
-	}
-
-	for _, r := range reviews {
-		switch r.State {
-		case reviewconst.StateApproved:
-			fallthrough //nolint
-		case reviewmgrpb.ReviewState_Approved.String():
-			state = ledgermgrwithdrawpb.WithdrawState_Successful
-			message = ""
-		}
+	wa, err := billingcli.GetWithdrawAccount(ctx, info.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	return &npool.Withdraw{
@@ -361,8 +336,8 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		Amount:        info.Amount,
 		CreatedAt:     info.CreatedAt,
 		Address:       account.Address,
-		AddressLabels: "TODO: to be filled",
-		State:         state, // TODO: get transactions for Transferring/TransactionFail state
+		AddressLabels: strings.Join(wa.Labels, ","),
+		State:         info.State,
 		Message:       message,
 	}, nil
 }
