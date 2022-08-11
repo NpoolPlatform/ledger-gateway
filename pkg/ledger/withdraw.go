@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -115,19 +117,15 @@ func CreateWithdraw(
 	}
 
 	// Check account is belong to user and used for withdraw
-	was, err := billingcli.GetWithdrawAccounts(ctx, appID, userID)
+	wa, err := billingcli.GetWithdrawAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
-	found := false
-	for _, wa := range was {
-		if wa.AccountID == account.ID {
-			found = true
-			break
-		}
+	if wa == nil {
+		return nil, fmt.Errorf("invalid withdraw account")
 	}
-	if !found {
-		return nil, fmt.Errorf("not user's withdraw address")
+	if wa.AppID != appID || wa.UserID != userID {
+		return nil, fmt.Errorf("permission denied")
 	}
 
 	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
@@ -458,6 +456,7 @@ func GetWithdraws(
 
 		wacc, ok := waccMap[info.AccountID]
 		if !ok {
+			logger.Sugar().Infow("GetWithdraws", "Address", acc.Address, "AccountID", info.AccountID)
 			return nil, 0, fmt.Errorf("invalid withdraw account")
 		}
 
