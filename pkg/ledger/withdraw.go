@@ -323,9 +323,12 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		}
 	}
 
-	wa, err := billingcli.GetWithdrawAccount(ctx, info.ID)
+	wa, err := billingcli.GetWithdrawAccount(ctx, info.AccountID)
 	if err != nil {
 		return nil, err
+	}
+	if wa == nil {
+		return nil, fmt.Errorf("invalid withdraw address")
 	}
 
 	return &npool.Withdraw{
@@ -446,7 +449,7 @@ func GetWithdraws(
 			CreatedAt:     info.CreatedAt,
 			Address:       acc.Address,
 			AddressLabels: strings.Join(wacc.Labels, ","),
-			State:         info.State, // TODO: get transactions for Transferring/TransactionFail state
+			State:         info.State,
 			Message:       messageMap[info.ID],
 		})
 	}
