@@ -78,8 +78,8 @@ github.com/NpoolPlatform/api-manager v0.0.0-20220205130236-69d286e72dba/go.mod h
 github.com/NpoolPlatform/api-manager v0.0.0-20220328101926-8907b2f76c6d h1:lbBWd/t79S1JIuGySCFDyRJnOMQ7oHSjzUk+5aCAMxI=
 github.com/NpoolPlatform/api-manager v0.0.0-20220328101926-8907b2f76c6d/go.mod h1:ubnvHuhc0o6drhdYrT+nM5DXZW/yEesObWky6oRsHoQ=
 github.com/NpoolPlatform/appuser-manager v0.0.0-20220129103404-3f7941df7148/go.mod h1:nxXkzxeBSfyzJ3GGAT4iLhjFVlsCLDmLx6SaKLa0yy4=
-github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220806102703-0570e7231a6c h1:I3zn1vZrs8RPPEE0HFbEzlqkgKA9dFups6tMCKULXfs=
-github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220806102703-0570e7231a6c/go.mod h1:RpChPk9kWRo2oO0UdaB6VkRdz5InZ2yqVoQyCiRbTQc=
+github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220811032942-1d1ae51970f8 h1:PWb2/yDR2UI3BYQJAilbCD3WB8EonZgLlo+cxaV0zV0=
+github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220811032942-1d1ae51970f8/go.mod h1:f2A+B1EmEM4YZXMNFaQEsaZxcBEjdumAKfh9Ke2o5zQ=
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20211224023221-a715aef93510/go.mod h1:YcH4tmsnOFfsFeBG6tqT6W5Z6yKvQA2W+b9RBhSAzMo=
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98 h1:f5MqcCkX3mAOdBRxg/mjiFsTzrRbjAAATIIfaot3/+s=
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98/go.mod h1:aFvLR1M7HtXB2A0hyC7q83/H8WPv9jJaw30XrhSKNFI=
@@ -91,10 +91,10 @@ github.com/NpoolPlatform/go-service-framework v0.0.0-20220120091626-4e8035637592
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220127101433-3def4e496433/go.mod h1:G5SKpcIWWkyxeNtgI8c0iY8py6DY2xHZFGKPJpTEon0=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220726144547-41aefeaea336 h1:LQtAbTaGZKrGT/AwUKLGx2ojoksqp0XQGtf4RcRx9ME=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220726144547-41aefeaea336/go.mod h1:0x2o/TTJ+LZA6sPcTbhOUvt3+Ed/HiNia9gxvcw5nRA=
-github.com/NpoolPlatform/ledger-manager v0.0.0-20220809070830-be4ca34ea535 h1:+Wy3yf/u1KxgHe110Ej9gcyNjF60i6/qkgb6Tnern9U=
-github.com/NpoolPlatform/ledger-manager v0.0.0-20220809070830-be4ca34ea535/go.mod h1:izJzpKdLDp4rJhRRRqrIa24Xl1kxPKPn/yrQ9FviAJU=
-github.com/NpoolPlatform/ledger-middleware v0.0.0-20220809141338-91c5abaabc76 h1:/R8kb6Q6wDW6k6Q0VRdifHr2sDlrJVev308czEQCS1I=
-github.com/NpoolPlatform/ledger-middleware v0.0.0-20220809141338-91c5abaabc76/go.mod h1:gS9+//zY6e3EiJZyAJbPcyI7h0X5UmAprI85tz0/PO0=
+github.com/NpoolPlatform/ledger-manager v0.0.0-20220810080525-bffa7a839d30 h1:EYuaZgp4UvWwfKekiHVUTOM8/ywL2Q83X353Nox25Js=
+github.com/NpoolPlatform/ledger-manager v0.0.0-20220810080525-bffa7a839d30/go.mod h1:izJzpKdLDp4rJhRRRqrIa24Xl1kxPKPn/yrQ9FviAJU=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20220811054139-8ee942532891 h1:9XzzKJ2x18Ss1DwEZfybOvgk55rbYB8p5EBdsqGRNJg=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20220811054139-8ee942532891/go.mod h1:2sf5WaV98YmyERx+PsrB8YyIN2s4vdUaL6AIiUGyCsY=
 github.com/NpoolPlatform/libent-cruder v0.0.0-20220526050249-956b54fac9f1/go.mod h1:zvvqlRwbOdTUauPQ9dFDhDuxa91ILV0CQfVdPBZj+eA=
 github.com/NpoolPlatform/libent-cruder v0.0.0-20220801075201-cab5db8b6290 h1:yMIe6rgOrAlD2gXQnzxaNUcDtw8LMrg/oCB0TU2rnfU=
 github.com/NpoolPlatform/libent-cruder v0.0.0-20220801075201-cab5db8b6290/go.mod h1:zvvqlRwbOdTUauPQ9dFDhDuxa91ILV0CQfVdPBZj+eA=
