@@ -99,14 +99,6 @@ func CreateWithdraw(
 		return nil, err
 	}
 
-	// Try lock balance
-	if err := ledgermwcli.LockBalance(
-		ctx,
-		appID, userID, coinTypeID, amount,
-	); err != nil {
-		return nil, err
-	}
-
 	// Check account
 	account, err := billingcli.GetAccount(ctx, accountID)
 	if err != nil {
@@ -206,6 +198,16 @@ func CreateWithdraw(
 
 	if amount.Cmp(decimal.NewFromFloat(feeAmount)) < 0 {
 		return nil, fmt.Errorf("invalid amount")
+	}
+
+	// TODO: move to TX
+
+	// Try lock balance
+	if err := ledgermwcli.LockBalance(
+		ctx,
+		appID, userID, coinTypeID, amount,
+	); err != nil {
+		return nil, err
 	}
 
 	// TODO: move to dtm to ensure data integrity
