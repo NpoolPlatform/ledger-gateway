@@ -208,7 +208,7 @@ func GetGoodProfits(
 	ofs = 0
 
 	for {
-		ords, _, err := ordermwcli.GetOrders(ctx, appID, userID, offset, limit)
+		ords, _, err := ordermwcli.GetOrders(ctx, appID, userID, ofs, limit)
 		if err != nil {
 			return nil, 0, err
 		}
