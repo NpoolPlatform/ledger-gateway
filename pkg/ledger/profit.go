@@ -163,7 +163,6 @@ func GetGoodProfits(
 	[]*npool.GoodProfit, uint32, error,
 ) {
 	// TODO: move to middleware with aggregate
-	// TODO: move to middleware with aggregate
 	details := []*ledgermgrdetailpb.Detail{}
 	ofs := int32(0)
 	lim := limit
@@ -222,6 +221,8 @@ func GetGoodProfits(
 	infos := map[string]*npool.GoodProfit{}
 	total := uint32(0)
 
+	profitOrderMap := map[string]struct{}{}
+
 	for _, info := range details {
 		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
 			continue
@@ -276,8 +277,46 @@ func GetGoodProfits(
 				Add(decimal.RequireFromString(info.Amount)).
 				String()
 		}
+
 		gp.Units += order.Units
 
+		profitOrderMap[order.ID] = struct{}{}
+		infos[order.GoodID] = gp
+	}
+
+	for _, order := range orders {
+		if _, ok := profitOrderMap[order.ID]; ok {
+			continue
+		}
+
+		good, ok := goodMap[order.GoodID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid good")
+		}
+
+		coin, ok := coinMap[good.CoinInfoID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid coin")
+		}
+
+		gp, ok := infos[order.GoodID]
+		if !ok {
+			gp = &npool.GoodProfit{
+				CoinTypeID:            good.CoinInfoID,
+				CoinName:              coin.Name,
+				CoinLogo:              coin.Logo,
+				CoinUnit:              coin.Unit,
+				GoodID:                order.GoodID,
+				GoodName:              good.Title,
+				GoodUnit:              good.Unit,
+				GoodServicePeriodDays: uint32(good.DurationDays),
+				Units:                 0,
+				Incoming:              decimal.NewFromInt(0).String(),
+			}
+			total += 1
+		}
+
+		gp.Units += 1
 		infos[order.GoodID] = gp
 	}
 
