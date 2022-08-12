@@ -15,14 +15,16 @@ import (
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
+	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order/state"
+
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 
 	goodscli "github.com/NpoolPlatform/cloud-hashing-goods/pkg/client"
 	goodspb "github.com/NpoolPlatform/message/npool/cloud-hashing-goods"
 
-	ordercli "github.com/NpoolPlatform/cloud-hashing-order/pkg/client"
-	orderpb "github.com/NpoolPlatform/message/npool/cloud-hashing-order"
+	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
+	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
@@ -202,13 +204,24 @@ func GetGoodProfits(
 		goodMap[good.ID] = good
 	}
 
-	// TODO: offset / limit is actually not for orders here, and not used
-	orders, err := ordercli.GetUserOrders(ctx, appID, userID, offset, limit)
-	if err != nil {
-		return nil, 0, err
+	orders := []*ordermwpb.Order{}
+	ofs = 0
+
+	for {
+		ords, _, err := ordermwcli.GetOrders(ctx, appID, userID, offset, limit)
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(ords) == 0 {
+			break
+		}
+
+		orders = append(orders, ords...)
+
+		ofs += limit
 	}
 
-	orderMap := map[string]*orderpb.Order{}
+	orderMap := map[string]*ordermwpb.Order{}
 	for _, order := range orders {
 		orderMap[order.ID] = order
 	}
@@ -286,6 +299,14 @@ func GetGoodProfits(
 
 	for _, order := range orders {
 		if _, ok := profitOrderMap[order.ID]; ok {
+			continue
+		}
+
+		switch order.State {
+		case orderstatemgrpb.EState_Paid:
+		case orderstatemgrpb.EState_InService:
+		case orderstatemgrpb.EState_Expired:
+		default:
 			continue
 		}
 

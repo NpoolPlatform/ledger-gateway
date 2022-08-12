@@ -84,6 +84,7 @@ github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20211224023221-a715aef93510/
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98 h1:f5MqcCkX3mAOdBRxg/mjiFsTzrRbjAAATIIfaot3/+s=
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98/go.mod h1:aFvLR1M7HtXB2A0hyC7q83/H8WPv9jJaw30XrhSKNFI=
 github.com/NpoolPlatform/cloud-hashing-inspire v0.0.0-20211224023242-bd6da3111653/go.mod h1:VBiNGga8uFzy0Pt3Epzx4Dg7RxzM0Y4lzsr+9a7icU8=
+github.com/NpoolPlatform/cloud-hashing-inspire v0.0.0-20220224025352-b4d29cbbeebc h1:cqdD6f0QAZYsUm4tLg5hgaUiOFUdbdg2mc/1Nm6YV1w=
 github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111 h1:ZAdFQi0hfyrgWGUH5S5m4VaHYnMAwB2Aiuh7+nB4Cdw=
 github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111/go.mod h1:Tyx/tHnAHxgRhAxqOzlJs8PHzVLdbpqs57eRGgdj3cw=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20211222114515-4928e6cf3f1f/go.mod h1:kR7v9OYmi38GLucJoVUOxLYiA3xtLp5TY/fWqrR6WRw=
@@ -110,6 +111,8 @@ github.com/NpoolPlatform/message v0.0.0-20220811055003-c46a227689fb h1:sQPrP9ztb
 github.com/NpoolPlatform/message v0.0.0-20220811055003-c46a227689fb/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
 github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5 h1:oiRkGjKBLYY33K0ryuHXY9c0RIv44g8uQrEQPn4FVrI=
 github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5/go.mod h1:f9Seypsw5N+Kc0P13IurAD/WNHXhzYsBt+d/R17oLfA=
+github.com/NpoolPlatform/order-middleware v0.0.0-20220811123009-a5dbe37f15f9 h1:tYBnrD2XIgXCRGVUcmU05zalbpQe60f543o1a7Ugn/A=
+github.com/NpoolPlatform/order-middleware v0.0.0-20220811123009-a5dbe37f15f9/go.mod h1:zsjsj8yCidvajYI5K2SfS/nIqp8emI/Qq0FYqSgWIJ8=
 github.com/NpoolPlatform/review-service v0.0.0-20220806103714-e9b6fbf81671 h1:gUbsXQzCMh/09XcqzP6dlscdU5sh6vBeQoT7jYbP0r4=
 github.com/NpoolPlatform/review-service v0.0.0-20220806103714-e9b6fbf81671/go.mod h1:JQH8fhr5aRRLs5R//leqc7cClJN3rlbkOTmLz9pQZzQ=
 github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc h1:kbbN6VOsTY9Si1nCLAG6TQ+A2gIo4I2yxhWQIYs7aW8=
