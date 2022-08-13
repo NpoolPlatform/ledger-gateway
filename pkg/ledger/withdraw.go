@@ -365,6 +365,9 @@ func GetWithdraws(
 	if err != nil {
 		return nil, 0, err
 	}
+	if len(infos) == 0 {
+		return []*npool.Withdraw{}, 0, nil
+	}
 
 	waccounts, err := billingcli.GetWithdrawAccounts(ctx, appID, userID)
 	if err != nil {
@@ -399,6 +402,9 @@ func GetAppWithdraws(
 	infos, total, err := ledgermgrwithdrawcli.GetWithdraws(ctx, conds, offset, limit)
 	if err != nil {
 		return nil, 0, err
+	}
+	if len(infos) == 0 {
+		return []*npool.Withdraw{}, 0, nil
 	}
 
 	waccounts, err := billingcli.GetAppWithdrawAccounts(ctx, appID)
