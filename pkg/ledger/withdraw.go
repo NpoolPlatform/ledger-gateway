@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -116,6 +114,7 @@ func CreateWithdraw(
 	if wa == nil {
 		return nil, fmt.Errorf("invalid withdraw account")
 	}
+
 	if wa.AppID != appID || wa.UserID != userID {
 		return nil, fmt.Errorf("permission denied")
 	}
@@ -327,8 +326,10 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	if err != nil {
 		return nil, err
 	}
-	if wa == nil {
-		return nil, fmt.Errorf("invalid withdraw address")
+
+	labels := ""
+	if wa != nil {
+		labels = strings.Join(wa.Labels, ",")
 	}
 
 	return &npool.Withdraw{
@@ -339,7 +340,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		Amount:        info.Amount,
 		CreatedAt:     info.CreatedAt,
 		Address:       account.Address,
-		AddressLabels: strings.Join(wa.Labels, ","),
+		AddressLabels: labels,
 		State:         info.State,
 		Message:       message,
 	}, nil
@@ -483,15 +484,18 @@ func expand(
 			return nil, fmt.Errorf("invalid coin")
 		}
 
+		address := ""
+
 		acc, ok := accMap[info.AccountID]
-		if !ok {
-			return nil, fmt.Errorf("invalid account")
+		if ok {
+			address = acc.Address
 		}
 
+		labels := ""
+
 		wacc, ok := waccMap[info.AccountID]
-		if !ok {
-			logger.Sugar().Infow("GetWithdraws", "Address", acc.Address, "AccountID", info.AccountID)
-			return nil, fmt.Errorf("invalid withdraw account")
+		if ok {
+			labels = strings.Join(wacc.Labels, ",")
 		}
 
 		withdraws = append(withdraws, &npool.Withdraw{
@@ -501,8 +505,8 @@ func expand(
 			CoinUnit:      coin.Unit,
 			Amount:        info.Amount,
 			CreatedAt:     info.CreatedAt,
-			Address:       acc.Address,
-			AddressLabels: strings.Join(wacc.Labels, ","),
+			Address:       address,
+			AddressLabels: labels,
 			State:         info.State,
 			Message:       messageMap[info.ID],
 		})
