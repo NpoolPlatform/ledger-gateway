@@ -58,7 +58,7 @@ spec:
       http: &http_rules
         paths:
           ######
-          # Enable for all users
+          # Enable for all users (some is special for admin)
           ######
           - path: /api/ledger/v1/get
             backend:

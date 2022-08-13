@@ -345,7 +345,6 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	}, nil
 }
 
-// nolint
 func GetWithdraws(
 	ctx context.Context, appID, userID string, offset, limit int32,
 ) (
@@ -367,26 +366,6 @@ func GetWithdraws(
 		return nil, 0, err
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
-	if err != nil {
-		return nil, 0, err
-	}
-
-	coinMap := map[string]*coininfopb.CoinInfo{}
-	for _, coin := range coins {
-		coinMap[coin.ID] = coin
-	}
-
-	accounts, err := billingcli.GetAccounts(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	accMap := map[string]*billingpb.CoinAccountInfo{}
-	for _, acc := range accounts {
-		accMap[acc.ID] = acc
-	}
-
 	waccounts, err := billingcli.GetWithdrawAccounts(ctx, appID, userID)
 	if err != nil {
 		return nil, 0, err
@@ -397,7 +376,76 @@ func GetWithdraws(
 		waccMap[acc.AccountID] = acc
 	}
 
-	// TODO: also add account labels
+	withdraws, err := expand(ctx, appID, infos, waccMap)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return withdraws, total, nil
+}
+
+func GetAppWithdraws(
+	ctx context.Context, appID string, offset, limit int32,
+) (
+	[]*npool.Withdraw, uint32, error,
+) {
+	conds := &ledgermgrwithdrawpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+	}
+
+	infos, total, err := ledgermgrwithdrawcli.GetWithdraws(ctx, conds, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	waccounts, err := billingcli.GetAppWithdrawAccounts(ctx, appID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	waccMap := map[string]*billingpb.UserWithdraw{}
+	for _, acc := range waccounts {
+		waccMap[acc.AccountID] = acc
+	}
+
+	withdraws, err := expand(ctx, appID, infos, waccMap)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return withdraws, total, nil
+}
+
+func expand(
+	ctx context.Context,
+	appID string,
+	infos []*ledgermgrwithdrawpb.Withdraw,
+	waccMap map[string]*billingpb.UserWithdraw,
+) (
+	[]*npool.Withdraw, error,
+) {
+	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	if err != nil {
+		return nil, err
+	}
+
+	coinMap := map[string]*coininfopb.CoinInfo{}
+	for _, coin := range coins {
+		coinMap[coin.ID] = coin
+	}
+
+	accounts, err := billingcli.GetAccounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	accMap := map[string]*billingpb.CoinAccountInfo{}
+	for _, acc := range accounts {
+		accMap[acc.ID] = acc
+	}
 
 	// TODO: move to review middleware
 	reviews, err := reviewcli.GetDomainReviews(
@@ -405,7 +453,7 @@ func GetWithdraws(
 		appID, constant.ServiceName, reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
 	)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	messageMap := map[string]string{}
@@ -426,18 +474,18 @@ func GetWithdraws(
 	for _, info := range infos {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			return nil, fmt.Errorf("invalid coin")
 		}
 
 		acc, ok := accMap[info.AccountID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid account")
+			return nil, fmt.Errorf("invalid account")
 		}
 
 		wacc, ok := waccMap[info.AccountID]
 		if !ok {
 			logger.Sugar().Infow("GetWithdraws", "Address", acc.Address, "AccountID", info.AccountID)
-			return nil, 0, fmt.Errorf("invalid withdraw account")
+			return nil, fmt.Errorf("invalid withdraw account")
 		}
 
 		withdraws = append(withdraws, &npool.Withdraw{
@@ -454,7 +502,7 @@ func GetWithdraws(
 		})
 	}
 
-	return withdraws, total, nil
+	return withdraws, nil
 }
 
 func GetIntervalWithdraws(
