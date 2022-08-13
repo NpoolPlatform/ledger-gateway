@@ -1,11 +1,11 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: ledger-gateway-traefik-app-user-ingress
+  name: ledger-gateway-traefik-app-ingress
   namespace: kube-system
   annotations:
-    k8s.kuboard.cn/displayName: ledger-gateway-traefik-app-user
-    k8s.kuboard.cn/workload: ledger-gateway-traefik-app-user
+    k8s.kuboard.cn/displayName: ledger-gateway-traefik-app
+    k8s.kuboard.cn/workload: ledger-gateway-traefik-app
     kubernetes.io/ingress.class: "traefik-internet"
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.middlewares:
