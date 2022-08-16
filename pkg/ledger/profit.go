@@ -337,7 +337,7 @@ func GetGoodProfits(
 			total += 1
 		}
 
-		gp.Units += 1
+		gp.Units += order.Units
 		infos[order.GoodID] = gp
 	}
 
