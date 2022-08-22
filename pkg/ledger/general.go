@@ -12,6 +12,7 @@ import (
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+	ledgermw "github.com/NpoolPlatform/ledger-middleware/pkg/ledger"
 
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
@@ -87,6 +88,9 @@ nextCoin:
 			Outcoming:  decimal.NewFromInt(0).String(),
 			Spendable:  decimal.NewFromInt(0).String(),
 		})
+
+		total += 1
+		_, _ = ledgermw.TryCreateGeneral(ctx, appID, userID, coin.ID)
 	}
 
 	return generals, total, nil
