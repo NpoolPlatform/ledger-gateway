@@ -7,14 +7,14 @@ require (
 	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220813093402-2273d71145f8
 	github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20220812032117-44ecffa2bb95
-	github.com/NpoolPlatform/ledger-manager v0.0.0-20220810080525-bffa7a839d30
+	github.com/NpoolPlatform/ledger-manager v0.0.0-20220822103819-e95f38840746
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220811054139-8ee942532891
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20220801075201-cab5db8b6290
-	github.com/NpoolPlatform/message v0.0.0-20220813092230-fd5cbf2fec3c
+	github.com/NpoolPlatform/message v0.0.0-20220822103546-617d3ab7ce71
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
 	github.com/NpoolPlatform/order-middleware v0.0.0-20220811123009-a5dbe37f15f9
 	github.com/NpoolPlatform/review-service v0.0.0-20220806103714-e9b6fbf81671
-	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc
+	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220822104551-5021d893afe5
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b
 	github.com/NpoolPlatform/third-gateway v0.0.0-20220810052824-77db6bdd52ef
 	github.com/go-resty/resty/v2 v2.7.0
