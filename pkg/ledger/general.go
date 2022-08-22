@@ -31,9 +31,6 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 
 	coinTypeIDs := []string{}
 	for _, coin := range coins {
-		if coin.PreSale {
-			continue
-		}
 		coinTypeIDs = append(coinTypeIDs, coin.ID)
 	}
 
