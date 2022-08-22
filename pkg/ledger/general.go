@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/shopspring/decimal"
+
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
@@ -61,6 +63,29 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 			Locked:     info.Locked,
 			Outcoming:  info.Outcoming,
 			Spendable:  info.Spendable,
+		})
+	}
+
+nextCoin:
+	for _, coin := range coins {
+		if !coin.ForPay {
+			continue
+		}
+		for _, g := range generals {
+			if coin.ID == g.CoinTypeID {
+				continue nextCoin
+			}
+		}
+
+		generals = append(generals, &npool.General{
+			CoinTypeID: coin.ID,
+			CoinName:   coin.Name,
+			CoinLogo:   coin.Logo,
+			CoinUnit:   coin.Unit,
+			Incoming:   decimal.NewFromInt(0).String(),
+			Locked:     decimal.NewFromInt(0).String(),
+			Outcoming:  decimal.NewFromInt(0).String(),
+			Spendable:  decimal.NewFromInt(0).String(),
 		})
 	}
 
