@@ -36,6 +36,8 @@ import (
 	thirdgwcli "github.com/NpoolPlatform/third-gateway/pkg/client"
 	thirdgwconst "github.com/NpoolPlatform/third-gateway/pkg/const"
 
+	ga "github.com/NpoolPlatform/appuser-gateway/pkg/ga"
+
 	currency "github.com/NpoolPlatform/oracle-manager/pkg/middleware/currency"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
@@ -94,7 +96,10 @@ func CreateWithdraw(
 		signMethod, signAccount, verificationCode,
 		thirdgwconst.UsedForWithdraw,
 	); err != nil {
-		return nil, err
+		// Temporary implementation
+		if _, err := ga.VerifyGoogleAuth(ctx, appID, userID, verificationCode); err != nil {
+			return nil, err
+		}
 	}
 
 	// Check account
