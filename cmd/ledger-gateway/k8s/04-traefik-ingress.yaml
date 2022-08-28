@@ -31,6 +31,8 @@ spec:
       http: *http_rules
     - host: api.ohhash.com
       http: *http_rules
+    - host: api.procyon.xpool.top
+      http: *http_rules
 
 ---
 
@@ -73,4 +75,6 @@ spec:
     - host: api.xpool.top
       http: *http_rules
     - host: api.ohhash.com
+      http: *http_rules
+    - host: api.procyon.xpool.top
       http: *http_rules
