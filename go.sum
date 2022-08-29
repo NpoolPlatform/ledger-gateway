@@ -97,7 +97,6 @@ github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111 
 github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111/go.mod h1:Tyx/tHnAHxgRhAxqOzlJs8PHzVLdbpqs57eRGgdj3cw=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20211222114515-4928e6cf3f1f/go.mod h1:kR7v9OYmi38GLucJoVUOxLYiA3xtLp5TY/fWqrR6WRw=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220120091626-4e8035637592/go.mod h1:JqrktA7gNQe/Uprnr6DCs5UCFpheCZ30lDd0OkyRtC4=
-github.com/NpoolPlatform/go-service-framework v0.0.0-20220812032117-44ecffa2bb95/go.mod h1:QPI3Fu/AU5iUOUnf9EictZP1lqPQdPcVLqveIB2HovI=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220818105452-9457611ae070 h1:BARdOYP/2s4Oxk7GnM0oXw5oSGevx2TZL+wPfgPz7Nc=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20220818105452-9457611ae070/go.mod h1:QPI3Fu/AU5iUOUnf9EictZP1lqPQdPcVLqveIB2HovI=
 github.com/NpoolPlatform/ledger-manager v0.0.0-20220822103819-e95f38840746 h1:KdAw/Lgsb66ohlmUrUpkx2aeTFLhBpYvok66PfzNzW0=
@@ -112,7 +111,6 @@ github.com/NpoolPlatform/message v0.0.0-20220120075427-38182760a780/go.mod h1:tn
 github.com/NpoolPlatform/message v0.0.0-20220121040326-31d316062cdc/go.mod h1:tnsf7zHQ5Mv2uG0ezOwCfm/bxluiRW10DeuIl4SjG4Y=
 github.com/NpoolPlatform/message v0.0.0-20220126154557-410153a86b92/go.mod h1:tnsf7zHQ5Mv2uG0ezOwCfm/bxluiRW10DeuIl4SjG4Y=
 github.com/NpoolPlatform/message v0.0.0-20220501030927-34f296682c0c/go.mod h1:i/F/sQWjQk44RGvfgEB0zH0oAK/0qLvgJ1AsJDZQDkk=
-github.com/NpoolPlatform/message v0.0.0-20220811055003-c46a227689fb/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
 github.com/NpoolPlatform/message v0.0.0-20220819134247-1dc75c85fe43/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
 github.com/NpoolPlatform/message v0.0.0-20220827172633-626ae541d989 h1:V8SXOfkuZzZOeGC/ped/MtEVcQrWVKMEeNnoyl9yVYA=
 github.com/NpoolPlatform/message v0.0.0-20220827172633-626ae541d989/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
@@ -126,8 +124,8 @@ github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220822104551-5021d893afe5 h1:o
 github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220822104551-5021d893afe5/go.mod h1:6x2MevuQNEWnB/uJl8REgHUH2F+mBadmMtexHDO1/NA=
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b h1:p6fukOlIC+Hh5qC94Ai+qBq4mQ/Rz35Q13AnZ0x/rIg=
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b/go.mod h1:WV8KW4JtPNg2auCRqkoUV+35jkyT4LPPqr+JqsNjHa4=
-github.com/NpoolPlatform/third-gateway v0.0.0-20220827172902-231171eb5f69 h1:SbTvgoAzgi3I4CZYKPIugWm9KFXYplWDwXJ7jAd+6Ks=
-github.com/NpoolPlatform/third-gateway v0.0.0-20220827172902-231171eb5f69/go.mod h1:0eNXBcakuf6QABBG4v4eV5H1zMxgJLXcwOrfyToSNss=
+github.com/NpoolPlatform/third-gateway v0.0.0-20220828062552-d83e418cc011 h1:PyD6swHZU0qI+ONHRWZLiPWbF6SFMPTE/Sjb+NNEQ2c=
+github.com/NpoolPlatform/third-gateway v0.0.0-20220828062552-d83e418cc011/go.mod h1:0dxG4KaaJShdMfUxmXpNDt06HTUh6LsFxVlqY9YmYMk=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shonminh/apollo-client v0.4.0 h1:AXGp4wOahrEKjheMXehgsG9B8dEfLQHttRLHeEefvus=
