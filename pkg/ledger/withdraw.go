@@ -205,6 +205,7 @@ func CreateWithdraw(
 	}
 
 	// TODO: move to TX
+	// TODO: unlock if we fail before transaction created
 
 	// Try lock balance
 	if err := ledgermwcli.LockBalance(
