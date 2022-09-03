@@ -26,7 +26,7 @@ import (
 	accountmgrcli "github.com/NpoolPlatform/account-manager/pkg/client/transfer"
 	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/transfer"
 
-	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/v2/ledger"
+	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
