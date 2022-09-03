@@ -12,6 +12,7 @@ import (
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	ledgermgrwithdrawcli "github.com/NpoolPlatform/ledger-manager/pkg/client/withdraw"
+	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 	ledgermgrwithdrawpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/withdraw"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
@@ -215,6 +216,26 @@ func CreateWithdraw(
 		return nil, err
 	}
 
+	needUnlock := true
+	defer func() {
+		if err == nil {
+			return
+		}
+		if !needUnlock {
+			return
+		}
+		_ = ledgermwcli.UnlockBalance(
+			ctx,
+			appID, userID, coinTypeID,
+			ledgermgrdetailpb.IOSubType_Withdrawal,
+			amount, decimal.NewFromInt(0),
+			fmt.Sprintf(
+				`{"AccountID":"%v","Timestamp":"%v"}`,
+				accountID, time.Now(),
+			),
+		)
+	}()
+
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
 	info, err := ledgermgrwithdrawcli.CreateWithdraw(ctx, &ledgermgrwithdrawpb.WithdrawReq{
@@ -271,10 +292,12 @@ func CreateWithdraw(
 			PlatformTransactionID: &tx.ID,
 			State:                 &state,
 		}); err != nil {
+			needUnlock = false
 			return nil, err
 		}
 	}
 
+	needUnlock = false
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
 }
