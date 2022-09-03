@@ -70,6 +70,10 @@ spec:
             backend:
               serviceName: ledger-gateway
               servicePort: 50410
+          - path: /api/ledger/v1/create/transfer
+            backend:
+              serviceName: ledger-gateway
+              servicePort: 50410
     - host: api.procyon.vip
       http: *http_rules
     - host: api.xpool.top
