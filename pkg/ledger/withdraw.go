@@ -7,13 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	ledgermgrwithdrawcli "github.com/NpoolPlatform/ledger-manager/pkg/client/withdraw"
+	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 	ledgermgrwithdrawpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/withdraw"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
@@ -37,6 +36,8 @@ import (
 	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
 	thirdgwcli "github.com/NpoolPlatform/third-gateway/pkg/client"
 	thirdgwconst "github.com/NpoolPlatform/third-gateway/pkg/const"
+
+	ga "github.com/NpoolPlatform/appuser-gateway/pkg/ga"
 
 	currency "github.com/NpoolPlatform/oracle-manager/pkg/middleware/currency"
 
@@ -96,7 +97,10 @@ func CreateWithdraw(
 		signMethod, signAccount, verificationCode,
 		thirdgwconst.UsedForWithdraw,
 	); err != nil {
-		return nil, err
+		// Temporary implementation
+		if _, err := ga.VerifyGoogleAuth(ctx, appID, userID, verificationCode); err != nil {
+			return nil, err
+		}
 	}
 
 	// Check account
@@ -116,6 +120,7 @@ func CreateWithdraw(
 	if wa == nil {
 		return nil, fmt.Errorf("invalid withdraw account")
 	}
+
 	if wa.AppID != appID || wa.UserID != userID {
 		return nil, fmt.Errorf("permission denied")
 	}
@@ -201,6 +206,7 @@ func CreateWithdraw(
 	}
 
 	// TODO: move to TX
+	// TODO: unlock if we fail before transaction created
 
 	// Try lock balance
 	if err := ledgermwcli.LockBalance(
@@ -209,6 +215,26 @@ func CreateWithdraw(
 	); err != nil {
 		return nil, err
 	}
+
+	needUnlock := true
+	defer func() {
+		if err == nil {
+			return
+		}
+		if !needUnlock {
+			return
+		}
+		_ = ledgermwcli.UnlockBalance(
+			ctx,
+			appID, userID, coinTypeID,
+			ledgermgrdetailpb.IOSubType_Withdrawal,
+			amount, decimal.NewFromInt(0),
+			fmt.Sprintf(
+				`{"AccountID":"%v","Timestamp":"%v"}`,
+				accountID, time.Now(),
+			),
+		)
+	}()
 
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
@@ -266,10 +292,12 @@ func CreateWithdraw(
 			PlatformTransactionID: &tx.ID,
 			State:                 &state,
 		}); err != nil {
+			needUnlock = false
 			return nil, err
 		}
 	}
 
+	needUnlock = false
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
 }
@@ -327,8 +355,10 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	if err != nil {
 		return nil, err
 	}
-	if wa == nil {
-		return nil, fmt.Errorf("invalid withdraw address")
+
+	labels := ""
+	if wa != nil {
+		labels = strings.Join(wa.Labels, ",")
 	}
 
 	return &npool.Withdraw{
@@ -339,13 +369,12 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		Amount:        info.Amount,
 		CreatedAt:     info.CreatedAt,
 		Address:       account.Address,
-		AddressLabels: strings.Join(wa.Labels, ","),
+		AddressLabels: labels,
 		State:         info.State,
 		Message:       message,
 	}, nil
 }
 
-// nolint
 func GetWithdraws(
 	ctx context.Context, appID, userID string, offset, limit int32,
 ) (
@@ -366,25 +395,8 @@ func GetWithdraws(
 	if err != nil {
 		return nil, 0, err
 	}
-
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
-	if err != nil {
-		return nil, 0, err
-	}
-
-	coinMap := map[string]*coininfopb.CoinInfo{}
-	for _, coin := range coins {
-		coinMap[coin.ID] = coin
-	}
-
-	accounts, err := billingcli.GetAccounts(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	accMap := map[string]*billingpb.CoinAccountInfo{}
-	for _, acc := range accounts {
-		accMap[acc.ID] = acc
+	if len(infos) == 0 {
+		return []*npool.Withdraw{}, 0, nil
 	}
 
 	waccounts, err := billingcli.GetWithdrawAccounts(ctx, appID, userID)
@@ -397,7 +409,79 @@ func GetWithdraws(
 		waccMap[acc.AccountID] = acc
 	}
 
-	// TODO: also add account labels
+	withdraws, err := expand(ctx, appID, infos, waccMap)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return withdraws, total, nil
+}
+
+func GetAppWithdraws(
+	ctx context.Context, appID string, offset, limit int32,
+) (
+	[]*npool.Withdraw, uint32, error,
+) {
+	conds := &ledgermgrwithdrawpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+	}
+
+	infos, total, err := ledgermgrwithdrawcli.GetWithdraws(ctx, conds, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(infos) == 0 {
+		return []*npool.Withdraw{}, 0, nil
+	}
+
+	waccounts, err := billingcli.GetAppWithdrawAccounts(ctx, appID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	waccMap := map[string]*billingpb.UserWithdraw{}
+	for _, acc := range waccounts {
+		waccMap[acc.AccountID] = acc
+	}
+
+	withdraws, err := expand(ctx, appID, infos, waccMap)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return withdraws, total, nil
+}
+
+func expand(
+	ctx context.Context,
+	appID string,
+	infos []*ledgermgrwithdrawpb.Withdraw,
+	waccMap map[string]*billingpb.UserWithdraw,
+) (
+	[]*npool.Withdraw, error,
+) {
+	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	if err != nil {
+		return nil, err
+	}
+
+	coinMap := map[string]*coininfopb.CoinInfo{}
+	for _, coin := range coins {
+		coinMap[coin.ID] = coin
+	}
+
+	accounts, err := billingcli.GetAccounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	accMap := map[string]*billingpb.CoinAccountInfo{}
+	for _, acc := range accounts {
+		accMap[acc.ID] = acc
+	}
 
 	// TODO: move to review middleware
 	reviews, err := reviewcli.GetDomainReviews(
@@ -405,7 +489,7 @@ func GetWithdraws(
 		appID, constant.ServiceName, reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
 	)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	messageMap := map[string]string{}
@@ -426,18 +510,21 @@ func GetWithdraws(
 	for _, info := range infos {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			return nil, fmt.Errorf("invalid coin")
 		}
+
+		address := ""
 
 		acc, ok := accMap[info.AccountID]
-		if !ok {
-			return nil, 0, fmt.Errorf("invalid account")
+		if ok {
+			address = acc.Address
 		}
 
+		labels := ""
+
 		wacc, ok := waccMap[info.AccountID]
-		if !ok {
-			logger.Sugar().Infow("GetWithdraws", "Address", acc.Address, "AccountID", info.AccountID)
-			return nil, 0, fmt.Errorf("invalid withdraw account")
+		if ok {
+			labels = strings.Join(wacc.Labels, ",")
 		}
 
 		withdraws = append(withdraws, &npool.Withdraw{
@@ -447,14 +534,14 @@ func GetWithdraws(
 			CoinUnit:      coin.Unit,
 			Amount:        info.Amount,
 			CreatedAt:     info.CreatedAt,
-			Address:       acc.Address,
-			AddressLabels: strings.Join(wacc.Labels, ","),
+			Address:       address,
+			AddressLabels: labels,
 			State:         info.State,
 			Message:       messageMap[info.ID],
 		})
 	}
 
-	return withdraws, total, nil
+	return withdraws, nil
 }
 
 func GetIntervalWithdraws(

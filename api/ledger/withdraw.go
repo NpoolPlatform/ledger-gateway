@@ -123,3 +123,37 @@ func (s *Server) GetIntervalWithdraws(
 		Total: n,
 	}, nil
 }
+
+func (s *Server) GetAppWithdraws(ctx context.Context, in *npool.GetAppWithdrawsRequest) (*npool.GetAppWithdrawsResponse, error) {
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("GetAppWithdraws", "AppID", in.GetAppID(), "error", err)
+		return &npool.GetAppWithdrawsResponse{}, status.Error(codes.InvalidArgument, "AppID is invalid")
+	}
+
+	infos, n, err := ledger1.GetAppWithdraws(ctx, in.GetAppID(), in.GetOffset(), in.GetLimit())
+	if err != nil {
+		logger.Sugar().Errorw("GetAppWithdraws", "error", err)
+		return &npool.GetAppWithdrawsResponse{}, status.Error(codes.Internal, "fail get withdraws")
+	}
+
+	return &npool.GetAppWithdrawsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
+}
+
+func (s *Server) GetNAppWithdraws(ctx context.Context, in *npool.GetNAppWithdrawsRequest) (*npool.GetNAppWithdrawsResponse, error) {
+	resp, err := s.GetAppWithdraws(ctx, &npool.GetAppWithdrawsRequest{
+		AppID:  in.TargetAppID,
+		Offset: in.Offset,
+		Limit:  in.Limit,
+	})
+	if err != nil {
+		return &npool.GetNAppWithdrawsResponse{}, err
+	}
+
+	return &npool.GetNAppWithdrawsResponse{
+		Infos: resp.Infos,
+		Total: resp.Total,
+	}, nil
+}

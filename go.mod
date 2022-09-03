@@ -5,19 +5,19 @@ go 1.17
 require (
 	github.com/NpoolPlatform/account-manager v0.0.0-20220901093224-af15c33ff8cb
 	github.com/NpoolPlatform/api-manager v0.0.0-20220826022307-d72866fe3ec0
-	github.com/NpoolPlatform/appuser-gateway v0.0.0-20220902073018-6aafb3b8e9cf
+	github.com/NpoolPlatform/appuser-gateway v0.0.6-0.20220828042118-89808c8705fb
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
-	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220811032942-1d1ae51970f8
+	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220813093402-2273d71145f8
 	github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98
-	github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20220818105452-9457611ae070
-	github.com/NpoolPlatform/ledger-manager v0.0.0-20220810080525-bffa7a839d30
+	github.com/NpoolPlatform/ledger-manager v0.0.0-20220822103819-e95f38840746
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220902104548-dd78d14765ee
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20220821121920-9559f5776d15
 	github.com/NpoolPlatform/message v0.0.0-20220903055802-dd11b8ba23d8
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
+	github.com/NpoolPlatform/order-middleware v0.0.0-20220811123009-a5dbe37f15f9
 	github.com/NpoolPlatform/review-service v0.0.0-20220826135931-2f311aae9cbd
-	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220731103603-21004f4341dc
+	github.com/NpoolPlatform/sphinx-coininfo v0.0.0-20220822104551-5021d893afe5
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20220803040820-2b7bd4158e8b
 	github.com/NpoolPlatform/third-gateway v0.0.0-20220902070046-fada8266c34d
 	github.com/go-resty/resty/v2 v2.7.0
@@ -35,6 +35,7 @@ require (
 require (
 	ariga.io/atlas v0.5.1-0.20220717122844-8593d7eb1a8e // indirect
 	entgo.io/ent v0.11.2 // indirect
+	github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111 // indirect
 	github.com/Shonminh/apollo-client v0.4.0 // indirect
 	github.com/agext/levenshtein v1.2.1 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
