@@ -23,6 +23,9 @@ import (
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 
+	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/kyc"
+	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/kyc"
+
 	accountmgrcli "github.com/NpoolPlatform/account-manager/pkg/client/transfer"
 	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/transfer"
 
@@ -33,7 +36,7 @@ import (
 	appusergw "github.com/NpoolPlatform/appuser-gateway/pkg/ga"
 )
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func CreateTransfer(
 	ctx context.Context,
 	appID,
@@ -72,6 +75,27 @@ func CreateTransfer(
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	kyc, err := appusermgrcli.GetKycOnly(ctx, &appusermgrpb.Conds{
+		AppID: &npool.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		UserID: &npool.StringVal{
+			Op:    cruder.EQ,
+			Value: userID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if kyc == nil {
+		return nil, fmt.Errorf("kyc not added")
+	}
+
+	if kyc.State != appusermgrpb.KycState_Approved {
+		return nil, fmt.Errorf("kyc state is not approved")
 	}
 
 	exist, err := accountmgrcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
