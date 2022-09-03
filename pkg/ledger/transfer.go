@@ -17,10 +17,6 @@ import (
 
 	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
 
-	"go.opentelemetry.io/otel"
-
-	scodes "go.opentelemetry.io/otel/codes"
-
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 
 	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/kyc"
@@ -34,6 +30,9 @@ import (
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
 	appusergw "github.com/NpoolPlatform/appuser-gateway/pkg/ga"
+
+	"go.opentelemetry.io/otel"
+	scodes "go.opentelemetry.io/otel/codes"
 )
 
 //nolint:funlen,gocyclo
@@ -66,7 +65,7 @@ func CreateTransfer(
 			ctx,
 			appID, userID,
 			accountType, account, verificationCode,
-			thirdgwconst.UsedForSetTransferTargetUser,
+			thirdgwconst.UsedForTransfer,
 		); err != nil {
 			return nil, err
 		}
