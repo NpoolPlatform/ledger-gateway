@@ -19,7 +19,7 @@ import (
 )
 
 func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depositAppID, depositUserID string) (*ledger.Detail, error) {
-	depositUser, err := appusermgrcli.GetAppUserOnly(ctx, &appusermgrpb.Conds{
+	exist, err := appusermgrcli.ExistAppUserConds(ctx, &appusermgrpb.Conds{
 		AppID: &npool.StringVal{
 			Op:    cruder.EQ,
 			Value: depositAppID,
@@ -32,8 +32,8 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depos
 	if err != nil {
 		return nil, err
 	}
-	if depositUser == nil {
-		return nil, fmt.Errorf("deposit user not found")
+	if !exist {
+		return nil, fmt.Errorf("deposit user not exist")
 	}
 
 	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
