@@ -18,22 +18,22 @@ import (
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 )
 
-func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depositAppID, depositUserID string) (*ledger.Detail, error) {
+func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
 	exist, err := appusermgrcli.ExistAppUserConds(ctx, &appusermgrpb.Conds{
 		AppID: &npool.StringVal{
 			Op:    cruder.EQ,
-			Value: depositAppID,
+			Value: targetAppID,
 		},
 		ID: &npool.StringVal{
 			Op:    cruder.EQ,
-			Value: depositUserID,
+			Value: targetUserID,
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	if !exist {
-		return nil, fmt.Errorf("deposit user not exist")
+		return nil, fmt.Errorf("target user not exist")
 	}
 
 	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
@@ -45,13 +45,13 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depos
 	}
 
 	ioType := ledgermgrpb.IOType_Incoming
-	ioSubtype := ledgermgrpb.IOSubType_AdminDeposit
+	ioSubtype := ledgermgrpb.IOSubType_Deposit
 	ioExtra := fmt.Sprintf(
-		`{"AppID":"%v","UserID":"%v","DepositAppID":"%v","DepositUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
+		`{"AppID":"%v","UserID":"%v","TargetAppID":"%v","TargetUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
 		appID,
 		userID,
-		depositAppID,
-		depositUserID,
+		targetAppID,
+		targetUserID,
 		coin.Name,
 		amount,
 		time.Now(),
@@ -60,8 +60,8 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depos
 
 	err = ledgermwcli.BookKeeping(ctx, []*ledgermgrpb.DetailReq{
 		{
-			AppID:      &depositAppID,
-			UserID:     &depositUserID,
+			AppID:      &targetAppID,
+			UserID:     &targetUserID,
 			CoinTypeID: &coinTypeID,
 			IOType:     &ioType,
 			IOSubType:  &ioSubtype,

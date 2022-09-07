@@ -33,13 +33,13 @@ func (s *Server) CreateAppUserDeposit(
 		}
 	}()
 
-	if _, err := uuid.Parse(in.GetTargetUserID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "TargetUserID", in.GetTargetUserID(), "error", err)
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("CreateAppUserDeposit", "UserID", in.GetUserID(), "error", err)
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if _, err := uuid.Parse(in.GetTargetUserID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "TargetUserID", in.GetTargetUserID(), "error", err)
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("CreateAppUserDeposit", "AppID", in.GetAppID(), "error", err)
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -59,24 +59,25 @@ func (s *Server) CreateAppUserDeposit(
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, "Amount is less than 0")
 	}
 
-	if _, err := uuid.Parse(in.GetDepositAppID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "DepositAppID", in.GetDepositAppID(), "error", err)
+	if _, err := uuid.Parse(in.GetTargetAppID()); err != nil {
+		logger.Sugar().Errorw("CreateAppUserDeposit", "TargetAppID", in.GetTargetAppID(), "error", err)
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if _, err := uuid.Parse(in.GetDepositUserID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "DepositUserID", in.GetDepositUserID(), "error", err)
+	if _, err := uuid.Parse(in.GetTargetUserID()); err != nil {
+		logger.Sugar().Errorw("CreateAppUserDeposit", "TargetUserID", in.GetTargetUserID(), "error", err)
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	info, err := mledger.CreateDeposit(
 		ctx,
-		in.GetTargetAppID(),
-		in.GetTargetUserID(),
+		in.GetAppID(),
+		in.GetUserID(),
 		in.GetCoinTypeID(),
 		in.GetAmount(),
-		in.GetDepositAppID(),
-		in.GetDepositUserID())
+		in.GetTargetAppID(),
+		in.GetTargetUserID(),
+	)
 	if err != nil {
 		logger.Sugar().Errorw("CreateAppUserDeposit", "error", err)
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.Internal, err.Error())
