@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	mledger "github.com/NpoolPlatform/ledger-gateway/pkg/ledger"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
@@ -15,7 +16,13 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Server) CreateAppUserDeposit(ctx context.Context, in *ledger.CreateAppUserDepositRequest) (resp *ledger.CreateAppUserDepositResponse, err error) {
+func (s *Server) CreateAppUserDeposit(
+	ctx context.Context,
+	in *ledger.CreateAppUserDepositRequest,
+) (
+	resp *ledger.CreateAppUserDepositResponse,
+	err error,
+) {
 	_, span := otel.Tracer(constant.ServiceName).Start(ctx, "CreateAppUserDeposit")
 	defer span.End()
 

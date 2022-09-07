@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	"github.com/NpoolPlatform/message/npool"
@@ -10,10 +11,11 @@ import (
 	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/appuser"
 	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/appuser"
 
+	"time"
+
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
-	"time"
 )
 
 func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depositAppID, depositUserID string) (*ledger.Detail, error) {
@@ -43,7 +45,7 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, depos
 	}
 
 	ioType := ledgermgrpb.IOType_Incoming
-	ioSubtype := ledgermgrpb.IOSubType_Deposit
+	ioSubtype := ledgermgrpb.IOSubType_AdminDeposit
 	ioExtra := fmt.Sprintf(
 		`{"AppID":"%v","UserID":"%v","DepositAppID":"%v","DepositUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
 		appID,
