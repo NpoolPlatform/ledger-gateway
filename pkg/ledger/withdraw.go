@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
+	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
+
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -34,10 +37,7 @@ import (
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
 	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
-	thirdgwcli "github.com/NpoolPlatform/third-gateway/pkg/client"
-	thirdgwconst "github.com/NpoolPlatform/third-gateway/pkg/const"
-
-	ga "github.com/NpoolPlatform/appuser-gateway/pkg/ga"
+	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
 
 	currency "github.com/NpoolPlatform/oracle-manager/pkg/middleware/currency"
 
@@ -91,16 +91,17 @@ func CreateWithdraw(
 ) (
 	*npool.Withdraw, error,
 ) {
-	if err := thirdgwcli.VerifyCode(
-		ctx,
-		appID, userID,
-		signMethod, signAccount, verificationCode,
-		thirdgwconst.UsedForWithdraw,
-	); err != nil {
-		// Temporary implementation
-		if _, err := ga.VerifyGoogleAuth(ctx, appID, userID, verificationCode); err != nil {
-			return nil, err
-		}
+
+	user, err := usermwcli.GetUser(ctx, appID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if signMethod == signmethodpb.SignMethodType_Google {
+		signAccount = user.GetGoogleSecret()
+	}
+	if err := thirdmwcli.VerifyCode(ctx, appID, signAccount, verificationCode, signMethod, usedfor.UsedFor_Withdraw); err != nil {
+		return nil, err
 	}
 
 	// Check account
