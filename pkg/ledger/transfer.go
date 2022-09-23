@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	thirdgwcli "github.com/NpoolPlatform/third-gateway/pkg/client"
-	thirdgwconst "github.com/NpoolPlatform/third-gateway/pkg/const"
+	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
+
+	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
 
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	"github.com/NpoolPlatform/message/npool"
@@ -29,13 +30,11 @@ import (
 
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
-	appusergw "github.com/NpoolPlatform/appuser-gateway/pkg/ga"
-
 	"go.opentelemetry.io/otel"
 	scodes "go.opentelemetry.io/otel/codes"
 )
 
-//nolint:funlen,gocyclo
+//nolint:funlen
 func CreateTransfer(
 	ctx context.Context,
 	appID,
@@ -59,21 +58,23 @@ func CreateTransfer(
 		}
 	}()
 
-	switch accountType {
-	case signmethodpb.SignMethodType_Mobile, signmethodpb.SignMethodType_Email:
-		if err := thirdgwcli.VerifyCode(
-			ctx,
-			appID, userID,
-			accountType, account, verificationCode,
-			thirdgwconst.UsedForTransfer,
-		); err != nil {
-			return nil, err
-		}
-	case signmethodpb.SignMethodType_Google:
-		_, err = appusergw.VerifyGoogleAuth(ctx, appID, userID, verificationCode)
-		if err != nil {
-			return nil, err
-		}
+	user, err := appusermwcli.GetUser(ctx, appID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if accountType == signmethodpb.SignMethodType_Google {
+		account = user.GetGoogleSecret()
+	}
+
+	if err := thirdmwcli.VerifyCode(
+		ctx,
+		appID,
+		account,
+		verificationCode,
+		accountType,
+		usedfor.UsedFor_Transfer,
+	); err != nil {
+		return nil, err
 	}
 
 	kyc, err := appusermgrcli.GetKycOnly(ctx, &appusermgrpb.Conds{
