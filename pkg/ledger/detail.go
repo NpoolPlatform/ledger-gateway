@@ -7,7 +7,7 @@ import (
 	commonpb "github.com/NpoolPlatform/message/npool"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
-	
+
 	ledgermgrdetailcli "github.com/NpoolPlatform/ledger-manager/pkg/client/detail"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
@@ -57,7 +57,6 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 }
 
 func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*npool.Detail, uint32, error) {
-
 	conds := &ledgermgrdetailpb.Conds{
 		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
