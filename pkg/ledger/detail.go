@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	commonpb "github.com/NpoolPlatform/message/npool"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-
+	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
+	
+	ledgermgrdetailcli "github.com/NpoolPlatform/ledger-manager/pkg/client/detail"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
@@ -47,6 +50,53 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 			Amount:     info.Amount,
 			IOExtra:    info.IOExtra,
 			CreatedAt:  info.CreatedAt,
+		})
+	}
+
+	return infos, total, nil
+}
+
+func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*npool.Detail, uint32, error) {
+
+	conds := &ledgermgrdetailpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+	}
+	details, total, err := ledgermgrdetailcli.GetDetails(ctx, conds, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coinMap := map[string]*coininfopb.CoinInfo{}
+	for _, coin := range coins {
+		coinMap[coin.ID] = coin
+	}
+
+	infos := []*npool.Detail{}
+	for _, info := range details {
+		coin, ok := coinMap[info.CoinTypeID]
+		if !ok {
+			return nil, 0, fmt.Errorf("invalid coin")
+		}
+
+		infos = append(infos, &npool.Detail{
+			CoinTypeID: info.CoinTypeID,
+			CoinName:   coin.Name,
+			CoinLogo:   coin.Logo,
+			CoinUnit:   coin.Unit,
+			IOType:     info.IOType,
+			IOSubType:  info.IOSubType,
+			Amount:     info.Amount,
+			IOExtra:    info.IOExtra,
+			CreatedAt:  info.CreatedAt,
+			UserID:     info.UserID,
 		})
 	}
 

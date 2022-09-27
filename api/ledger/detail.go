@@ -48,3 +48,26 @@ func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*
 		Total: n,
 	}, nil
 }
+
+func (s *Server) GetAppDetails(ctx context.Context, in *npool.GetAppDetailsRequest) (*npool.GetAppDetailsResponse, error) {
+	if _, err := uuid.Parse(in.GetTargetAppID()); err != nil {
+		logger.Sugar().Errorw("GetAppDetails", "TargetAppID", in.GetTargetAppID(), "error", err)
+		return &npool.GetAppDetailsResponse{}, status.Error(codes.InvalidArgument, "TargetAppID is invalid")
+	}
+
+	infos, n, err := ledger1.GetAppDetails(
+		ctx,
+		in.GetTargetAppID(),
+		in.GetOffset(),
+		in.GetLimit(),
+	)
+	if err != nil {
+		logger.Sugar().Errorw("GetAppDetails", "error", err)
+		return &npool.GetAppDetailsRequest{}, status.Error(codes.Internal, "fail get app generals")
+	}
+
+	return &npool.GetAppDetailsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
+}
