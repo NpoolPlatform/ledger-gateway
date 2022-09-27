@@ -131,3 +131,71 @@ func GetIntervalGenerals(
 
 	return infos, total, nil
 }
+
+func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*npool.General, uint32, error) {
+	coins, _, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(coins) == 0 {
+		return nil, 0, nil
+	}
+
+	coinTypeIDs := []string{}
+	for _, coin := range coins {
+		coinTypeIDs = append(coinTypeIDs, coin.ID)
+	}
+
+	conds := &ledgermgrgeneralpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: coinTypeIDs,
+		},
+	}
+
+	infos, total, err := ledgermgrgeneralcli.GetGenerals(ctx, conds, offset, limit)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	generalMap := map[string]*ledgermgrgeneralpb.General{}
+	for _, general := range infos {
+		generalMap[general.CoinTypeID] = general
+	}
+
+	generals := []*npool.General{}
+	for _, coin := range coins {
+		general, ok := generalMap[coin.ID]
+		if ok {
+			generals = append(generals, &npool.General{
+				CoinTypeID: coin.ID,
+				CoinName:   coin.Name,
+				CoinLogo:   coin.Logo,
+				CoinUnit:   coin.Unit,
+				Incoming:   general.Incoming,
+				Locked:     general.Locked,
+				Outcoming:  general.Outcoming,
+				Spendable:  general.Spendable,
+				UserID:     general.UserID,
+			})
+		} else {
+			generals = append(generals, &npool.General{
+				CoinTypeID: coin.ID,
+				CoinName:   coin.Name,
+				CoinLogo:   coin.Logo,
+				CoinUnit:   coin.Unit,
+				Incoming:   decimal.NewFromInt(0).String(),
+				Locked:     decimal.NewFromInt(0).String(),
+				Outcoming:  decimal.NewFromInt(0).String(),
+				Spendable:  decimal.NewFromInt(0).String(),
+				UserID:     general.UserID,
+			})
+		}
+	}
+
+	return generals, total, nil
+}
