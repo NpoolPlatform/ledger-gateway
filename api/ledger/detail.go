@@ -63,7 +63,7 @@ func (s *Server) GetAppDetails(ctx context.Context, in *npool.GetAppDetailsReque
 	)
 	if err != nil {
 		logger.Sugar().Errorw("GetAppDetails", "error", err)
-		return &npool.GetAppDetailsResponse{}, status.Error(codes.Internal, "fail get app generals")
+		return &npool.GetAppDetailsResponse{}, status.Error(codes.Internal, "fail get app details")
 	}
 
 	return &npool.GetAppDetailsResponse{
