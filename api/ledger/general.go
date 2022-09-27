@@ -69,3 +69,21 @@ func (s *Server) GetIntervalGenerals(
 		Total: n,
 	}, nil
 }
+
+func (s *Server) GetAppGenerals(ctx context.Context, in *npool.GetAppGeneralsRequest) (*npool.GetAppGeneralsResponse, error) {
+	if _, err := uuid.Parse(in.GetTargetAppID()); err != nil {
+		logger.Sugar().Errorw("GetAppGenerals", "TargetAppID", in.GetTargetAppID(), "error", err)
+		return &npool.GetAppGeneralsResponse{}, status.Error(codes.InvalidArgument, "TargetAppID is invalid")
+	}
+
+	infos, n, err := ledger1.GetAppGenerals(ctx, in.GetTargetAppID(), in.GetOffset(), in.GetLimit())
+	if err != nil {
+		logger.Sugar().Errorw("GetAppGenerals", "error", err)
+		return &npool.GetAppGeneralsResponse{}, status.Error(codes.Internal, "fail get app generals")
+	}
+
+	return &npool.GetAppGeneralsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
+}
