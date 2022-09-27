@@ -133,7 +133,7 @@ func GetIntervalGenerals(
 }
 
 func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*npool.General, uint32, error) {
-	coins, total, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
+	coins, _, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -157,7 +157,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		},
 	}
 
-	infos, _, err := ledgermgrgeneralcli.GetGenerals(ctx, conds, offset, limit)
+	infos, total, err := ledgermgrgeneralcli.GetGenerals(ctx, conds, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
