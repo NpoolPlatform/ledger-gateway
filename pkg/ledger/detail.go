@@ -97,12 +97,10 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 	for _, detail := range details {
 		user, ok := userMap[detail.UserID]
 		if !ok {
-			total -= 1
 			continue
 		}
 		coin, ok := coinMap[detail.CoinTypeID]
 		if !ok {
-			total -= 1
 			continue
 		}
 		infos = append(infos, &npool.Detail{
