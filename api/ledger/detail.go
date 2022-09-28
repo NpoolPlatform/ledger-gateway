@@ -3,6 +3,7 @@ package ledger
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
@@ -63,6 +64,7 @@ func (s *Server) GetAppDetails(ctx context.Context, in *npool.GetAppDetailsReque
 	)
 	if err != nil {
 		logger.Sugar().Errorw("GetAppDetails", "error", err)
+		fmt.Println("error:", err)
 		return &npool.GetAppDetailsResponse{}, status.Error(codes.Internal, "fail get app details")
 	}
 
