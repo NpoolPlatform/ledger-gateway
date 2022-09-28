@@ -176,11 +176,11 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 	for _, general := range infos {
 		user, ok := userMap[general.UserID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid user id: %v", err)
+			continue
 		}
 		coin, ok := coinMap[general.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin id: %v", err)
+			continue
 		}
 		generals = append(generals, &npool.General{
 			CoinTypeID:   coin.ID,
