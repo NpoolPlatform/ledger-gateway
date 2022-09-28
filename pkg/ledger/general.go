@@ -192,7 +192,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 			Outcoming:    general.Outcoming,
 			Spendable:    general.Spendable,
 			UserID:       general.UserID,
-			PhoneNo:      user.PhoneNO,
+			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
 		})
 	}

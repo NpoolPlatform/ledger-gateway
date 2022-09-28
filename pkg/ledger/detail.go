@@ -114,7 +114,7 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 			IOExtra:      detail.IOExtra,
 			CreatedAt:    detail.CreatedAt,
 			UserID:       detail.UserID,
-			PhoneNo:      user.PhoneNO,
+			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
 		})
 	}
