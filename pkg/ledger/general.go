@@ -147,6 +147,10 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		return nil, 0, err
 	}
 
+	if 0 == len(infos)  {
+		return nil, 0, err
+	}
+
 	userIDs := []string{}
 	for _, info := range infos {
 		userIDs = append(userIDs, info.UserID)

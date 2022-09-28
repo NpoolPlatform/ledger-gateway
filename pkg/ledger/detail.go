@@ -68,6 +68,9 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 	if err != nil {
 		return nil, 0, err
 	}
+	if 0 == len(details) {
+		return nil, 0, nil
+	}
 
 	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
 	if err != nil {
