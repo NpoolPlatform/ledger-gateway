@@ -147,7 +147,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		return nil, 0, err
 	}
 
-	if 0 == len(infos)  {
+	if len(infos) == 0 {
 		return nil, 0, nil
 	}
 
