@@ -148,7 +148,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 	}
 
 	if 0 == len(infos)  {
-		return nil, 0, err
+		return nil, 0, nil
 	}
 
 	userIDs := []string{}
