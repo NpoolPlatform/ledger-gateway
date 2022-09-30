@@ -33,6 +33,8 @@ spec:
       http: *http_rules
     - host: api.procyon.xpool.top
       http: *http_rules
+    - host: api.lpsecretbase.com
+      http: *http_rules
 
 ---
 
@@ -89,4 +91,6 @@ spec:
     - host: api.jh-testing.npool.top
       http: *http_rules
     - host: api.japan-procyon-production.npool.top
+      http: *http_rules
+    - host: api.lpsecretbase.com
       http: *http_rules
