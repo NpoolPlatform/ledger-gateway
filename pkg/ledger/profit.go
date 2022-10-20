@@ -20,8 +20,8 @@ import (
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 
-	goodscli "github.com/NpoolPlatform/cloud-hashing-goods/pkg/client"
-	goodspb "github.com/NpoolPlatform/message/npool/cloud-hashing-goods"
+	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
+	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
 
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
@@ -194,12 +194,12 @@ func GetGoodProfits(
 		coinMap[coin.ID] = coin
 	}
 
-	goods, err := goodscli.GetGoods(ctx)
+	goods, _, err := goodscli.GetGoods(ctx, nil, 0, 0)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	goodMap := map[string]*goodspb.GoodInfo{}
+	goodMap := map[string]*goodspb.Good{}
 	for _, good := range goods {
 		goodMap[good.ID] = good
 	}
@@ -263,7 +263,7 @@ func GetGoodProfits(
 			return nil, 0, fmt.Errorf("invalid good")
 		}
 
-		coin, ok := coinMap[good.CoinInfoID]
+		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
 			return nil, 0, fmt.Errorf("invalid coin")
 		}
@@ -271,7 +271,7 @@ func GetGoodProfits(
 		gp, ok := infos[order.GoodID]
 		if !ok {
 			gp = &npool.GoodProfit{
-				CoinTypeID:            good.CoinInfoID,
+				CoinTypeID:            good.CoinTypeID,
 				CoinName:              coin.Name,
 				CoinLogo:              coin.Logo,
 				CoinUnit:              coin.Unit,
@@ -315,7 +315,7 @@ func GetGoodProfits(
 			return nil, 0, fmt.Errorf("invalid good")
 		}
 
-		coin, ok := coinMap[good.CoinInfoID]
+		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
 			return nil, 0, fmt.Errorf("invalid coin")
 		}
@@ -323,7 +323,7 @@ func GetGoodProfits(
 		gp, ok := infos[order.GoodID]
 		if !ok {
 			gp = &npool.GoodProfit{
-				CoinTypeID:            good.CoinInfoID,
+				CoinTypeID:            good.CoinTypeID,
 				CoinName:              coin.Name,
 				CoinLogo:              coin.Logo,
 				CoinUnit:              coin.Unit,

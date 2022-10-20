@@ -8,12 +8,12 @@ require (
 	github.com/NpoolPlatform/appuser-manager v0.0.0-20220829153511-c579ddb3686d
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
 	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220813093402-2273d71145f8
-	github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20220802122741-81b3c9f75a98
-	github.com/NpoolPlatform/go-service-framework v0.0.0-20220908115503-7dd1d00f71fa
+	github.com/NpoolPlatform/go-service-framework v0.0.0-20221015040432-cd676d323379
+	github.com/NpoolPlatform/good-middleware v0.0.0-20221020081337-e2a047d5c1d7
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20220903065726-179137cd687f
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220903073840-84638f81279f
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20220821121920-9559f5776d15
-	github.com/NpoolPlatform/message v0.0.0-20220928085422-7409d1e2c015
+	github.com/NpoolPlatform/message v0.0.0-20221017071502-d4692075a48f
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
 	github.com/NpoolPlatform/order-middleware v0.0.0-20220811123009-a5dbe37f15f9
 	github.com/NpoolPlatform/review-service v0.0.0-20220826135931-2f311aae9cbd
@@ -28,13 +28,13 @@ require (
 	github.com/urfave/cli/v2 v2.16.3
 	go.opentelemetry.io/otel v1.10.0
 	go.opentelemetry.io/otel/trace v1.10.0
-	google.golang.org/grpc v1.49.0
+	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 )
 
 require (
-	ariga.io/atlas v0.5.1-0.20220717122844-8593d7eb1a8e // indirect
-	entgo.io/ent v0.11.2 // indirect
+	ariga.io/atlas v0.7.2-0.20220927111110-867ee0cca56a // indirect
+	entgo.io/ent v0.11.3 // indirect
 	github.com/NpoolPlatform/cloud-hashing-inspire v0.0.0-20220826143628-2e00dfa1a95f // indirect
 	github.com/NpoolPlatform/cloud-hashing-order v0.0.0-20220806140253-35d26a3ce111 // indirect
 	github.com/Shonminh/apollo-client v0.4.0 // indirect
@@ -77,7 +77,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/hcl/v2 v2.10.0 // indirect
+	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
 	github.com/hashicorp/serf v0.9.7 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -124,3 +124,7 @@ require (
 )
 
 replace google.golang.org/grpc => github.com/grpc/grpc-go v1.41.0
+
+replace entgo.io/ent => entgo.io/ent v0.11.2
+
+replace ariga.io/atlas => ariga.io/atlas v0.5.1-0.20220717122844-8593d7eb1a8e
