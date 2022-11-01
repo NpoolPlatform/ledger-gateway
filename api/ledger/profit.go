@@ -85,7 +85,7 @@ func (s *Server) GetGoodProfits(
 		return &npool.GetGoodProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
 	}
 
-	if in.GetLimit() < 0 {
+	if in.GetLimit() <= 0 {
 		logger.Sugar().Errorw("limit is less than or equal to 0")
 		return &npool.GetGoodProfitsResponse{}, status.Error(codes.InvalidArgument, "limit is less than or equal to 0")
 	}
