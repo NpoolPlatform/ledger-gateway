@@ -23,6 +23,8 @@ import (
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
 
+	goodsmgrpb "github.com/NpoolPlatform/message/npool/good/mgr/v1/good"
+
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 
@@ -194,28 +196,6 @@ func GetGoodProfits(
 		coinMap[coin.ID] = coin
 	}
 
-	goods := []*goodspb.Good{}
-	ofs = 0
-	for {
-		gds, _, err := goodscli.GetGoods(ctx, nil, ofs, limit)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		if len(gds) == 0 {
-			break
-		}
-
-		goods = append(goods, gds...)
-
-		ofs += limit
-	}
-
-	goodMap := map[string]*goodspb.Good{}
-	for _, good := range goods {
-		goodMap[good.ID] = good
-	}
-
 	orders := []*ordermwpb.Order{}
 	ofs = 0
 
@@ -247,6 +227,26 @@ func GetGoodProfits(
 	total := uint32(0)
 
 	profitOrderMap := map[string]struct{}{}
+
+	goodIDs := []string{}
+	for _, val := range orders {
+		goodIDs = append(goodIDs, val.GetGoodID())
+	}
+
+	goods, _, err := goodscli.GetGoods(ctx, &goodsmgrpb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: goodIDs,
+		},
+	}, 0, int32(len(goodIDs)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	goodMap := map[string]*goodspb.Good{}
+	for _, good := range goods {
+		goodMap[good.ID] = good
+	}
 
 	for _, info := range details {
 		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
