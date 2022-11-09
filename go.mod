@@ -9,11 +9,11 @@ require (
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
 	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220813093402-2273d71145f8
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20221015040432-cd676d323379
-	github.com/NpoolPlatform/good-middleware v0.0.0-20221020081337-e2a047d5c1d7
+	github.com/NpoolPlatform/good-middleware v0.0.0-20221109024849-724709e2093e
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20220903065726-179137cd687f
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220903073840-84638f81279f
-	github.com/NpoolPlatform/libent-cruder v0.0.0-20220821121920-9559f5776d15
-	github.com/NpoolPlatform/message v0.0.0-20221017071502-d4692075a48f
+	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
+	github.com/NpoolPlatform/message v0.0.0-20221109022611-ca37512e0c04
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
 	github.com/NpoolPlatform/order-middleware v0.0.0-20220811123009-a5dbe37f15f9
 	github.com/NpoolPlatform/review-service v0.0.0-20220826135931-2f311aae9cbd
@@ -28,7 +28,7 @@ require (
 	github.com/urfave/cli/v2 v2.16.3
 	go.opentelemetry.io/otel v1.10.0
 	go.opentelemetry.io/otel/trace v1.10.0
-	google.golang.org/grpc v1.50.0
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 )
 
