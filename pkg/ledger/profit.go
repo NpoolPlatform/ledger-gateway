@@ -270,6 +270,14 @@ func GetGoodProfits(
 			return nil, 0, fmt.Errorf("invalid order")
 		}
 
+		switch order.State {
+		case orderstatemgrpb.EState_Paid:
+		case orderstatemgrpb.EState_InService:
+		case orderstatemgrpb.EState_Expired:
+		default:
+			continue
+		}
+
 		good, ok := goodMap[order.GoodID]
 		if !ok {
 			return nil, 0, fmt.Errorf("invalid good")
