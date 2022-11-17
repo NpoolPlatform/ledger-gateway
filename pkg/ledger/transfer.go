@@ -23,7 +23,7 @@ import (
 	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/kyc"
 	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/kyc"
 
-	accountmgrcli "github.com/NpoolPlatform/account-manager/pkg/client/transfer"
+	accountmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/transfer"
 	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/transfer"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
@@ -98,7 +98,7 @@ func CreateTransfer(
 		return nil, fmt.Errorf("kyc state is not approved")
 	}
 
-	exist, err := accountmgrcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
+	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
 		AppID: &npool.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
