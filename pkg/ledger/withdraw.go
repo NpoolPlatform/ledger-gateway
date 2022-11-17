@@ -22,17 +22,20 @@ import (
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
-
-	appcoininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	sphinxproxypb "github.com/NpoolPlatform/message/npool/sphinxproxy"
 	sphinxproxycli "github.com/NpoolPlatform/sphinx-proxy/pkg/client"
 
-	billingcli "github.com/NpoolPlatform/cloud-hashing-billing/pkg/client"
-	billingpb "github.com/NpoolPlatform/message/npool/cloud-hashing-billing"
+	useraccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/user"
+	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/account"
+
+	pltfaccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/platform"
+	pltfaccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/platform"
 
 	reviewpb "github.com/NpoolPlatform/message/npool/review-service"
 	reviewmgrpb "github.com/NpoolPlatform/message/npool/review/mgr/v2"
@@ -51,40 +54,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-const (
-	defaultLimitAmount = 10000.0
-	leastLimitAmount   = 0.001
-)
-
-func coinLimit(ctx context.Context, coin *coininfopb.Coin, setting *billingpb.AppWithdrawSetting) (float64, error) {
-	limit := defaultLimitAmount
-
-	if setting != nil {
-		// TODO: use decimal for amount
-		limit = setting.WithdrawAutoReviewCoinAmount
-	}
-
-	if limit == 0 {
-		psetting, err := billingcli.GetPlatformSetting(ctx)
-		if err != nil {
-			return defaultLimitAmount, err
-		}
-
-		price, err := currency.USDPrice(ctx, coin.Name)
-		if err != nil {
-			return defaultLimitAmount, err
-		}
-
-		limit = psetting.WithdrawAutoReviewUSDAmount / price
-	}
-
-	if limit < leastLimitAmount {
-		return leastLimitAmount, nil
-	}
-
-	return limit, nil
-}
 
 // nolint
 func CreateWithdraw(
@@ -105,60 +74,91 @@ func CreateWithdraw(
 	if signMethod == signmethodpb.SignMethodType_Google {
 		signAccount = user.GetGoogleSecret()
 	}
-	if err := thirdmwcli.VerifyCode(ctx, appID, signAccount, verificationCode, signMethod, usedfor.UsedFor_Withdraw); err != nil {
+	if err := thirdmwcli.VerifyCode(
+		ctx,
+		appID,
+		signAccount,
+		verificationCode,
+		signMethod,
+		usedfor.UsedFor_Withdraw,
+	); err != nil {
 		return nil, err
 	}
 
-	// Check account
-	account, err := billingcli.GetAccount(ctx, accountID)
+	account, err := useraccmwcli.GetAccount(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 	if account == nil {
 		return nil, fmt.Errorf("invalid account")
 	}
-
-	// Check account is belong to user and used for withdraw
-	wa, err := billingcli.GetWithdrawAccount(ctx, accountID)
-	if err != nil {
-		return nil, err
+	if account.UsedFor != accountmgrpb.AccountUsedFor_UserWithdraw {
+		return nil, fmt.Errorf("invalid account")
 	}
-	if wa == nil {
-		return nil, fmt.Errorf("invalid withdraw account")
+	if account.AppID != appID || account.UserID != userID {
+		return nil, fmt.Errorf("invalid account")
+	}
+	if !account.Active || account.Blocked {
+		return nil, fmt.Errorf("invalid account")
+	}
+	if account.CoinTypeID != coinTypeID {
+		return nil, fmt.Errorf("invalid account")
 	}
 
-	if wa.AppID != appID || wa.UserID != userID {
-		return nil, fmt.Errorf("permission denied")
-	}
-
-	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
-
-	// Check hot wallet balance
 	coin, err := coininfocli.GetCoin(ctx, coinTypeID)
 	if err != nil {
 		return nil, err
 	}
 	if coin == nil {
-		return nil, fmt.Errorf("invalid coin")
+		return nil, fmt.Errorf("invalid cointypeid")
+	}
+	if coin.Disabled {
+		return nil, fmt.Errorf("invalid cointypeid")
 	}
 
-	cs, err := billingcli.GetCoinSetting(ctx, coin.ID)
+	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
+		Name:    coin.Name,
+		Address: account.Address,
+	})
 	if err != nil {
 		return nil, err
 	}
-	if cs == nil {
-		return nil, fmt.Errorf("invalid coin setting")
+	if bal == nil {
+		return nil, fmt.Errorf("invalid account")
 	}
 
-	hotacc, err := billingcli.GetAccount(ctx, cs.UserOnlineAccountID)
+	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
+
+	hotacc, err := pltfaccmwcli.GetAccountOnly(ctx, &pltfaccmwpb.Conds{
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+		UsedFor: &commonpb.Int32Val{
+			Op:    cruder.EQ,
+			Value: int32(accountmgrpb.AccountUsedFor_UserBenefitHot),
+		},
+		Active: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: true,
+		},
+		Backup: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: false,
+		},
+		Blocked: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: false,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 	if hotacc == nil {
-		return nil, fmt.Errorf("invalid account")
+		return nil, fmt.Errorf("invalid hot wallet account")
 	}
 
-	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
+	bal, err = sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
 		Name:    coin.Name,
 		Address: hotacc.Address,
 	})
@@ -169,52 +169,108 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("invalid balance")
 	}
 
-	// TODO: also check gas insufficient
 	balance := decimal.RequireFromString(bal.BalanceStr)
 	if balance.Cmp(amount) <= 0 {
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFunds
 	}
 
-	// Check auto review threshold
-	ws, err := billingcli.GetWithdrawSetting(ctx, appID, coinTypeID)
+	if coin.ID != coin.FeeCoinTypeID {
+		feecoin, err := coininfocli.GetCoin(ctx, coin.FeeCoinTypeID)
+		if err != nil {
+			return nil, err
+		}
+		if feecoin == nil {
+			return nil, fmt.Errorf("invalid fee coin")
+		}
+
+		bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
+			Name:    feecoin.Name,
+			Address: hotacc.Address,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if bal == nil {
+			return nil, fmt.Errorf("invalid balance")
+		}
+
+		feeAmount, err := decimal.NewFromString(coin.HotWalletFeeAmount)
+		if err != nil {
+			return nil, err
+		}
+
+		balance := decimal.RequireFromString(bal.BalanceStr)
+		if balance.Cmp(feeAmount) <= 0 {
+			switch reviewTrigger {
+			case reviewmgrpb.ReviewTriggerType_InsufficientFunds:
+				reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFundsGas
+			case reviewmgrpb.ReviewTriggerType_AutoReviewed:
+				reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientGas
+			}
+		}
+	}
+
+	appCoin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+		Disabled: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: false,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
-	if ws == nil {
-		return nil, fmt.Errorf("invalid withdraw setting")
+	if appCoin == nil {
+		return nil, fmt.Errorf("invalid app coin")
+	}
+	if appCoin.Disabled {
+		return nil, fmt.Errorf("invalid app coin")
 	}
 
-	limit, err := coinLimit(ctx, coin, ws)
+	threshold, err := decimal.NewFromString(appCoin.WithdrawAutoReviewAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	threshold := decimal.NewFromFloat(limit)
 	if amount.Cmp(threshold) > 0 && reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
 		reviewTrigger = reviewmgrpb.ReviewTriggerType_LargeAmount
 	}
 
-	price, err := currency.USDPrice(ctx, coin.Name)
+	feeAmount, err := decimal.NewFromString(appCoin.WithdrawFeeAmount)
 	if err != nil {
 		return nil, err
 	}
-	if price <= 0 {
-		return nil, fmt.Errorf("invalid coin price")
+	if feeAmount.Cmp(decimal.NewFromInt(0)) <= 0 {
+		return nil, fmt.Errorf("invalid fee amount")
 	}
 
-	const feeUSDAmount = 2
-	feeAmount := feeUSDAmount / price
+	if appCoin.WithdrawFeeByStableUSD {
+		price, err := currency.USDPrice(ctx, coin.Name)
+		if err != nil {
+			return nil, err
+		}
+		if price <= 0 {
+			return nil, fmt.Errorf("invalid coin price")
+		}
+		feeAmount = feeAmount.Div(decimal.NewFromFloat(price))
+	}
 
 	amountS := amount.String()
 
-	if amount.Cmp(decimal.NewFromFloat(feeAmount)) < 0 {
+	if amount.Cmp(feeAmount) <= 0 {
 		return nil, fmt.Errorf("invalid amount")
 	}
 
 	// TODO: move to TX
 	// TODO: unlock if we fail before transaction created
 
-	// Try lock balance
 	if err := ledgermwcli.LockBalance(
 		ctx,
 		appID, userID, coinTypeID, amount,
@@ -269,8 +325,6 @@ func CreateWithdraw(
 	}
 
 	if reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
-		// Formatted to use formatted approved
-		// rv.State = reviewmgrpb.ReviewState_Approved.String()
 		rv.State = reviewconst.StateApproved
 		if _, err := reviewcli.UpdateReview(ctx, rv); err != nil {
 			return nil, err
