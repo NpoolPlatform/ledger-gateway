@@ -17,8 +17,8 @@ import (
 
 	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order/state"
 
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
@@ -48,13 +48,26 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 	if err != nil {
 		return nil, 0, err
 	}
+	if len(infos) == 0 {
+		return nil, total, nil
+	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, info := range infos {
+		ids = append(ids, info.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -107,12 +120,22 @@ func GetIntervalProfits(
 		ofs += lim
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, d := range details {
+		ids = append(ids, d.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -186,12 +209,22 @@ func GetGoodProfits(
 		ofs += lim
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, d := range details {
+		ids = append(ids, d.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
