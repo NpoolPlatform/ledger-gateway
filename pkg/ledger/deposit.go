@@ -13,9 +13,9 @@ import (
 
 	"time"
 
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 )
 
 func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
@@ -36,7 +36,7 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targe
 		return nil, fmt.Errorf("target user not exist")
 	}
 
-	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
+	coin, err := coininfocli.GetCoin(ctx, coinTypeID)
 	if err != nil {
 		return nil, err
 	}

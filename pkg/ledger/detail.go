@@ -10,10 +10,10 @@ import (
 	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 	ledgermgrdetailcli "github.com/NpoolPlatform/ledger-manager/pkg/client/detail"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 )
@@ -23,13 +23,26 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 	if err != nil {
 		return nil, 0, err
 	}
+	if len(details) == 0 {
+		return nil, total, nil
+	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, d := range details {
+		ids = append(ids, d.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -72,12 +85,22 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 		return nil, 0, nil
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, d := range details {
+		ids = append(ids, d.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
