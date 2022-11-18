@@ -122,6 +122,7 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 	if err != nil {
 		return nil, 0, fmt.Errorf("fail get users: %v", err)
 	}
+
 	userMap := map[string]*appusermwpb.User{}
 	for _, user := range users {
 		userMap[user.ID] = user
