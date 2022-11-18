@@ -14,8 +14,8 @@ import (
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
@@ -23,7 +23,7 @@ import (
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
-	coins, total, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
+	coins, total, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{}, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -102,12 +102,22 @@ func GetIntervalGenerals(
 		return nil, 0, err
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, g := range generals {
+		ids = append(ids, g.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -166,12 +176,22 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		userMap[user.ID] = user
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.FilterConds{})
+	ids := []string{}
+	for _, info := range infos {
+		ids = append(ids, info.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, fmt.Errorf("fail get coins: %v", err)
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
