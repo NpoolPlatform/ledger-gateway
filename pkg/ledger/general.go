@@ -13,7 +13,7 @@ import (
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
@@ -22,7 +22,12 @@ import (
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
-	coins, total, err := coininfocli.GetCoins(ctx, nil, offset, limit)
+	coins, total, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+	}, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -101,19 +106,23 @@ func GetIntervalGenerals(
 		return nil, 0, err
 	}
 
-	ofs := 0
-	lim := 1000
-	coins := []*coininfopb.Coin{}
-	for {
-		coinInfos, _, err := coininfocli.GetCoins(ctx, nil, int32(ofs), int32(lim))
-		if err != nil {
-			return nil, 0, err
-		}
-		if len(coinInfos) == 0 {
-			break
-		}
-		coins = append(coins, coinInfos...)
-		ofs += lim
+	ids := []string{}
+	for _, g := range generals {
+		ids = append(ids, g.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		AppID: &common.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
+	if err != nil {
+		return nil, 0, err
 	}
 
 	coinMap := map[string]*coininfopb.Coin{}
@@ -175,19 +184,23 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		userMap[user.ID] = user
 	}
 
-	ofs := 0
-	lim := 1000
-	coins := []*coininfopb.Coin{}
-	for {
-		coinInfos, _, err := coininfocli.GetCoins(ctx, nil, int32(ofs), int32(lim))
-		if err != nil {
-			return nil, 0, err
-		}
-		if len(coinInfos) == 0 {
-			break
-		}
-		coins = append(coins, coinInfos...)
-		ofs += lim
+	ids := []string{}
+	for _, info := range infos {
+		ids = append(ids, info.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		AppID: &common.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
+	if err != nil {
+		return nil, 0, fmt.Errorf("fail get coins: %v", err)
 	}
 
 	coinMap := map[string]*coininfopb.Coin{}

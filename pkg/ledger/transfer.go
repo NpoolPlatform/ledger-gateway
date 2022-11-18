@@ -9,11 +9,12 @@ import (
 
 	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
 
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	"github.com/NpoolPlatform/message/npool"
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
@@ -128,7 +129,16 @@ func CreateTransfer(
 		return nil, fmt.Errorf("target user not found")
 	}
 
-	coin, err := coininfocli.GetCoin(ctx, coinTypeID)
+	coin, err := coininfocli.GetCoinOnly(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
