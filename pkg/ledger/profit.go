@@ -50,6 +50,9 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 	if err != nil {
 		return nil, 0, err
 	}
+	if len(infos) == 0 {
+		return nil, total, nil
+	}
 
 	coinTypeIDs := []string{}
 	for _, val := range infos {
