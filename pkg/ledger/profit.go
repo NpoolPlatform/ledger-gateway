@@ -15,7 +15,7 @@ import (
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order/state"
+	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
@@ -200,7 +200,16 @@ func GetGoodProfits(
 	ofs = 0
 
 	for {
-		ords, _, err := ordermwcli.GetOrders(ctx, appID, userID, ofs, limit)
+		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
+			AppID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: appID,
+			},
+			UserID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: userID,
+			},
+		}, ofs, limit)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -270,10 +279,10 @@ func GetGoodProfits(
 			return nil, 0, fmt.Errorf("invalid order")
 		}
 
-		switch order.State {
-		case orderstatemgrpb.EState_Paid:
-		case orderstatemgrpb.EState_InService:
-		case orderstatemgrpb.EState_Expired:
+		switch order.OrderState {
+		case orderstatemgrpb.OrderState_Paid:
+		case orderstatemgrpb.OrderState_InService:
+		case orderstatemgrpb.OrderState_Expired:
 		default:
 			continue
 		}
@@ -322,10 +331,10 @@ func GetGoodProfits(
 			continue
 		}
 
-		switch order.State {
-		case orderstatemgrpb.EState_Paid:
-		case orderstatemgrpb.EState_InService:
-		case orderstatemgrpb.EState_Expired:
+		switch order.OrderState {
+		case orderstatemgrpb.OrderState_Paid:
+		case orderstatemgrpb.OrderState_InService:
+		case orderstatemgrpb.OrderState_Expired:
 		default:
 			continue
 		}
