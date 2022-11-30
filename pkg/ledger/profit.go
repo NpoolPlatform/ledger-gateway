@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -276,7 +278,8 @@ func GetGoodProfits(
 
 		order, ok := orderMap[e.OrderID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid order")
+			logger.Sugar().Warn("order not exist continue")
+			continue
 		}
 
 		switch order.OrderState {
@@ -289,12 +292,14 @@ func GetGoodProfits(
 
 		good, ok := goodMap[order.GoodID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid good")
+			logger.Sugar().Warn("good not exist continue")
+			continue
 		}
 
 		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warn("coin not exist continue")
+			continue
 		}
 
 		gp, ok := infos[order.GoodID]
@@ -341,12 +346,14 @@ func GetGoodProfits(
 
 		good, ok := goodMap[order.GoodID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid good")
+			logger.Sugar().Warn("good not exist continue")
+			continue
 		}
 
 		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warn("good not exist continue")
+			continue
 		}
 
 		gp, ok := infos[order.GoodID]
