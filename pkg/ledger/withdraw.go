@@ -3,6 +3,9 @@ package ledger
 import (
 	"context"
 	"fmt"
+
+	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+
 	"sort"
 	"time"
 
@@ -19,8 +22,11 @@ import (
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
+
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
+
+	appcoininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 
 	sphinxproxypb "github.com/NpoolPlatform/message/npool/sphinxproxy"
 	sphinxproxycli "github.com/NpoolPlatform/sphinx-proxy/pkg/client"
@@ -51,7 +57,7 @@ const (
 	leastLimitAmount   = 0.001
 )
 
-func coinLimit(ctx context.Context, coin *coininfopb.CoinInfo, setting *billingpb.AppWithdrawSetting) (float64, error) {
+func coinLimit(ctx context.Context, coin *coininfopb.Coin, setting *billingpb.AppWithdrawSetting) (float64, error) {
 	limit := defaultLimitAmount
 
 	if setting != nil {
@@ -128,7 +134,7 @@ func CreateWithdraw(
 	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
 
 	// Check hot wallet balance
-	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
+	coin, err := coininfocli.GetCoin(ctx, coinTypeID)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +317,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		return nil, fmt.Errorf("invalid withdraw")
 	}
 
-	coin, err := coininfocli.GetCoinInfo(ctx, info.CoinTypeID)
+	coin, err := coininfocli.GetCoin(ctx, info.CoinTypeID)
 	if err != nil {
 		return nil, err
 	}
@@ -458,12 +464,26 @@ func expand(
 ) (
 	[]*npool.Withdraw, error,
 ) {
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range infos {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := appcoininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}

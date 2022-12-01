@@ -3,8 +3,6 @@ package ledger
 import (
 	"context"
 	"fmt"
-	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
-
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -15,8 +13,8 @@ import (
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
@@ -24,18 +22,7 @@ import (
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
-
-	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: appID,
-		},
-	}, 0, int32(len(coinTypeIDs)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	coins, total, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
+	coins, total, err := coininfocli.GetCoins(ctx, nil, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -114,12 +101,22 @@ func GetIntervalGenerals(
 		return nil, 0, err
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
-	if err != nil {
-		return nil, 0, err
+	ofs := 0
+	lim := 1000
+	coins := []*coininfopb.Coin{}
+	for {
+		coinInfos, _, err := coininfocli.GetCoins(ctx, nil, int32(ofs), int32(lim))
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(coinInfos) == 0 {
+			break
+		}
+		coins = append(coins, coinInfos...)
+		ofs += lim
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -178,12 +175,22 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		userMap[user.ID] = user
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.FilterConds{})
-	if err != nil {
-		return nil, 0, fmt.Errorf("fail get coins: %v", err)
+	ofs := 0
+	lim := 1000
+	coins := []*coininfopb.Coin{}
+	for {
+		coinInfos, _, err := coininfocli.GetCoins(ctx, nil, int32(ofs), int32(lim))
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(coinInfos) == 0 {
+			break
+		}
+		coins = append(coins, coinInfos...)
+		ofs += lim
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}

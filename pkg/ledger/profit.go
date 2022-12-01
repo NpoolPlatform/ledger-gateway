@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 
@@ -19,8 +20,7 @@ import (
 
 	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
@@ -51,12 +51,26 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 		return nil, 0, err
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range infos {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -109,12 +123,26 @@ func GetIntervalProfits(
 		ofs += lim
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range details {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -188,12 +216,26 @@ func GetGoodProfits(
 		ofs += lim
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range details {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.EQ,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
