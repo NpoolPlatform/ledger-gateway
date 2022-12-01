@@ -7,13 +7,14 @@ require (
 	github.com/NpoolPlatform/api-manager v0.0.0-20220826022307-d72866fe3ec0
 	github.com/NpoolPlatform/appuser-manager v0.0.0-20220829153511-c579ddb3686d
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
+	github.com/NpoolPlatform/chain-middleware v0.0.0-20221201084405-d3c3772efbc8
 	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20220813093402-2273d71145f8
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20221015040432-cd676d323379
 	github.com/NpoolPlatform/good-middleware v0.0.0-20221109024849-724709e2093e
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20220903065726-179137cd687f
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220903073840-84638f81279f
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20221130022700-6ea25e8422fd
+	github.com/NpoolPlatform/message v0.0.0-20221201081448-db4c8a641f1c
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
 	github.com/NpoolPlatform/order-middleware v0.0.0-20221130031001-7cbeedee9966
 	github.com/NpoolPlatform/review-service v0.0.0-20220826135931-2f311aae9cbd

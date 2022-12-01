@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	"github.com/shopspring/decimal"
 
@@ -14,8 +15,8 @@ import (
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
@@ -23,6 +24,17 @@ import (
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+	}, 0, int32(len(coinTypeIDs)))
+	if err != nil {
+		return nil, 0, err
+	}
+
 	coins, total, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
 	if err != nil {
 		return nil, 0, err
