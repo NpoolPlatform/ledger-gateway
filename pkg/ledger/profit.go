@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -15,7 +17,7 @@ import (
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order/state"
+	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 
 	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
 	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
@@ -200,7 +202,16 @@ func GetGoodProfits(
 	ofs = 0
 
 	for {
-		ords, _, err := ordermwcli.GetOrders(ctx, appID, userID, ofs, limit)
+		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
+			AppID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: appID,
+			},
+			UserID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: userID,
+			},
+		}, ofs, limit)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -267,25 +278,28 @@ func GetGoodProfits(
 
 		order, ok := orderMap[e.OrderID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid order")
+			logger.Sugar().Warn("order not exist continue")
+			continue
 		}
 
-		switch order.State {
-		case orderstatemgrpb.EState_Paid:
-		case orderstatemgrpb.EState_InService:
-		case orderstatemgrpb.EState_Expired:
+		switch order.OrderState {
+		case orderstatemgrpb.OrderState_Paid:
+		case orderstatemgrpb.OrderState_InService:
+		case orderstatemgrpb.OrderState_Expired:
 		default:
 			continue
 		}
 
 		good, ok := goodMap[order.GoodID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid good")
+			logger.Sugar().Warn("good not exist continue")
+			continue
 		}
 
 		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warn("coin not exist continue")
+			continue
 		}
 
 		gp, ok := infos[order.GoodID]
@@ -322,22 +336,24 @@ func GetGoodProfits(
 			continue
 		}
 
-		switch order.State {
-		case orderstatemgrpb.EState_Paid:
-		case orderstatemgrpb.EState_InService:
-		case orderstatemgrpb.EState_Expired:
+		switch order.OrderState {
+		case orderstatemgrpb.OrderState_Paid:
+		case orderstatemgrpb.OrderState_InService:
+		case orderstatemgrpb.OrderState_Expired:
 		default:
 			continue
 		}
 
 		good, ok := goodMap[order.GoodID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid good")
+			logger.Sugar().Warn("good not exist continue")
+			continue
 		}
 
 		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warn("good not exist continue")
+			continue
 		}
 
 		gp, ok := infos[order.GoodID]

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
@@ -357,11 +356,6 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		return nil, err
 	}
 
-	labels := ""
-	if wa != nil {
-		labels = strings.Join(wa.Labels, ",")
-	}
-
 	return &npool.Withdraw{
 		CoinTypeID:    info.CoinTypeID,
 		CoinName:      coin.Name,
@@ -370,7 +364,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		Amount:        info.Amount,
 		CreatedAt:     info.CreatedAt,
 		Address:       account.Address,
-		AddressLabels: labels,
+		AddressLabels: wa.Labels,
 		State:         info.State,
 		Message:       message,
 	}, nil
@@ -521,11 +515,10 @@ func expand(
 			address = acc.Address
 		}
 
-		labels := ""
-
+		labels := []string{}
 		wacc, ok := waccMap[info.AccountID]
 		if ok {
-			labels = strings.Join(wacc.Labels, ",")
+			labels = wacc.Labels
 		}
 
 		withdraws = append(withdraws, &npool.Withdraw{
