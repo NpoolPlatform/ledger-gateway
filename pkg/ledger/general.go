@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -12,13 +13,14 @@ import (
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
-	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+
 	commonpb "github.com/NpoolPlatform/message/npool"
-	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
@@ -112,7 +114,7 @@ func GetIntervalGenerals(
 	}
 
 	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
-		AppID: &common.StringVal{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
@@ -190,7 +192,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 	}
 
 	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
-		AppID: &common.StringVal{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},

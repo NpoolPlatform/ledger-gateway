@@ -13,7 +13,6 @@ import (
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	"github.com/NpoolPlatform/message/npool"
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
@@ -31,6 +30,8 @@ import (
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
+
+	commonpb "github.com/NpoolPlatform/message/npool"
 
 	"go.opentelemetry.io/otel"
 	scodes "go.opentelemetry.io/otel/codes"
@@ -80,11 +81,11 @@ func CreateTransfer(
 	}
 
 	kyc, err := appusermgrcli.GetKycOnly(ctx, &appusermgrpb.Conds{
-		AppID: &npool.StringVal{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &npool.StringVal{
+		UserID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
@@ -101,15 +102,15 @@ func CreateTransfer(
 	}
 
 	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
-		AppID: &npool.StringVal{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &npool.StringVal{
+		UserID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
-		TargetUserID: &npool.StringVal{
+		TargetUserID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: targetUserID,
 		},

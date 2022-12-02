@@ -3,9 +3,6 @@ package ledger
 import (
 	"context"
 	"fmt"
-
-	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
-
 	"sort"
 	"time"
 
