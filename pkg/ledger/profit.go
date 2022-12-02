@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
-
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	"github.com/shopspring/decimal"
 
@@ -21,6 +19,7 @@ import (
 	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
