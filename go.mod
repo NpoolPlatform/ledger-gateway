@@ -3,7 +3,6 @@ module github.com/NpoolPlatform/ledger-gateway
 go 1.17
 
 require (
-	github.com/NpoolPlatform/account-manager v0.0.0-20220901093224-af15c33ff8cb
 	github.com/NpoolPlatform/api-manager v0.0.0-20220826022307-d72866fe3ec0
 	github.com/NpoolPlatform/appuser-manager v0.0.0-20220829153511-c579ddb3686d
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
@@ -14,7 +13,7 @@ require (
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20220903065726-179137cd687f
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220903073840-84638f81279f
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20221201081448-db4c8a641f1c
+	github.com/NpoolPlatform/message d6c45b099097cb32d2112a68a5c47a0bb7bdcec1
 	github.com/NpoolPlatform/oracle-manager v0.0.0-20220805135435-75cd3e5baec5
 	github.com/NpoolPlatform/order-middleware v0.0.0-20221130031001-7cbeedee9966
 	github.com/NpoolPlatform/review-service v0.0.0-20220826135931-2f311aae9cbd
