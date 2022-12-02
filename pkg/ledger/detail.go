@@ -14,6 +14,7 @@ import (
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 	ledgermgrdetailcli "github.com/NpoolPlatform/ledger-manager/pkg/client/detail"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 )
 
@@ -21,6 +22,9 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 	details, total, err := ledgermwcli.GetIntervalDetails(ctx, appID, userID, start, end, offset, limit)
 	if err != nil {
 		return nil, 0, err
+	}
+	if len(details) == 0 {
+		return nil, total, nil
 	}
 
 	coinTypeIDs := []string{}
