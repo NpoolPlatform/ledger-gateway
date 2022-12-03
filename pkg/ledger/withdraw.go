@@ -48,7 +48,7 @@ import (
 	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
 	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
 
-	currency "github.com/NpoolPlatform/oracle-manager/pkg/middleware/currency"
+	currencymwcli "github.com/NpoolPlatform/chain-middleware/pkg/coin/currency/value"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
@@ -251,14 +251,18 @@ func CreateWithdraw(
 	}
 
 	if appCoin.WithdrawFeeByStableUSD {
-		price, err := currency.USDPrice(ctx, coin.Name)
+		curr, err := currencymwcli.GetCoinCurrency(ctx, coin.ID)
 		if err != nil {
 			return nil, err
 		}
-		if price <= 0 {
+		value, err := decimal.NewFromString(curr.MarketValueLow)
+		if err != nil {
+			return nil, err
+		}
+		if value.Cmp(decimal.NewFromInt(0)) <= 0 {
 			return nil, fmt.Errorf("invalid coin price")
 		}
-		feeAmount = feeAmount.Div(decimal.NewFromFloat(price))
+		feeAmount = feeAmount.Div(value)
 	}
 
 	if amount.Cmp(feeAmount) <= 0 {
