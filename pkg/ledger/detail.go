@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
 	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
@@ -38,7 +39,7 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 			Value: appID,
 		},
 		CoinTypeIDs: &commonpb.StringSliceVal{
-			Op:    cruder.EQ,
+			Op:    cruder.IN,
 			Value: coinTypeIDs,
 		},
 	}, 0, int32(len(coinTypeIDs)))
@@ -48,14 +49,15 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 
 	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	infos := []*npool.Detail{}
 	for _, info := range details {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warnw("GetDetails", "app coin not exist", "appID", appID, "user_id", userID)
+			continue
 		}
 
 		infos = append(infos, &npool.Detail{
@@ -110,7 +112,7 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 
 	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	userIDs := []string{}
