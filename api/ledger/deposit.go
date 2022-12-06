@@ -71,8 +71,8 @@ func (s *Server) CreateAppUserDeposit(
 
 	info, err := mledger.CreateDeposit(
 		ctx,
-		in.GetUserID(),
 		in.GetAppID(),
+		in.GetUserID(),
 		in.GetCoinTypeID(),
 		in.GetAmount(),
 		in.GetTargetAppID(),

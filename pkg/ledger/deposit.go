@@ -20,7 +20,7 @@ import (
 	commonpb "github.com/NpoolPlatform/message/npool"
 )
 
-func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
+func CreateDeposit(ctx context.Context, appID, userID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
 	exist, err := appusermgrcli.ExistAppUserConds(ctx, &appusermgrpb.Conds{
 		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
