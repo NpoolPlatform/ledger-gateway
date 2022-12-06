@@ -41,7 +41,7 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targe
 	coin, err := coininfocli.GetCoinOnly(ctx, &coininfopb.Conds{
 		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: targetAppID,
 		},
 		CoinTypeID: &commonpb.StringVal{
 			Op:    cruder.EQ,
