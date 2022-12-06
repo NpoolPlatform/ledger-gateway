@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
@@ -102,7 +103,7 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 			Value: appID,
 		},
 		CoinTypeIDs: &commonpb.StringSliceVal{
-			Op:    cruder.EQ,
+			Op:    cruder.IN,
 			Value: coinTypeIDs,
 		},
 	}, 0, int32(len(coinTypeIDs)))

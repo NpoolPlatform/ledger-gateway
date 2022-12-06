@@ -118,8 +118,8 @@ func GetIntervalGenerals(
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		IDs: &commonpb.StringSliceVal{
-			Op:    cruder.EQ,
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
 			Value: ids,
 		},
 	}, 0, int32(len(ids)))
@@ -129,7 +129,7 @@ func GetIntervalGenerals(
 
 	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	infos := []*npool.General{}
@@ -207,7 +207,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 
 	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	generals := []*npool.General{}

@@ -64,7 +64,7 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 			Value: appID,
 		},
 		CoinTypeIDs: &commonpb.StringSliceVal{
-			Op:    cruder.EQ,
+			Op:    cruder.IN,
 			Value: coinTypeIDs,
 		},
 	}, 0, int32(len(coinTypeIDs)))
@@ -74,14 +74,15 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 
 	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	profits := []*npool.Profit{}
 	for _, info := range infos {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warn("app coin not exist continue")
+			continue
 		}
 
 		profits = append(profits, &npool.Profit{
@@ -136,7 +137,7 @@ func GetIntervalProfits(
 			Value: appID,
 		},
 		CoinTypeIDs: &commonpb.StringSliceVal{
-			Op:    cruder.EQ,
+			Op:    cruder.IN,
 			Value: coinTypeIDs,
 		},
 	}, 0, int32(len(coinTypeIDs)))
@@ -146,7 +147,7 @@ func GetIntervalProfits(
 
 	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	infos := map[string]*npool.Profit{}
@@ -229,7 +230,7 @@ func GetGoodProfits(
 			Value: appID,
 		},
 		CoinTypeIDs: &commonpb.StringSliceVal{
-			Op:    cruder.EQ,
+			Op:    cruder.IN,
 			Value: coinTypeIDs,
 		},
 	}, 0, int32(len(coinTypeIDs)))
@@ -239,7 +240,7 @@ func GetGoodProfits(
 
 	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	orders := []*ordermwpb.Order{}
