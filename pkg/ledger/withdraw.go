@@ -48,7 +48,7 @@ import (
 	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
 	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
 
-	currencymwcli "github.com/NpoolPlatform/chain-middleware/pkg/coin/currency/value"
+	currencymwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin/currency"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
