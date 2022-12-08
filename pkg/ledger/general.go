@@ -69,10 +69,10 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 
 	generals := []*npool.General{}
 	for _, coin := range coins {
-		general, ok := generalMap[coin.ID]
+		general, ok := generalMap[coin.CoinTypeID]
 		if ok {
 			generals = append(generals, &npool.General{
-				CoinTypeID: coin.ID,
+				CoinTypeID: coin.CoinTypeID,
 				CoinName:   coin.Name,
 				CoinLogo:   coin.Logo,
 				CoinUnit:   coin.Unit,
@@ -83,7 +83,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 			})
 		} else {
 			generals = append(generals, &npool.General{
-				CoinTypeID: coin.ID,
+				CoinTypeID: coin.CoinTypeID,
 				CoinName:   coin.Name,
 				CoinLogo:   coin.Logo,
 				CoinUnit:   coin.Unit,
@@ -221,7 +221,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 			continue
 		}
 		generals = append(generals, &npool.General{
-			CoinTypeID:   coin.ID,
+			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.Name,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,
