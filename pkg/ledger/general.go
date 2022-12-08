@@ -39,7 +39,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 
 	coinTypeIDs := []string{}
 	for _, coin := range coins {
-		coinTypeIDs = append(coinTypeIDs, coin.ID)
+		coinTypeIDs = append(coinTypeIDs, coin.CoinTypeID)
 	}
 
 	conds := &ledgermgrgeneralpb.Conds{
