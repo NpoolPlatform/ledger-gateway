@@ -348,7 +348,7 @@ func CreateWithdraw(
 		// TODO: should be in dtm
 		tx, err := txmwcli.CreateTx(ctx, &txmgrpb.TxReq{
 			CoinTypeID:    &coinTypeID,
-			FromAccountID: &hotacc.ID,
+			FromAccountID: &hotacc.AccountID,
 			ToAccountID:   &account.AccountID,
 			Amount:        &amountS,
 			FeeAmount:     &feeAmountS,
