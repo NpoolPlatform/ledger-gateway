@@ -84,7 +84,12 @@ func CreateWithdraw(
 		return nil, err
 	}
 
-	account, err := useraccmwcli.GetAccount(ctx, accountID)
+	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
+		AccountID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: accountID,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
