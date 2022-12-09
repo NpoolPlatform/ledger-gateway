@@ -72,14 +72,15 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 		general, ok := generalMap[coin.CoinTypeID]
 		if ok {
 			generals = append(generals, &npool.General{
-				CoinTypeID: coin.CoinTypeID,
-				CoinName:   coin.Name,
-				CoinLogo:   coin.Logo,
-				CoinUnit:   coin.Unit,
-				Incoming:   general.Incoming,
-				Locked:     general.Locked,
-				Outcoming:  general.Outcoming,
-				Spendable:  general.Spendable,
+				CoinTypeID:   coin.CoinTypeID,
+				CoinName:     coin.Name,
+				CoinLogo:     coin.Logo,
+				CoinUnit:     coin.Unit,
+				CoinDisabled: coin.Disabled,
+				Incoming:     general.Incoming,
+				Locked:       general.Locked,
+				Outcoming:    general.Outcoming,
+				Spendable:    general.Spendable,
 			})
 		} else {
 			generals = append(generals, &npool.General{
