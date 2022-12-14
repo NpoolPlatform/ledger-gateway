@@ -85,27 +85,39 @@ func CreateWithdraw(
 	}
 
 	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		UserID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: userID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
 		AccountID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: accountID,
+		},
+		Active: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: true,
+		},
+		Blocked: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: false,
+		},
+		UsedFor: &commonpb.Int32Val {
+			Op:    cruder.EQ,
+			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	if account == nil {
-		return nil, fmt.Errorf("invalid account")
-	}
-	if account.UsedFor != accountmgrpb.AccountUsedFor_UserWithdraw {
-		return nil, fmt.Errorf("invalid account")
-	}
-	if account.AppID != appID || account.UserID != userID {
-		return nil, fmt.Errorf("invalid account")
-	}
-	if !account.Active || account.Blocked {
-		return nil, fmt.Errorf("invalid account")
-	}
-	if account.CoinTypeID != coinTypeID {
 		return nil, fmt.Errorf("invalid account")
 	}
 
@@ -118,6 +130,30 @@ func CreateWithdraw(
 	}
 	if coin.Disabled {
 		return nil, fmt.Errorf("invalid cointypeid")
+	}
+
+	appCoin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+		Disabled: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: false,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if appCoin == nil {
+		return nil, fmt.Errorf("invalid app coin")
+	}
+	if appCoin.Disabled {
+		return nil, fmt.Errorf("invalid app coin")
 	}
 
 	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
@@ -212,30 +248,6 @@ func CreateWithdraw(
 				reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientGas
 			}
 		}
-	}
-
-	appCoin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: appID,
-		},
-		CoinTypeID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: coinTypeID,
-		},
-		Disabled: &commonpb.BoolVal{
-			Op:    cruder.EQ,
-			Value: false,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if appCoin == nil {
-		return nil, fmt.Errorf("invalid app coin")
-	}
-	if appCoin.Disabled {
-		return nil, fmt.Errorf("invalid app coin")
 	}
 
 	threshold, err := decimal.NewFromString(appCoin.WithdrawAutoReviewAmount)
@@ -397,7 +409,36 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		return nil, fmt.Errorf("invalid coin")
 	}
 
-	account, err := useraccmwcli.GetAccount(ctx, info.AccountID)
+	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: info.AppID,
+		},
+		UserID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: info.UserID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: info.CoinTypeID,
+		},
+		AccountID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: info.AccountID,
+		},
+		Active: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: true,
+		},
+		Blocked: &commonpb.BoolVal{
+			Op:    cruder.EQ,
+			Value: false,
+		},
+		UsedFor: &commonpb.Int32Val {
+			Op:    cruder.EQ,
+			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
