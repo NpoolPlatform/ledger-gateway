@@ -352,12 +352,12 @@ func CreateWithdraw(
 		}
 
 		message := fmt.Sprintf(
-			`{"AppID": "%v", "UserID": "%v", "Timestamp": %v, "Address": "%v", "CoinName": "%v"}`,
+			`{"AppID":"%v","UserID":"%v","Address":"%v","CoinName":"%v","WithdrawID":"%v"}`,
 			appID,
 			userID,
-			time.Now(),
 			account.Address,
 			coin.Name,
+			info.ID,
 		)
 
 		txType := txmgrpb.TxType_TxWithdraw
