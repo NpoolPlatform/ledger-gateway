@@ -109,7 +109,7 @@ func CreateWithdraw(
 			Op:    cruder.EQ,
 			Value: false,
 		},
-		UsedFor: &commonpb.Int32Val {
+		UsedFor: &commonpb.Int32Val{
 			Op:    cruder.EQ,
 			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
 		},
@@ -434,7 +434,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 			Op:    cruder.EQ,
 			Value: false,
 		},
-		UsedFor: &commonpb.Int32Val {
+		UsedFor: &commonpb.Int32Val{
 			Op:    cruder.EQ,
 			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
 		},
