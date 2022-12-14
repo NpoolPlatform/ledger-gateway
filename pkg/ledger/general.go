@@ -84,14 +84,15 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 			})
 		} else {
 			generals = append(generals, &npool.General{
-				CoinTypeID: coin.CoinTypeID,
-				CoinName:   coin.Name,
-				CoinLogo:   coin.Logo,
-				CoinUnit:   coin.Unit,
-				Incoming:   decimal.NewFromInt(0).String(),
-				Locked:     decimal.NewFromInt(0).String(),
-				Outcoming:  decimal.NewFromInt(0).String(),
-				Spendable:  decimal.NewFromInt(0).String(),
+				CoinTypeID:   coin.CoinTypeID,
+				CoinName:     coin.Name,
+				CoinLogo:     coin.Logo,
+				CoinUnit:     coin.Unit,
+				CoinDisabled: coin.Disabled,
+				Incoming:     decimal.NewFromInt(0).String(),
+				Locked:       decimal.NewFromInt(0).String(),
+				Outcoming:    decimal.NewFromInt(0).String(),
+				Spendable:    decimal.NewFromInt(0).String(),
 			})
 		}
 	}
