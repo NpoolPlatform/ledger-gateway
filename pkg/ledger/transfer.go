@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
 
 	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
@@ -30,6 +32,9 @@ import (
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
+
+	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
+	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
 
@@ -99,6 +104,40 @@ func CreateTransfer(
 
 	if kyc.State != appusermgrpb.KycState_Approved {
 		return nil, fmt.Errorf("kyc state is not approved")
+	}
+
+	general, err := ledgermgrgeneralcli.GetGeneralOnly(ctx, &ledgermgrgeneralpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		UserID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: userID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if general == nil {
+		return nil, fmt.Errorf("insufficient funds")
+	}
+
+	ad, err := decimal.NewFromString(amount)
+	if err != nil {
+		return nil, err
+	}
+
+	spendable, err := decimal.NewFromString(general.Spendable)
+	if err != nil {
+		return nil, err
+	}
+	if spendable.Cmp(ad) < 0 {
+		return nil, fmt.Errorf("insufficient funds")
 	}
 
 	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmgrpb.Conds{

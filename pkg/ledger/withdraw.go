@@ -19,6 +19,9 @@ import (
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
+	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
+	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
+
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
@@ -82,6 +85,27 @@ func CreateWithdraw(
 		usedfor.UsedFor_Withdraw,
 	); err != nil {
 		return nil, err
+	}
+
+	general, err := ledgermgrgeneralcli.GetGeneralOnly(ctx, &ledgermgrgeneralpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		UserID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: userID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if general == nil {
+		return nil, fmt.Errorf("insufficient funds")
 	}
 
 	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
@@ -284,6 +308,14 @@ func CreateWithdraw(
 
 	if amount.Cmp(feeAmount) <= 0 {
 		return nil, fmt.Errorf("invalid amount")
+	}
+
+	spendable, err := decimal.NewFromString(general.Spendable)
+	if err != nil {
+		return nil, err
+	}
+	if spendable.Cmp(amount.Add(feeAmount)) < 0 {
+		return nil, fmt.Errorf("insufficient funds")
 	}
 
 	amountS := amount.String()
