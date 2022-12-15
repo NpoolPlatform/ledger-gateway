@@ -90,6 +90,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 				CoinLogo:     coin.Logo,
 				CoinUnit:     coin.Unit,
 				CoinDisabled: coin.Disabled,
+				CoinDisplay:  coin.Display,
 				Incoming:     decimal.NewFromInt(0).String(),
 				Locked:       decimal.NewFromInt(0).String(),
 				Outcoming:    decimal.NewFromInt(0).String(),
