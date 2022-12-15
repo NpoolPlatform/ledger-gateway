@@ -202,7 +202,7 @@ func GetGoodProfits(
 	// TODO: move to middleware with aggregate
 	details := []*ledgermgrdetailpb.Detail{}
 	ofs := int32(0)
-	lim := limit
+	lim := int32(100)
 
 	for {
 		ds, _, err := ledgermwcli.GetIntervalDetails(
@@ -256,7 +256,7 @@ func GetGoodProfits(
 				Op:    cruder.EQ,
 				Value: userID,
 			},
-		}, ofs, limit)
+		}, ofs, lim)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -266,7 +266,7 @@ func GetGoodProfits(
 
 		orders = append(orders, ords...)
 
-		ofs += limit
+		ofs += lim
 	}
 
 	orderMap := map[string]*ordermwpb.Order{}
@@ -324,6 +324,10 @@ func GetGoodProfits(
 		order, ok := orderMap[e.OrderID]
 		if !ok {
 			logger.Sugar().Warn("order not exist continue")
+			continue
+		}
+
+		if _, ok := profitOrderMap[order.ID]; ok {
 			continue
 		}
 
