@@ -3,10 +3,12 @@ package ledger
 
 import (
 	"context"
+	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
+	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	ledger1 "github.com/NpoolPlatform/ledger-gateway/pkg/ledger"
 
 	"github.com/google/uuid"
@@ -26,7 +28,12 @@ func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*
 		return &npool.GetProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
 	}
 
-	infos, n, err := ledger1.GetProfits(ctx, in.GetAppID(), in.GetUserID(), in.GetOffset(), in.GetLimit())
+	limit := constant.DefaultRowLimit
+	if in.GetLimit() > 0 {
+		limit = in.GetLimit()
+	}
+
+	infos, n, err := ledger1.GetProfits(ctx, in.GetAppID(), in.GetUserID(), in.GetOffset(), limit)
 	if err != nil {
 		logger.Sugar().Errorw("GetProfits", "error", err)
 		return &npool.GetProfitsResponse{}, status.Error(codes.Internal, "fail get generals")
@@ -53,11 +60,21 @@ func (s *Server) GetIntervalProfits(
 		return &npool.GetIntervalProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
 	}
 
+	limit := constant.DefaultRowLimit
+	if in.GetLimit() > 0 {
+		limit = in.GetLimit()
+	}
+
+	endAt := uint32(time.Now().Unix())
+	if in.GetEndAt() > 0 {
+		endAt = in.GetEndAt()
+	}
+
 	infos, n, err := ledger1.GetIntervalProfits(
 		ctx,
 		in.GetAppID(), in.GetUserID(),
-		in.GetStartAt(), in.GetEndAt(),
-		in.GetOffset(), in.GetLimit(),
+		in.GetStartAt(), endAt,
+		in.GetOffset(), limit,
 	)
 	if err != nil {
 		logger.Sugar().Errorw("GetIntervalProfits", "error", err)
@@ -85,15 +102,21 @@ func (s *Server) GetGoodProfits(
 		return &npool.GetGoodProfitsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
 	}
 
-	if in.GetLimit() <= 0 {
-		logger.Sugar().Errorw("limit is less than or equal to 0")
-		return &npool.GetGoodProfitsResponse{}, status.Error(codes.InvalidArgument, "limit is less than or equal to 0")
+	limit := constant.DefaultRowLimit
+	if in.GetLimit() > 0 {
+		limit = in.GetLimit()
 	}
+
+	endAt := uint32(time.Now().Unix())
+	if in.GetEndAt() > 0 {
+		endAt = in.GetEndAt()
+	}
+
 	infos, n, err := ledger1.GetGoodProfits(
 		ctx,
 		in.GetAppID(), in.GetUserID(),
-		in.GetStartAt(), in.GetEndAt(),
-		in.GetOffset(), in.GetLimit(),
+		in.GetStartAt(), endAt,
+		in.GetOffset(), limit,
 	)
 	if err != nil {
 		logger.Sugar().Errorw("GetGoodProfits", "error", err)
