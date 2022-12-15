@@ -42,7 +42,7 @@ import (
 	scodes "go.opentelemetry.io/otel/codes"
 )
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func CreateTransfer(
 	ctx context.Context,
 	appID,

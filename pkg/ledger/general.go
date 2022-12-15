@@ -77,6 +77,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 				CoinLogo:     coin.Logo,
 				CoinUnit:     coin.Unit,
 				CoinDisabled: coin.Disabled,
+				CoinDisplay:  coin.Display,
 				Incoming:     general.Incoming,
 				Locked:       general.Locked,
 				Outcoming:    general.Outcoming,
