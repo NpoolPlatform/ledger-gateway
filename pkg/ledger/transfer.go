@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
 
 	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
 
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	"github.com/NpoolPlatform/message/npool"
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
@@ -23,18 +26,23 @@ import (
 	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/kyc"
 	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/kyc"
 
-	accountmgrcli "github.com/NpoolPlatform/account-manager/pkg/client/transfer"
+	accountmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/transfer"
 	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/transfer"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
+	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
+	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
+
+	commonpb "github.com/NpoolPlatform/message/npool"
+
 	"go.opentelemetry.io/otel"
 	scodes "go.opentelemetry.io/otel/codes"
 )
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func CreateTransfer(
 	ctx context.Context,
 	appID,
@@ -78,11 +86,11 @@ func CreateTransfer(
 	}
 
 	kyc, err := appusermgrcli.GetKycOnly(ctx, &appusermgrpb.Conds{
-		AppID: &npool.StringVal{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &npool.StringVal{
+		UserID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
@@ -98,16 +106,50 @@ func CreateTransfer(
 		return nil, fmt.Errorf("kyc state is not approved")
 	}
 
-	exist, err := accountmgrcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
-		AppID: &npool.StringVal{
+	general, err := ledgermgrgeneralcli.GetGeneralOnly(ctx, &ledgermgrgeneralpb.Conds{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &npool.StringVal{
+		UserID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
-		TargetUserID: &npool.StringVal{
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if general == nil {
+		return nil, fmt.Errorf("insufficient funds")
+	}
+
+	ad, err := decimal.NewFromString(amount)
+	if err != nil {
+		return nil, err
+	}
+
+	spendable, err := decimal.NewFromString(general.Spendable)
+	if err != nil {
+		return nil, err
+	}
+	if spendable.Cmp(ad) < 0 {
+		return nil, fmt.Errorf("insufficient funds")
+	}
+
+	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		UserID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: userID,
+		},
+		TargetUserID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: targetUserID,
 		},
@@ -127,7 +169,16 @@ func CreateTransfer(
 		return nil, fmt.Errorf("target user not found")
 	}
 
-	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
+	coin, err := coininfocli.GetCoinOnly(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +238,7 @@ func CreateTransfer(
 	}
 
 	return &ledger.Transfer{
-		CoinTypeID:         coin.ID,
+		CoinTypeID:         coin.CoinTypeID,
 		CoinName:           coin.Name,
 		CoinLogo:           coin.Logo,
 		CoinUnit:           coin.Unit,

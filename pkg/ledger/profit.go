@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-
 	"github.com/shopspring/decimal"
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -19,8 +18,8 @@ import (
 
 	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
@@ -50,22 +49,40 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 	if err != nil {
 		return nil, 0, err
 	}
+	if len(infos) == 0 {
+		return nil, total, nil
+	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range infos {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	profits := []*npool.Profit{}
 	for _, info := range infos {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Warn("app coin not exist continue")
+			continue
 		}
 
 		profits = append(profits, &npool.Profit{
@@ -109,14 +126,28 @@ func GetIntervalProfits(
 		ofs += lim
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range details {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	infos := map[string]*npool.Profit{}
@@ -171,7 +202,7 @@ func GetGoodProfits(
 	// TODO: move to middleware with aggregate
 	details := []*ledgermgrdetailpb.Detail{}
 	ofs := int32(0)
-	lim := limit
+	lim := int32(100)
 
 	for {
 		ds, _, err := ledgermwcli.GetIntervalDetails(
@@ -188,14 +219,28 @@ func GetGoodProfits(
 		ofs += lim
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	coinTypeIDs := []string{}
+	for _, val := range details {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: coinTypeIDs,
+		},
+	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*appcoinpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	orders := []*ordermwpb.Order{}
@@ -211,7 +256,7 @@ func GetGoodProfits(
 				Op:    cruder.EQ,
 				Value: userID,
 			},
-		}, ofs, limit)
+		}, ofs, lim)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -221,7 +266,7 @@ func GetGoodProfits(
 
 		orders = append(orders, ords...)
 
-		ofs += limit
+		ofs += lim
 	}
 
 	orderMap := map[string]*ordermwpb.Order{}
@@ -279,6 +324,10 @@ func GetGoodProfits(
 		order, ok := orderMap[e.OrderID]
 		if !ok {
 			logger.Sugar().Warn("order not exist continue")
+			continue
+		}
+
+		if _, ok := profitOrderMap[order.ID]; ok {
 			continue
 		}
 

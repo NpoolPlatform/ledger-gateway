@@ -13,17 +13,23 @@ import (
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 
-	coininfopb "github.com/NpoolPlatform/message/npool/coininfo"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+
 	commonpb "github.com/NpoolPlatform/message/npool"
-	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
-	coins, total, err := coininfocli.GetCoinInfosV2(ctx, offset, limit)
+	coins, total, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+	}, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -33,7 +39,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 
 	coinTypeIDs := []string{}
 	for _, coin := range coins {
-		coinTypeIDs = append(coinTypeIDs, coin.ID)
+		coinTypeIDs = append(coinTypeIDs, coin.CoinTypeID)
 	}
 
 	conds := &ledgermgrgeneralpb.Conds{
@@ -63,28 +69,32 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 
 	generals := []*npool.General{}
 	for _, coin := range coins {
-		general, ok := generalMap[coin.ID]
+		general, ok := generalMap[coin.CoinTypeID]
 		if ok {
 			generals = append(generals, &npool.General{
-				CoinTypeID: coin.ID,
-				CoinName:   coin.Name,
-				CoinLogo:   coin.Logo,
-				CoinUnit:   coin.Unit,
-				Incoming:   general.Incoming,
-				Locked:     general.Locked,
-				Outcoming:  general.Outcoming,
-				Spendable:  general.Spendable,
+				CoinTypeID:   coin.CoinTypeID,
+				CoinName:     coin.Name,
+				CoinLogo:     coin.Logo,
+				CoinUnit:     coin.Unit,
+				CoinDisabled: coin.Disabled,
+				CoinDisplay:  coin.Display,
+				Incoming:     general.Incoming,
+				Locked:       general.Locked,
+				Outcoming:    general.Outcoming,
+				Spendable:    general.Spendable,
 			})
 		} else {
 			generals = append(generals, &npool.General{
-				CoinTypeID: coin.ID,
-				CoinName:   coin.Name,
-				CoinLogo:   coin.Logo,
-				CoinUnit:   coin.Unit,
-				Incoming:   decimal.NewFromInt(0).String(),
-				Locked:     decimal.NewFromInt(0).String(),
-				Outcoming:  decimal.NewFromInt(0).String(),
-				Spendable:  decimal.NewFromInt(0).String(),
+				CoinTypeID:   coin.CoinTypeID,
+				CoinName:     coin.Name,
+				CoinLogo:     coin.Logo,
+				CoinUnit:     coin.Unit,
+				CoinDisabled: coin.Disabled,
+				CoinDisplay:  coin.Display,
+				Incoming:     decimal.NewFromInt(0).String(),
+				Locked:       decimal.NewFromInt(0).String(),
+				Outcoming:    decimal.NewFromInt(0).String(),
+				Spendable:    decimal.NewFromInt(0).String(),
 			})
 		}
 	}
@@ -102,14 +112,28 @@ func GetIntervalGenerals(
 		return nil, 0, err
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.NewFilterConds())
+	ids := []string{}
+	for _, g := range generals {
+		ids = append(ids, g.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	infos := []*npool.General{}
@@ -166,14 +190,28 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		userMap[user.ID] = user
 	}
 
-	coins, err := coininfocli.GetCoinInfos(ctx, cruder.FilterConds{})
+	ids := []string{}
+	for _, info := range infos {
+		ids = append(ids, info.CoinTypeID)
+	}
+
+	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		IDs: &commonpb.StringSliceVal{
+			Op:    cruder.IN,
+			Value: ids,
+		},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return nil, 0, fmt.Errorf("fail get coins: %v", err)
 	}
 
-	coinMap := map[string]*coininfopb.CoinInfo{}
+	coinMap := map[string]*coininfopb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	generals := []*npool.General{}
@@ -187,7 +225,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 			continue
 		}
 		generals = append(generals, &npool.General{
-			CoinTypeID:   coin.ID,
+			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.Name,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,

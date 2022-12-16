@@ -4,3 +4,4 @@ tmp
 *.json
 .apollo-base-config
 *.log
+.idea

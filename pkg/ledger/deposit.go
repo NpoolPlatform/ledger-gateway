@@ -3,28 +3,30 @@ package ledger
 import (
 	"context"
 	"fmt"
+	"time"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	"github.com/NpoolPlatform/message/npool"
 
 	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/appuser"
 	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/appuser"
 
-	"time"
+	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
+	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
-	coininfocli "github.com/NpoolPlatform/sphinx-coininfo/pkg/client"
+
+	commonpb "github.com/NpoolPlatform/message/npool"
 )
 
-func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
+func CreateDeposit(ctx context.Context, appID, userID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
 	exist, err := appusermgrcli.ExistAppUserConds(ctx, &appusermgrpb.Conds{
-		AppID: &npool.StringVal{
+		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: targetAppID,
 		},
-		ID: &npool.StringVal{
+		ID: &commonpb.StringVal{
 			Op:    cruder.EQ,
 			Value: targetUserID,
 		},
@@ -36,7 +38,16 @@ func CreateDeposit(ctx context.Context, userID, appID, coinTypeID, amount, targe
 		return nil, fmt.Errorf("target user not exist")
 	}
 
-	coin, err := coininfocli.GetCoinInfo(ctx, coinTypeID)
+	coin, err := coininfocli.GetCoinOnly(ctx, &coininfopb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: targetAppID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: coinTypeID,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
