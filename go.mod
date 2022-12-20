@@ -13,9 +13,9 @@ require (
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20220903065726-179137cd687f
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20220903073840-84638f81279f
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20221216024225-e7572ae5c761
+	github.com/NpoolPlatform/message v0.0.0-20221220115839-a93bb55eacca
 	github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515
-	github.com/NpoolPlatform/review-service v0.0.0-20220826135931-2f311aae9cbd
+	github.com/NpoolPlatform/review-middleware v0.0.0-20221220122427-467680e5dde2
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20221216033352-21a0a47434fe
 	github.com/NpoolPlatform/third-middleware v0.0.0-20221215071345-8f987b4b97db
 	github.com/go-resty/resty/v2 v2.7.0

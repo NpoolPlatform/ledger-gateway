@@ -3,7 +3,6 @@ package ledger
 import (
 	"context"
 	"fmt"
-	"sort"
 	"time"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
@@ -41,10 +40,8 @@ import (
 	pltfaccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/platform"
 	pltfaccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/platform"
 
-	reviewpb "github.com/NpoolPlatform/message/npool/review-service"
-	reviewmgrpb "github.com/NpoolPlatform/message/npool/review/mgr/v2"
-	reviewcli "github.com/NpoolPlatform/review-service/pkg/client"
-	reviewconst "github.com/NpoolPlatform/review-service/pkg/const"
+	reviewpb "github.com/NpoolPlatform/message/npool/review/mgr/v2"
+	reviewcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
@@ -53,6 +50,7 @@ import (
 
 	currencymwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin/currency"
 
+	uuid1 "github.com/NpoolPlatform/go-service-framework/pkg/const/uuid"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
 )
@@ -191,7 +189,7 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("invalid account")
 	}
 
-	reviewTrigger := reviewmgrpb.ReviewTriggerType_AutoReviewed
+	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
 
 	hotacc, err := pltfaccmwcli.GetAccountOnly(ctx, &pltfaccmwpb.Conds{
 		CoinTypeID: &commonpb.StringVal{
@@ -235,7 +233,7 @@ func CreateWithdraw(
 
 	balance := decimal.RequireFromString(bal.BalanceStr)
 	if balance.Cmp(amount) <= 0 {
-		reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFunds
+		reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFunds
 	}
 
 	if coin.ID != coin.FeeCoinTypeID {
@@ -266,10 +264,10 @@ func CreateWithdraw(
 		balance := decimal.RequireFromString(bal.BalanceStr)
 		if balance.Cmp(feeAmount) <= 0 {
 			switch reviewTrigger {
-			case reviewmgrpb.ReviewTriggerType_InsufficientFunds:
-				reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientFundsGas
-			case reviewmgrpb.ReviewTriggerType_AutoReviewed:
-				reviewTrigger = reviewmgrpb.ReviewTriggerType_InsufficientGas
+			case reviewpb.ReviewTriggerType_InsufficientFunds:
+				reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFundsGas
+			case reviewpb.ReviewTriggerType_AutoReviewed:
+				reviewTrigger = reviewpb.ReviewTriggerType_InsufficientGas
 			}
 		}
 	}
@@ -279,8 +277,8 @@ func CreateWithdraw(
 		return nil, err
 	}
 
-	if amount.Cmp(threshold) > 0 && reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
-		reviewTrigger = reviewmgrpb.ReviewTriggerType_LargeAmount
+	if amount.Cmp(threshold) > 0 && reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
+		reviewTrigger = reviewpb.ReviewTriggerType_LargeAmount
 	}
 
 	feeAmount, err := decimal.NewFromString(appCoin.WithdrawFeeAmount)
@@ -364,22 +362,32 @@ func CreateWithdraw(
 		return nil, err
 	}
 
-	// Create review
-	rv, err := reviewcli.CreateReview(ctx, &reviewpb.Review{
-		AppID:      appID,
-		Domain:     constant.ServiceName,
-		ObjectType: reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
-		ObjectID:   info.ID,
-		State:      reviewmgrpb.ReviewState_Wait.String(),
-		Trigger:    reviewTrigger.String(),
+	serviceName := constant.ServiceName
+	objectType := reviewpb.ReviewObjectType_ObjectWithdrawal
+
+	rv, err := reviewcli.CreateReview(ctx, &reviewpb.ReviewReq{
+		AppID:      &appID,
+		Domain:     &serviceName,
+		ObjectType: &objectType,
+		ObjectID:   &info.ID,
+		Trigger:    &reviewTrigger,
 	})
 	if err != nil {
 		return nil, err
 	}
+	if rv == nil {
+		return nil, fmt.Errorf("invalid review")
+	}
 
-	if reviewTrigger == reviewmgrpb.ReviewTriggerType_AutoReviewed {
-		rv.State = reviewconst.StateApproved
-		if _, err := reviewcli.UpdateReview(ctx, rv); err != nil {
+	if reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
+		rstate := reviewpb.ReviewState_Approved
+		reviewer := uuid1.InvalidUUIDStr
+
+		if _, err := reviewcli.UpdateReview(ctx, &reviewpb.ReviewReq{
+			ID:         &rv.ID,
+			ReviewerID: &reviewer,
+			State:      &rstate,
+		}); err != nil {
 			return nil, err
 		}
 
@@ -482,22 +490,21 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 
 	// TODO: move to review middleware
 	if info.State == ledgermgrwithdrawpb.WithdrawState_Rejected {
-		reviews, err := reviewcli.GetDomainReviews(
+		rv, err := reviewcli.GetObjectReview(
 			ctx,
-			info.AppID, constant.ServiceName, reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
+			info.AppID,
+			constant.ServiceName,
+			id,
+			reviewpb.ReviewObjectType_ObjectWithdrawal,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		for _, r := range reviews {
-			switch r.State {
-			case reviewconst.StateRejected:
-				fallthrough //nolint
-			case reviewmgrpb.ReviewState_Rejected.String():
-				message = r.Message
-			}
+		if rv == nil {
+			return nil, fmt.Errorf("invalid review")
 		}
+
+		message = rv.Message
 	}
 
 	return &npool.Withdraw{
@@ -662,25 +669,25 @@ func expand(
 		coinMap[coin.ID] = coin
 	}
 
-	// TODO: move to review middleware
-	reviews, err := reviewcli.GetDomainReviews(
+	wids := []string{}
+	for _, w := range infos {
+		wids = append(wids, w.ID)
+	}
+
+	reviews, err := reviewcli.GetObjectReviews(
 		ctx,
-		appID, constant.ServiceName, reviewmgrpb.ReviewObjectType_ObjectWithdrawal.String(),
+		appID,
+		constant.ServiceName,
+		wids,
+		reviewpb.ReviewObjectType_ObjectWithdrawal,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	messageMap := map[string]string{}
-	sort.SliceStable(reviews, func(i, j int) bool {
-		return reviews[i].CreateAt > reviews[j].CreateAt
-	})
-
 	for _, r := range reviews {
-		switch r.State {
-		case reviewconst.StateRejected:
-			fallthrough //nolint
-		case reviewmgrpb.ReviewState_Rejected.String():
+		if r.State == reviewpb.ReviewState_Rejected {
 			messageMap[r.ObjectID] = r.Message
 		}
 	}
