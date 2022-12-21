@@ -21,6 +21,8 @@ import (
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
+
+	"github.com/google/uuid"
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
@@ -114,6 +116,9 @@ func GetIntervalGenerals(
 
 	ids := []string{}
 	for _, g := range generals {
+		if _, err := uuid.Parse(g.CoinTypeID); err != nil {
+			continue
+		}
 		ids = append(ids, g.CoinTypeID)
 	}
 
@@ -192,6 +197,9 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 
 	ids := []string{}
 	for _, info := range infos {
+		if _, err := uuid.Parse(info.CoinTypeID); err != nil {
+			continue
+		}
 		ids = append(ids, info.CoinTypeID)
 	}
 

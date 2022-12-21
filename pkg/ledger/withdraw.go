@@ -55,6 +55,8 @@ import (
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
+
+	"github.com/google/uuid"
 )
 
 // nolint
@@ -644,6 +646,9 @@ func expand(
 ) {
 	ids := []string{}
 	for _, info := range infos {
+		if _, err := uuid.Parse(info.CoinTypeID); err != nil {
+			continue
+		}
 		ids = append(ids, info.CoinTypeID)
 	}
 

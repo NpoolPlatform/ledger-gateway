@@ -18,6 +18,8 @@ import (
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+
+	"github.com/google/uuid"
 )
 
 func GetDetails(ctx context.Context, appID, userID string, start, end uint32, offset, limit int32) ([]*npool.Detail, uint32, error) {
@@ -31,6 +33,9 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 
 	coinTypeIDs := []string{}
 	for _, val := range details {
+		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+			continue
+		}
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 
@@ -94,6 +99,9 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 
 	coinTypeIDs := []string{}
 	for _, val := range details {
+		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+			continue
+		}
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 

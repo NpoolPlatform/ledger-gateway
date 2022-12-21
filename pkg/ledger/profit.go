@@ -31,6 +31,8 @@ import (
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
+
+	"github.com/google/uuid"
 )
 
 func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.Profit, uint32, error) {
@@ -55,6 +57,9 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 
 	coinTypeIDs := []string{}
 	for _, val := range infos {
+		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+			continue
+		}
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 
@@ -128,6 +133,9 @@ func GetIntervalProfits(
 
 	coinTypeIDs := []string{}
 	for _, val := range details {
+		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+			continue
+		}
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 
@@ -221,6 +229,9 @@ func GetGoodProfits(
 
 	coinTypeIDs := []string{}
 	for _, val := range details {
+		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+			continue
+		}
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 
