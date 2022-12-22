@@ -21,6 +21,7 @@ import (
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	constant "github.com/NpoolPlatform/go-service-framework/pkg/mysql/const"
 
+	_ "github.com/NpoolPlatform/account-manager/pkg/db/ent/runtime"
 	_ "github.com/NpoolPlatform/review-service/pkg/db/ent/runtime"
 )
 
