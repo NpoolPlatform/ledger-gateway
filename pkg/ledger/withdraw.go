@@ -360,6 +360,7 @@ func CreateWithdraw(
 		UserID:     &userID,
 		CoinTypeID: &coinTypeID,
 		AccountID:  &accountID,
+		Address:    &account.Address,
 		Amount:     &amountS,
 	})
 	if err != nil {
@@ -697,7 +698,7 @@ func expand(
 			continue
 		}
 
-		address := ""
+		address := info.Address
 		labels := []string{}
 
 		wacc, ok := waccMap[info.AccountID]
