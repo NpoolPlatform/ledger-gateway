@@ -67,6 +67,7 @@ github.com/Masterminds/semver v1.5.0/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF0
 github.com/Masterminds/sprig v2.15.0+incompatible/go.mod h1:y6hNFY5UBTIWBxnzTeuNhlNS5hqE0NB0E6fgfo2Br3o=
 github.com/Masterminds/sprig v2.22.0+incompatible/go.mod h1:y6hNFY5UBTIWBxnzTeuNhlNS5hqE0NB0E6fgfo2Br3o=
 github.com/NpoolPlatform/account-manager v0.0.0-20221216032354-d0503e803f5d h1:tyNn3zzRuHWmVAQJrKsYdVpKd8wYbLnefpEBXEU01cE=
+github.com/NpoolPlatform/account-manager v0.0.0-20221216032354-d0503e803f5d/go.mod h1:/oiqg5gC9rv7K8Nfbt9ygznhdCJC6HocXIgr7QtiPek=
 github.com/NpoolPlatform/account-middleware v0.0.0-20221216032556-c0953cebb9a4 h1:6KgMC60Yu0jexuaTuuGfvrex9z/RDXdWRoeubuq+XxY=
 github.com/NpoolPlatform/account-middleware v0.0.0-20221216032556-c0953cebb9a4/go.mod h1:8eHi3JEVIN7thjtNMSNXfhWyLIyFki8UcpCdLF0PJk8=
 github.com/NpoolPlatform/api-manager v0.0.0-20220205130236-69d286e72dba/go.mod h1:ubnvHuhc0o6drhdYrT+nM5DXZW/yEesObWky6oRsHoQ=
@@ -79,6 +80,8 @@ github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79/g
 github.com/NpoolPlatform/chain-manager v0.0.0-20221214080455-07f7e511376f h1:lcqQpwbs7ktY9vjmDFD0X1DFdeXm78X3R5ry4gAelPI=
 github.com/NpoolPlatform/chain-middleware v0.0.0-20221216021206-c73dbc7ea1ce h1:lJ6jB8mUNoou/5a96pxwg6UxJP4/0ZKSta9mJqGn0GU=
 github.com/NpoolPlatform/chain-middleware v0.0.0-20221216021206-c73dbc7ea1ce/go.mod h1:ZTSnIdltJKyf+THfvHVCkoEmaJWESxDgpF35kJu/n78=
+github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20221108070616-8eb8c81dd6c8 h1:Y9h2vRjzsO5/hKoRE9Edjm23iGjfAVm/RZKUPLGasDs=
+github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20221108070616-8eb8c81dd6c8/go.mod h1:xsuWIAMqgyYRSt4DFCWPhwsQJGOcJKZYICieDdf0gPg=
 github.com/NpoolPlatform/cloud-hashing-goods v0.0.0-20211224023221-a715aef93510/go.mod h1:YcH4tmsnOFfsFeBG6tqT6W5Z6yKvQA2W+b9RBhSAzMo=
 github.com/NpoolPlatform/cloud-hashing-inspire v0.0.0-20211224023242-bd6da3111653/go.mod h1:VBiNGga8uFzy0Pt3Epzx4Dg7RxzM0Y4lzsr+9a7icU8=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20211222114515-4928e6cf3f1f/go.mod h1:kR7v9OYmi38GLucJoVUOxLYiA3xtLp5TY/fWqrR6WRw=

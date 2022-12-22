@@ -3,11 +3,14 @@ module github.com/NpoolPlatform/ledger-gateway
 go 1.17
 
 require (
+	entgo.io/ent v0.11.3
+	github.com/NpoolPlatform/account-manager v0.0.0-20221216032354-d0503e803f5d
 	github.com/NpoolPlatform/account-middleware v0.0.0-20221216032556-c0953cebb9a4
 	github.com/NpoolPlatform/api-manager v0.0.0-20220826022307-d72866fe3ec0
 	github.com/NpoolPlatform/appuser-manager v0.0.0-20220829153511-c579ddb3686d
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
 	github.com/NpoolPlatform/chain-middleware v0.0.0-20221216021206-c73dbc7ea1ce
+	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20221108070616-8eb8c81dd6c8
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20221102072657-7fcc5e6f1012
 	github.com/NpoolPlatform/good-middleware v0.0.0-20221216031911-f2715afb4b66
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20221222080228-e0b64d8fc4d2
@@ -32,7 +35,6 @@ require (
 
 require (
 	ariga.io/atlas v0.7.2-0.20220927111110-867ee0cca56a // indirect
-	entgo.io/ent v0.11.3 // indirect
 	github.com/Shonminh/apollo-client v0.4.0 // indirect
 	github.com/agext/levenshtein v1.2.1 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect

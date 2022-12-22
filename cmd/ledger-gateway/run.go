@@ -6,6 +6,8 @@ import (
 	grpc2 "github.com/NpoolPlatform/go-service-framework/pkg/grpc"
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 
+	"github.com/NpoolPlatform/ledger-gateway/pkg/migrator"
+
 	apimgrcli "github.com/NpoolPlatform/api-manager/pkg/client"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -22,6 +24,10 @@ var runCmd = &cli.Command{
 	Aliases: []string{"s"},
 	Usage:   "Run the daemon",
 	Action: func(c *cli.Context) error {
+		if err := migrator.Migrate(c.Context); err != nil {
+			return err
+		}
+
 		go func() {
 			if err := grpc2.RunGRPC(rpcRegister); err != nil {
 				logger.Sugar().Errorf("fail to run grpc server: %v", err)
