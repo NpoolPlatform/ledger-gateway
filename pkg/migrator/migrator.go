@@ -1,3 +1,4 @@
+//nolint
 package migrator
 
 import (
@@ -5,17 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-
-	"github.com/NpoolPlatform/ledger-manager/pkg/db"
-	"github.com/NpoolPlatform/ledger-manager/pkg/db/ent"
-
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
-
-	entaccount "github.com/NpoolPlatform/account-manager/pkg/db/ent"
-	accountconst "github.com/NpoolPlatform/account-manager/pkg/message/const"
-	entbilling "github.com/NpoolPlatform/cloud-hashing-billing/pkg/db/ent"
-	billingconst "github.com/NpoolPlatform/cloud-hashing-billing/pkg/message/const"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/config"
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
@@ -76,94 +66,6 @@ func open(hostname string) (conn *sql.DB, err error) {
 	return conn, nil
 }
 
-func migrateWithdrawAddress(ctx context.Context) error {
-	billing, err := open(billingconst.ServiceName)
-	if err != nil {
-		logger.Sugar().Errorw("migrateWithdrawAddress", "error", err)
-		return err
-	}
-	defer billing.Close()
-
-	bcli := entbilling.NewClient(entbilling.Driver(entsql.OpenDB(dialect.MySQL, billing)))
-	baccounts, err := bcli.
-		CoinAccountInfo.
-		Query().
-		All(ctx)
-	if err != nil {
-		logger.Sugar().Errorw("migrateWithdrawAddress", "error", err)
-		return err
-	}
-
-	account, err := open(accountconst.ServiceName)
-	if err != nil {
-		logger.Sugar().Errorw("migrateWithdrawAddress", "error", err)
-		return err
-	}
-	defer account.Close()
-
-	acli := entaccount.NewClient(entaccount.Driver(entsql.OpenDB(dialect.MySQL, account)))
-	aaccounts, err := acli.
-		Account.
-		Query().
-		All(ctx)
-	if err != nil {
-		logger.Sugar().Errorw("migrateReview", "error", err)
-		return err
-	}
-
-	return db.WithClient(ctx, func(_ctx context.Context, cli *ent.Client) error {
-		withdraws, err := cli.
-			Withdraw.
-			Query().
-			All(_ctx)
-		if err != nil {
-			return err
-		}
-
-		for _, withdraw := range withdraws {
-			address := withdraw.Address
-			found := false
-
-			for _, acc := range baccounts {
-				if acc.ID == withdraw.AccountID {
-					address = acc.Address
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				for _, acc := range aaccounts {
-					if acc.ID == withdraw.AccountID {
-						address = acc.Address
-						break
-					}
-				}
-			}
-
-			_, err := cli.
-				Withdraw.
-				UpdateOneID(withdraw.ID).
-				SetAddress(address).
-				Save(_ctx)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
 func Migrate(ctx context.Context) error {
-	if err := db.Init(); err != nil {
-		logger.Sugar().Errorw("Migrate", "error", err)
-		return err
-	}
-
-	if err := migrateWithdrawAddress(ctx); err != nil {
-		logger.Sugar().Errorw("Migrate", "error", err)
-		return err
-	}
-
 	return nil
 }
