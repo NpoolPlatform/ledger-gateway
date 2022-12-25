@@ -86,14 +86,15 @@ func CreateDeposit(ctx context.Context, appID, userID, coinTypeID, amount, targe
 	}
 
 	return &ledger.Detail{
-		CoinTypeID: coinTypeID,
-		CoinName:   coin.Name,
-		CoinLogo:   coin.Logo,
-		CoinUnit:   coin.Unit,
-		IOType:     ioType,
-		IOSubType:  ioSubtype,
-		Amount:     amount,
-		IOExtra:    ioExtra,
-		CreatedAt:  createdAt,
+		CoinTypeID:   coinTypeID,
+		CoinName:     coin.Name,
+		DisplayNames: coin.DisplayNames,
+		CoinLogo:     coin.Logo,
+		CoinUnit:     coin.Unit,
+		IOType:       ioType,
+		IOSubType:    ioSubtype,
+		Amount:       amount,
+		IOExtra:      ioExtra,
+		CreatedAt:    createdAt,
 	}, nil
 }

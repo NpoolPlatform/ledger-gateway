@@ -23,7 +23,6 @@ import (
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
-	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	txmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/tx"
 	txmgrpb "github.com/NpoolPlatform/message/npool/chain/mgr/v1/tx"
@@ -436,7 +435,16 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 		return nil, fmt.Errorf("invalid withdraw")
 	}
 
-	coin, err := coininfocli.GetCoin(ctx, info.CoinTypeID)
+	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: info.AppID,
+		},
+		CoinTypeID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: info.CoinTypeID,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -506,6 +514,7 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	return &npool.Withdraw{
 		CoinTypeID:    info.CoinTypeID,
 		CoinName:      coin.Name,
+		DisplayNames:  coin.DisplayNames,
 		CoinLogo:      coin.Logo,
 		CoinUnit:      coin.Unit,
 		Amount:        info.Amount,
@@ -646,6 +655,7 @@ func expand(
 	[]*npool.Withdraw, error,
 ) {
 	ids := []string{}
+
 	for _, info := range infos {
 		if _, err := uuid.Parse(info.CoinTypeID); err != nil {
 			continue
@@ -653,8 +663,12 @@ func expand(
 		ids = append(ids, info.CoinTypeID)
 	}
 
-	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
-		IDs: &commonpb.StringSliceVal{
+	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
+		AppID: &commonpb.StringVal{
+			Op:    cruder.EQ,
+			Value: appID,
+		},
+		CoinTypeIDs: &commonpb.StringSliceVal{
 			Op:    cruder.IN,
 			Value: ids,
 		},
@@ -663,7 +677,7 @@ func expand(
 		return nil, err
 	}
 
-	coinMap := map[string]*coininfopb.Coin{}
+	coinMap := map[string]*appcoinmwpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.ID] = coin
 	}
@@ -709,7 +723,8 @@ func expand(
 
 		withdraws = append(withdraws, &npool.Withdraw{
 			CoinTypeID:    info.CoinTypeID,
-			CoinName:      coin.Name,
+			CoinName:      coin.CoinName,
+			DisplayNames:  coin.DisplayNames,
 			CoinLogo:      coin.Logo,
 			CoinUnit:      coin.Unit,
 			Amount:        info.Amount,

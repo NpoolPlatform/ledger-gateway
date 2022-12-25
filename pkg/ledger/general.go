@@ -76,6 +76,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 			generals = append(generals, &npool.General{
 				CoinTypeID:   coin.CoinTypeID,
 				CoinName:     coin.Name,
+				DisplayNames: coin.DisplayNames,
 				CoinLogo:     coin.Logo,
 				CoinUnit:     coin.Unit,
 				CoinDisabled: coin.Disabled,
@@ -89,6 +90,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 			generals = append(generals, &npool.General{
 				CoinTypeID:   coin.CoinTypeID,
 				CoinName:     coin.Name,
+				DisplayNames: coin.DisplayNames,
 				CoinLogo:     coin.Logo,
 				CoinUnit:     coin.Unit,
 				CoinDisabled: coin.Disabled,
@@ -149,14 +151,15 @@ func GetIntervalGenerals(
 		}
 
 		infos = append(infos, &npool.General{
-			CoinTypeID: info.CoinTypeID,
-			CoinName:   coin.Name,
-			CoinLogo:   coin.Logo,
-			CoinUnit:   coin.Unit,
-			Incoming:   info.Incoming,
-			Locked:     info.Locked,
-			Outcoming:  info.Outcoming,
-			Spendable:  info.Spendable,
+			CoinTypeID:   info.CoinTypeID,
+			CoinName:     coin.Name,
+			DisplayNames: coin.DisplayNames,
+			CoinLogo:     coin.Logo,
+			CoinUnit:     coin.Unit,
+			Incoming:     info.Incoming,
+			Locked:       info.Locked,
+			Outcoming:    info.Outcoming,
+			Spendable:    info.Spendable,
 		})
 	}
 
@@ -235,6 +238,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		generals = append(generals, &npool.General{
 			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.Name,
+			DisplayNames: coin.DisplayNames,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,
 			Incoming:     general.Incoming,

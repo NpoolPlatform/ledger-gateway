@@ -67,15 +67,16 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 		}
 
 		infos = append(infos, &npool.Detail{
-			CoinTypeID: info.CoinTypeID,
-			CoinName:   coin.Name,
-			CoinLogo:   coin.Logo,
-			CoinUnit:   coin.Unit,
-			IOType:     info.IOType,
-			IOSubType:  info.IOSubType,
-			Amount:     info.Amount,
-			IOExtra:    info.IOExtra,
-			CreatedAt:  info.CreatedAt,
+			CoinTypeID:   info.CoinTypeID,
+			CoinName:     coin.Name,
+			DisplayNames: coin.DisplayNames,
+			CoinLogo:     coin.Logo,
+			CoinUnit:     coin.Unit,
+			IOType:       info.IOType,
+			IOSubType:    info.IOSubType,
+			Amount:       info.Amount,
+			IOExtra:      info.IOExtra,
+			CreatedAt:    info.CreatedAt,
 		})
 	}
 
@@ -152,6 +153,7 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 		infos = append(infos, &npool.Detail{
 			CoinTypeID:   detail.CoinTypeID,
 			CoinName:     coin.Name,
+			DisplayNames: coin.DisplayNames,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,
 			IOType:       detail.IOType,

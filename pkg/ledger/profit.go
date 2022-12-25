@@ -91,11 +91,12 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 		}
 
 		profits = append(profits, &npool.Profit{
-			CoinTypeID: info.CoinTypeID,
-			CoinName:   coin.Name,
-			CoinLogo:   coin.Logo,
-			CoinUnit:   coin.Unit,
-			Incoming:   info.Incoming,
+			CoinTypeID:   info.CoinTypeID,
+			CoinName:     coin.Name,
+			DisplayNames: coin.DisplayNames,
+			CoinLogo:     coin.Logo,
+			CoinUnit:     coin.Unit,
+			Incoming:     info.Incoming,
 		})
 	}
 
@@ -177,11 +178,12 @@ func GetIntervalProfits(
 		p, ok := infos[info.CoinTypeID]
 		if !ok {
 			p = &npool.Profit{
-				CoinTypeID: info.CoinTypeID,
-				CoinName:   coin.Name,
-				CoinLogo:   coin.Logo,
-				CoinUnit:   coin.Unit,
-				Incoming:   decimal.NewFromInt(0).String(),
+				CoinTypeID:   info.CoinTypeID,
+				CoinName:     coin.Name,
+				DisplayNames: coin.DisplayNames,
+				CoinLogo:     coin.Logo,
+				CoinUnit:     coin.Unit,
+				Incoming:     decimal.NewFromInt(0).String(),
 			}
 			total += 1
 		}
@@ -367,6 +369,7 @@ func GetGoodProfits(
 			gp = &npool.GoodProfit{
 				CoinTypeID:            good.CoinTypeID,
 				CoinName:              coin.Name,
+				DisplayNames:          coin.DisplayNames,
 				CoinLogo:              coin.Logo,
 				CoinUnit:              coin.Unit,
 				GoodID:                order.GoodID,
@@ -421,6 +424,7 @@ func GetGoodProfits(
 			gp = &npool.GoodProfit{
 				CoinTypeID:            good.CoinTypeID,
 				CoinName:              coin.Name,
+				DisplayNames:          coin.DisplayNames,
 				CoinLogo:              coin.Logo,
 				CoinUnit:              coin.Unit,
 				GoodID:                order.GoodID,

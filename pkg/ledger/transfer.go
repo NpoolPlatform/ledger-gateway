@@ -240,6 +240,7 @@ func CreateTransfer(
 	return &ledger.Transfer{
 		CoinTypeID:         coin.CoinTypeID,
 		CoinName:           coin.Name,
+		DisplayNames:       coin.DisplayNames,
 		CoinLogo:           coin.Logo,
 		CoinUnit:           coin.Unit,
 		Amount:             amount,

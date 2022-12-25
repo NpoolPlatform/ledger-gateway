@@ -104,8 +104,8 @@ github.com/NpoolPlatform/message v0.0.0-20220120075427-38182760a780/go.mod h1:tn
 github.com/NpoolPlatform/message v0.0.0-20220121040326-31d316062cdc/go.mod h1:tnsf7zHQ5Mv2uG0ezOwCfm/bxluiRW10DeuIl4SjG4Y=
 github.com/NpoolPlatform/message v0.0.0-20220501030927-34f296682c0c/go.mod h1:i/F/sQWjQk44RGvfgEB0zH0oAK/0qLvgJ1AsJDZQDkk=
 github.com/NpoolPlatform/message v0.0.0-20220819134247-1dc75c85fe43/go.mod h1:8YXp4MghMHLZ9bBdQQyfjcRtLI2RbEHAQoNCejT2nZU=
-github.com/NpoolPlatform/message v0.0.0-20221222074628-16f9daf4c9f7 h1:Gm2enmsz/hpooWE5ihaKzVNaeDxrYORMEmhVbA1Bx0I=
-github.com/NpoolPlatform/message v0.0.0-20221222074628-16f9daf4c9f7/go.mod h1:G4b3QmQYYHn2okxu8KfD6INUALqno3369SLciqevhtQ=
+github.com/NpoolPlatform/message v0.0.0-20221225020708-0ec987587117 h1:t12lOmPY10vKrPX7qSjQhiunGzyk/Yo1Tx1AHTwuMdM=
+github.com/NpoolPlatform/message v0.0.0-20221225020708-0ec987587117/go.mod h1:G4b3QmQYYHn2okxu8KfD6INUALqno3369SLciqevhtQ=
 github.com/NpoolPlatform/order-manager v0.0.0-20221215035849-67d0e844cfd2 h1:VYB0r4McbKJSgJ67TC20c7iBW9VhzUjP2ixdotlFghc=
 github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515 h1:iFoK/BJLczBmUoA5rwHxsWb3B7SGpuPeQ8NY1+JJadI=
 github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515/go.mod h1:Iw12DbiH5swWBPjFlO8NMwz84incpCJ4yyO/vzM0FrY=
