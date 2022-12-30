@@ -315,7 +315,7 @@ func CreateWithdraw(
 	if err != nil {
 		return nil, err
 	}
-	if spendable.Cmp(amount.Add(feeAmount)) < 0 {
+	if spendable.Cmp(amount) < 0 {
 		return nil, fmt.Errorf("insufficient funds")
 	}
 
