@@ -229,33 +229,6 @@ func GetGoodProfits(
 		ofs += lim
 	}
 
-	coinTypeIDs := []string{}
-	for _, val := range details {
-		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
-			continue
-		}
-		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
-	}
-
-	coins, _, err := coininfocli.GetCoins(ctx, &appcoinpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: appID,
-		},
-		CoinTypeIDs: &commonpb.StringSliceVal{
-			Op:    cruder.IN,
-			Value: coinTypeIDs,
-		},
-	}, 0, int32(len(coinTypeIDs)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	coinMap := map[string]*appcoinpb.Coin{}
-	for _, coin := range coins {
-		coinMap[coin.CoinTypeID] = coin
-	}
-
 	orders := []*ordermwpb.Order{}
 	ofs = 0
 

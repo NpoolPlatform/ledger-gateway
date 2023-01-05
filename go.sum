@@ -101,8 +101,6 @@ github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515 h1:
 github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515/go.mod h1:Iw12DbiH5swWBPjFlO8NMwz84incpCJ4yyO/vzM0FrY=
 github.com/NpoolPlatform/review-middleware v0.0.0-20221220122427-467680e5dde2 h1:TDG35NPQk4uLQfI6FBU7ftEZWPb6sjBIIOI7703pgNs=
 github.com/NpoolPlatform/review-middleware v0.0.0-20221220122427-467680e5dde2/go.mod h1:JP3iJh7gsfqfUBWpd07TRa6YFDka5G9nA+nVlgD9vmw=
-github.com/NpoolPlatform/review-service v0.0.0-20220930040918-ca8858bb4677 h1:97WzbhPe15N27J4Of1iOqITFjwWLWRfEqOSD3Qj5i0I=
-github.com/NpoolPlatform/review-service v0.0.0-20220930040918-ca8858bb4677/go.mod h1:8Nq07Aos0SN/pDUZj88oI+wjtqiiwUrgnnNqu6/8oYY=
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20221216033352-21a0a47434fe h1:a7UXGo1jxy6VproT8OQdXZDbk0ZKYWq4X6IQ3GCHh5E=
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20221216033352-21a0a47434fe/go.mod h1:7OAGCg0akA7pK0WrOxwOG2oIFawEOtJopfBKlUgGGZ4=
 github.com/NpoolPlatform/third-middleware v0.0.0-20221215071345-8f987b4b97db h1:NBQ1bVV5FxkJA/RYLGNsX/8+2t0idvw6qT8ciswDK1Y=
