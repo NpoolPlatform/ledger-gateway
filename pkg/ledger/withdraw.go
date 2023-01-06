@@ -42,6 +42,8 @@ import (
 	reviewpb "github.com/NpoolPlatform/message/npool/review/mgr/v2"
 	reviewcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 
+	kycmgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/kyc"
+
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
 	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
@@ -70,6 +72,9 @@ func CreateWithdraw(
 	user, err := usermwcli.GetUser(ctx, appID, userID)
 	if err != nil {
 		return nil, err
+	}
+	if user.State != kycmgrpb.KycState_Approved {
+		return nil, fmt.Errorf("permission denied")
 	}
 
 	if signMethod == signmethodpb.SignMethodType_Google {
