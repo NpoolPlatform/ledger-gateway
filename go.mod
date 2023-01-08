@@ -12,10 +12,10 @@ require (
 	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20221108070616-8eb8c81dd6c8
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20221102072657-7fcc5e6f1012
 	github.com/NpoolPlatform/good-middleware v0.0.0-20221216031911-f2715afb4b66
-	github.com/NpoolPlatform/ledger-manager v0.0.0-20221222080228-e0b64d8fc4d2
-	github.com/NpoolPlatform/ledger-middleware v0.0.0-20221222080503-edf65d38e64b
+	github.com/NpoolPlatform/ledger-manager v0.0.0-20230108090029-0c8375eab566
+	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230108090500-8dae6354bb3b
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20221225020708-0ec987587117
+	github.com/NpoolPlatform/message v0.0.0-20230108084039-44f7944d6c9a
 	github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515
 	github.com/NpoolPlatform/review-middleware v0.0.0-20221220122427-467680e5dde2
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20221216033352-21a0a47434fe
