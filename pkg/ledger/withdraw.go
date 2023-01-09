@@ -184,6 +184,14 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("invalid app coin")
 	}
 
+	maxAmount, err := decimal.NewFromString(appCoin.MaxAmountPerWithdraw)
+	if err != nil {
+		return nil, err
+	}
+	if amount.Cmp(maxAmount) > 0 {
+		return nil, fmt.Errorf("overflow")
+	}
+
 	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
 		Name:    coin.Name,
 		Address: account.Address,
