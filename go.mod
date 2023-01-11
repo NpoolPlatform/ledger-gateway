@@ -3,22 +3,20 @@ module github.com/NpoolPlatform/ledger-gateway
 go 1.17
 
 require (
-	github.com/NpoolPlatform/account-manager v0.0.0-20221216032354-d0503e803f5d
-	github.com/NpoolPlatform/account-middleware v0.0.0-20221216032556-c0953cebb9a4
+	github.com/NpoolPlatform/account-middleware v0.0.0-20221220111928-0c1abbca2829
 	github.com/NpoolPlatform/api-manager v0.0.0-20220826022307-d72866fe3ec0
-	github.com/NpoolPlatform/appuser-manager v0.0.0-20220829153511-c579ddb3686d
-	github.com/NpoolPlatform/appuser-middleware v0.0.0-20220829153642-da84c07abb79
-	github.com/NpoolPlatform/chain-middleware v0.0.0-20230109061755-747d9a117355
-	github.com/NpoolPlatform/cloud-hashing-billing v0.0.0-20221108070616-8eb8c81dd6c8
+	github.com/NpoolPlatform/appuser-manager v0.0.0-20230111060622-e3a10cc791c1
+	github.com/NpoolPlatform/appuser-middleware v0.0.0-20230111062013-f804f8850e22
+	github.com/NpoolPlatform/chain-middleware v0.0.0-20230111062408-7bc4b269c1d4
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20221102072657-7fcc5e6f1012
-	github.com/NpoolPlatform/good-middleware v0.0.0-20221216031911-f2715afb4b66
-	github.com/NpoolPlatform/ledger-manager v0.0.0-20230108090029-0c8375eab566
-	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230108090500-8dae6354bb3b
+	github.com/NpoolPlatform/good-middleware v0.0.0-20230111062156-9d26cfe25c94
+	github.com/NpoolPlatform/ledger-manager v0.0.0-20230111061350-4bddabacc212
+	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230111062738-1054218618aa
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20230109055950-8faed8ec3001
-	github.com/NpoolPlatform/order-middleware v0.0.0-20221215041035-9804ca4d3515
-	github.com/NpoolPlatform/review-middleware v0.0.0-20221220122427-467680e5dde2
-	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20221216033352-21a0a47434fe
+	github.com/NpoolPlatform/message v0.0.0-20230110162534-83df43757858
+	github.com/NpoolPlatform/order-middleware v0.0.0-20230111062552-aa2af7d0c282
+	github.com/NpoolPlatform/review-middleware v0.0.0-20230105072527-025b5576faf7
+	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20221216051435-3c588d703326
 	github.com/NpoolPlatform/third-middleware v0.0.0-20221215071345-8f987b4b97db
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
