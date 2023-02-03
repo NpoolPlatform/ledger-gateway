@@ -567,6 +567,7 @@ func GetWithdraws(
 		return nil, 0, err
 	}
 	if len(infos) == 0 {
+		fmt.Println("err 0000000")
 		return []*npool.Withdraw{}, 0, nil
 	}
 
@@ -699,7 +700,7 @@ func expand(
 
 	coinMap := map[string]*appcoinmwpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	wids := []string{}
