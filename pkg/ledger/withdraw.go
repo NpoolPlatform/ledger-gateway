@@ -567,7 +567,6 @@ func GetWithdraws(
 		return nil, 0, err
 	}
 	if len(infos) == 0 {
-		fmt.Println("err 0000000")
 		return []*npool.Withdraw{}, 0, nil
 	}
 
