@@ -699,7 +699,7 @@ func expand(
 
 	coinMap := map[string]*appcoinmwpb.Coin{}
 	for _, coin := range coins {
-		coinMap[coin.ID] = coin
+		coinMap[coin.CoinTypeID] = coin
 	}
 
 	wids := []string{}
