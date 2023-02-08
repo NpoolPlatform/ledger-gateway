@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	notifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif"
 	"time"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
@@ -77,7 +78,7 @@ func CreateDeposit(
 		return nil, err
 	}
 
-	CreateNotif(ctx, appID, userID, langID, user.Username)
+	CreateNotif(ctx, appID, userID, langID, user.Username, notifmgrpb.EventType_DepositReceived)
 
 	return &ledger.Detail{
 		CoinTypeID:   coinTypeID,

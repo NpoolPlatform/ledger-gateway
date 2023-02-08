@@ -17,8 +17,8 @@ import (
 func CreateNotif(
 	ctx context.Context,
 	appID, userID, langID, userName string,
+	eventType notifmgrpb.EventType,
 ) {
-	eventType := notifmgrpb.EventType_WithdrawalCompleted
 	templateInfo, err := thirdcli.GetNotifTemplateOnly(ctx, &thirdmgrpb.Conds{
 		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,

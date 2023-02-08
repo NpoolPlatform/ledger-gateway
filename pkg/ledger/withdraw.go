@@ -3,6 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
+	notifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif"
 	"time"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
@@ -444,7 +445,7 @@ func CreateWithdraw(
 
 	needUnlock = false
 
-	CreateNotif(ctx, appID, userID, langID, user.Username)
+	CreateNotif(ctx, appID, userID, langID, user.Username, notifmgrpb.EventType_WithdrawalRequest)
 
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
