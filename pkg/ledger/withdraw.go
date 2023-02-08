@@ -61,7 +61,7 @@ import (
 // nolint
 func CreateWithdraw(
 	ctx context.Context,
-	appID, userID, coinTypeID, accountID string,
+	appID, userID, langID, coinTypeID, accountID string,
 	amount decimal.Decimal,
 	signMethod signmethodpb.SignMethodType,
 	signAccount, verificationCode string,
@@ -443,6 +443,9 @@ func CreateWithdraw(
 	}
 
 	needUnlock = false
+
+	CreateNotif(ctx, appID, userID, langID, user.Username)
+
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
 }

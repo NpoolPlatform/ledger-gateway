@@ -8,9 +8,7 @@ import (
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
-	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/appuser"
-	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/appuser"
-
+	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 
@@ -20,21 +18,15 @@ import (
 	commonpb "github.com/NpoolPlatform/message/npool"
 )
 
-func CreateDeposit(ctx context.Context, appID, userID, coinTypeID, amount, targetAppID, targetUserID string) (*ledger.Detail, error) {
-	exist, err := appusermgrcli.ExistAppUserConds(ctx, &appusermgrpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: targetAppID,
-		},
-		ID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: targetUserID,
-		},
-	})
+func CreateDeposit(
+	ctx context.Context,
+	appID, userID, langID, coinTypeID, amount, targetAppID, targetUserID string,
+) (*ledger.Detail, error) {
+	user, err := appusermwcli.GetUser(ctx, appID, userID)
 	if err != nil {
 		return nil, err
 	}
-	if !exist {
+	if user == nil {
 		return nil, fmt.Errorf("target user not exist")
 	}
 
@@ -84,6 +76,8 @@ func CreateDeposit(ctx context.Context, appID, userID, coinTypeID, amount, targe
 	if err != nil {
 		return nil, err
 	}
+
+	CreateNotif(ctx, appID, userID, langID, user.Username)
 
 	return &ledger.Detail{
 		CoinTypeID:   coinTypeID,

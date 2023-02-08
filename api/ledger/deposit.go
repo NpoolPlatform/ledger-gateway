@@ -43,6 +43,11 @@ func (s *Server) CreateAppUserDeposit(
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	if _, err := uuid.Parse(in.GetLangID()); err != nil {
+		logger.Sugar().Errorw("CreateAppUserDeposit", "LangID", in.GetLangID(), "error", err)
+		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	if _, err := uuid.Parse(in.GetCoinTypeID()); err != nil {
 		logger.Sugar().Errorw("CreateAppUserDeposit", "CoinTypeID", in.GetCoinTypeID(), "error", err)
 		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("CoinTypeID is invalid: %v", err))
@@ -73,6 +78,7 @@ func (s *Server) CreateAppUserDeposit(
 		ctx,
 		in.GetAppID(),
 		in.GetUserID(),
+		in.GetLangID(),
 		in.GetCoinTypeID(),
 		in.GetAmount(),
 		in.GetTargetAppID(),
