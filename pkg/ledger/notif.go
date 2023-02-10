@@ -35,6 +35,7 @@ func CreateNotif(
 				Value: uint32(eventType.Number()),
 			},
 		}, offset, limit)
+		offset += limit
 		if err != nil {
 			logger.Sugar().Errorw("CreateNotif", "error", err.Error())
 			return
