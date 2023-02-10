@@ -449,6 +449,15 @@ func CreateWithdraw(
 
 		txNotifState := txnotifmgrpb.TxState_WaitTxSuccess
 		txNotifType := txnotifmgrpb.TxType_Withdraw
+		logger.Sugar().Errorw(
+			"CreateTxNotifState",
+			"txNotifState",
+			txNotifState,
+			"txNotifType",
+			"txNotifType",
+			"error",
+			err.Error(),
+		)
 		_, err = txnotifcli.CreateTxNotifState(ctx, &txnotifmgrpb.TxNotifStateReq{
 			TxID:       &tx.ID,
 			NotifState: &txNotifState,
