@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	notifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif"
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+	txnotifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif/txnotifstate"
+	txnotifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif/txnotifstate"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
@@ -442,11 +444,20 @@ func CreateWithdraw(
 			needUnlock = false
 			return nil, err
 		}
+
+		txNotifState := txnotifmgrpb.TxState_WaitTxSuccess
+		txNotifType := txnotifmgrpb.TxType_Withdraw
+		_, err = txnotifcli.CreateTxNotifState(ctx, &txnotifmgrpb.TxNotifStateReq{
+			TxID:       &tx.ID,
+			NotifState: &txNotifState,
+			NotifType:  &txNotifType,
+		})
+		if err != nil {
+			logger.Sugar().Errorw("CreateTxNotifState", "error", err.Error())
+		}
 	}
 
 	needUnlock = false
-
-	CreateNotif(ctx, appID, userID, &user.Username, &amountS, &coin.FeeCoinUnit, notifmgrpb.EventType_WithdrawalRequest)
 
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
