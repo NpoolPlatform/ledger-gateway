@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	notifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif"
+
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	txnotifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif/txnotifstate"
 	txnotifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif/txnotifstate"
@@ -458,6 +460,8 @@ func CreateWithdraw(
 	}
 
 	needUnlock = false
+
+	CreateNotif(ctx, appID, userID, &user.Username, &amountS, &coin.FeeCoinUnit, notifmgrpb.EventType_WithdrawalRequest)
 
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
