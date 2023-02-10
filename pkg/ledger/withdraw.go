@@ -446,7 +446,8 @@ func CreateWithdraw(
 
 	needUnlock = false
 
-	CreateNotif(ctx, appID, userID, langID, user.Username, notifmgrpb.EventType_WithdrawalRequest)
+	message := fmt.Sprintf("%v %v", amountS, coin.FeeCoinUnit)
+	CreateNotif(ctx, appID, userID, &user.Username, &message, notifmgrpb.EventType_WithdrawalRequest)
 
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	notifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif"
-
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
@@ -78,8 +76,6 @@ func CreateDeposit(
 	if err != nil {
 		return nil, err
 	}
-
-	CreateNotif(ctx, appID, userID, langID, user.Username, notifmgrpb.EventType_DepositReceived)
 
 	return &ledger.Detail{
 		CoinTypeID:   coinTypeID,

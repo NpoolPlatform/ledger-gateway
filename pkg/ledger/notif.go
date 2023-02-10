@@ -14,49 +14,59 @@ import (
 	thirdpkg "github.com/NpoolPlatform/third-middleware/pkg/template/notif"
 )
 
+const LIMIT = uint32(1000)
+
 func CreateNotif(
 	ctx context.Context,
-	appID, userID, langID, userName string,
+	appID, userID string,
+	userName, message *string,
 	eventType notifmgrpb.EventType,
 ) {
-	templateInfo, err := thirdcli.GetNotifTemplateOnly(ctx, &thirdmgrpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: appID,
-		},
-		LangID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: langID,
-		},
-		UsedFor: &commonpb.Uint32Val{
-			Op:    cruder.EQ,
-			Value: uint32(eventType.Number()),
-		},
-	})
-	if err != nil {
-		logger.Sugar().Errorw("sendNotif", "error", err.Error())
-		return
-	}
-	if templateInfo == nil {
-		logger.Sugar().Errorw("sendNotif", "error", "template not exist")
-		return
-	}
+	offset := uint32(0)
+	limit := LIMIT
+	for {
+		templateInfos, _, err := thirdcli.GetNotifTemplates(ctx, &thirdmgrpb.Conds{
+			AppID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: appID,
+			},
+			UsedFor: &commonpb.Uint32Val{
+				Op:    cruder.EQ,
+				Value: uint32(eventType.Number()),
+			},
+		}, offset, limit)
+		if err != nil {
+			logger.Sugar().Errorw("CreateNotif", "error", err.Error())
+			return
+		}
+		if len(templateInfos) == 0 {
+			logger.Sugar().Errorw("CreateNotif", "error", "template not exist")
+			return
+		}
 
-	content := thirdpkg.ReplaceVariable(templateInfo.Content, &userName, nil)
-	useTemplate := true
+		notifReq := []*notifmgrpb.NotifReq{}
+		content := ""
+		useTemplate := true
 
-	_, err = notifcli.CreateNotif(ctx, &notifmgrpb.NotifReq{
-		AppID:       &appID,
-		UserID:      &userID,
-		LangID:      &langID,
-		EventType:   &eventType,
-		UseTemplate: &useTemplate,
-		Title:       &templateInfo.Title,
-		Content:     &content,
-		Channels:    []channelpb.NotifChannel{channelpb.NotifChannel_ChannelEmail},
-	})
-	if err != nil {
-		logger.Sugar().Errorw("sendNotif", "error", err.Error())
-		return
+		for _, val := range templateInfos {
+			content = thirdpkg.ReplaceVariable(val.Content, userName, message)
+
+			notifReq = append(notifReq, &notifmgrpb.NotifReq{
+				AppID:       &appID,
+				UserID:      &userID,
+				LangID:      &val.LangID,
+				EventType:   &eventType,
+				UseTemplate: &useTemplate,
+				Title:       &val.Title,
+				Content:     &content,
+				Channels:    []channelpb.NotifChannel{channelpb.NotifChannel_ChannelEmail},
+			})
+		}
+
+		_, err = notifcli.CreateNotifs(ctx, notifReq)
+		if err != nil {
+			logger.Sugar().Errorw("CreateNotif", "error", err.Error())
+			return
+		}
 	}
 }
