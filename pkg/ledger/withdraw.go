@@ -454,7 +454,7 @@ func CreateWithdraw(
 			"txNotifState",
 			txNotifState,
 			"txNotifType",
-			"txNotifType",
+			txNotifType,
 			"error",
 			err.Error(),
 		)
