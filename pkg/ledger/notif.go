@@ -19,7 +19,7 @@ const LIMIT = uint32(1000)
 func CreateNotif(
 	ctx context.Context,
 	appID, userID string,
-	userName, message *string,
+	userName, amount, coinUnit *string,
 	eventType notifmgrpb.EventType,
 ) {
 	offset := uint32(0)
@@ -45,11 +45,19 @@ func CreateNotif(
 		}
 
 		notifReq := []*notifmgrpb.NotifReq{}
-		content := ""
 		useTemplate := true
 
 		for _, val := range templateInfos {
-			content = thirdpkg.ReplaceVariable(val.Content, userName, message)
+			content := thirdpkg.ReplaceVariable(
+				val.Content,
+				userName,
+				nil,
+				amount,
+				coinUnit,
+				nil,
+				nil,
+				nil,
+			)
 
 			notifReq = append(notifReq, &notifmgrpb.NotifReq{
 				AppID:       &appID,
