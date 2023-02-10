@@ -63,7 +63,7 @@ import (
 // nolint
 func CreateWithdraw(
 	ctx context.Context,
-	appID, userID, langID, coinTypeID, accountID string,
+	appID, userID, coinTypeID, accountID string,
 	amount decimal.Decimal,
 	signMethod signmethodpb.SignMethodType,
 	signAccount, verificationCode string,

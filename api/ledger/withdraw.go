@@ -29,11 +29,6 @@ func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawReq
 		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("UserID is invalid: %v", err))
 	}
 
-	if _, err := uuid.Parse(in.GetLangID()); err != nil {
-		logger.Sugar().Errorw("validate", "LangID", in.GetLangID(), "error", err)
-		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("LangID is invalid: %v", err))
-	}
-
 	if _, err := uuid.Parse(in.GetCoinTypeID()); err != nil {
 		logger.Sugar().Errorw("validate", "CoinTypeID", in.GetCoinTypeID(), "error", err)
 		return &npool.CreateWithdrawResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("CoinTypeID is invalid: %v", err))
@@ -57,7 +52,7 @@ func (s *Server) CreateWithdraw(ctx context.Context, in *npool.CreateWithdrawReq
 
 	info, err := ledger1.CreateWithdraw(
 		ctx,
-		in.GetAppID(), in.GetUserID(), in.GetLangID(),
+		in.GetAppID(), in.GetUserID(),
 		in.GetCoinTypeID(), in.GetAccountID(),
 		amount,
 		in.GetAccountType(),
