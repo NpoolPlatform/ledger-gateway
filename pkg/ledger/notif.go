@@ -193,14 +193,10 @@ func createEmailNotif(
 	if templateInfo == nil {
 		logger.Sugar().Errorw(
 			"CreateNotif",
-			"AppID",
-			appID,
-			"UsedFor",
-			eventType.String(),
-			"LangID",
-			mainLang.LangID,
-			"error",
-			"template not exists",
+			"AppID", appID,
+			"UsedFor", eventType.String(),
+			"LangID", mainLang.LangID,
+			"error", "template not exists",
 		)
 		return nil
 	}
