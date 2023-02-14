@@ -3,6 +3,7 @@ package ledger
 
 import (
 	"context"
+	"time"
 
 	notifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif"
 	notifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif"
@@ -38,7 +39,7 @@ const LIMIT = uint32(1000)
 func CreateNotif(
 	ctx context.Context,
 	appID, userID string,
-	userName, amount, coinUnit *string,
+	userName, amount, coinUnit, address *string,
 	eventType usedfor.UsedFor,
 ) {
 	channelInfos, _, err := notifchannelcli.GetNotifChannels(ctx, &notifchannelpb.Conds{
@@ -61,17 +62,17 @@ func CreateNotif(
 		if val.Channel == channelpb.NotifChannel_ChannelFrontend {
 			notifReq = append(
 				notifReq,
-				createFrontendNotif(ctx, appID, userID, userName, amount, coinUnit, eventType)...,
+				createFrontendNotif(ctx, appID, userID, userName, amount, coinUnit, address, eventType)...,
 			)
 		}
 		if val.Channel == channelpb.NotifChannel_ChannelEmail {
-			email := createEmailNotif(ctx, appID, userID, userName, amount, coinUnit, eventType)
+			email := createEmailNotif(ctx, appID, userID, userName, amount, coinUnit, address, eventType)
 			if email != nil {
 				notifReq = append(notifReq, email)
 			}
 		}
 		if val.Channel == channelpb.NotifChannel_ChannelSMS {
-			sms := createSMSNotif(ctx, appID, userID, userName, amount, coinUnit, eventType)
+			sms := createSMSNotif(ctx, appID, userID, userName, amount, coinUnit, address, eventType)
 			if sms != nil {
 				notifReq = append(notifReq, sms)
 			}
@@ -87,7 +88,7 @@ func CreateNotif(
 func createFrontendNotif(
 	ctx context.Context,
 	appID, userID string,
-	userName, amount, coinUnit *string,
+	userName, amount, coinUnit, address *string,
 	eventType usedfor.UsedFor,
 ) []*notifmgrpb.NotifReq {
 	offset := uint32(0)
@@ -113,7 +114,10 @@ func createFrontendNotif(
 		if len(templateInfos) == 0 {
 			break
 		}
+
 		useTemplate := true
+		date := time.Now().Format("2006-01-02")
+		time1 := time.Now().Format("15:04:05")
 
 		for _, val := range templateInfos {
 			content := thirdpkg.ReplaceVariable(
@@ -122,9 +126,9 @@ func createFrontendNotif(
 				nil,
 				amount,
 				coinUnit,
-				nil,
-				nil,
-				nil,
+				&date,
+				&time1,
+				address,
 			)
 
 			notifReq = append(notifReq, &notifmgrpb.NotifReq{
@@ -145,7 +149,7 @@ func createFrontendNotif(
 func createEmailNotif(
 	ctx context.Context,
 	appID, userID string,
-	userName, amount, coinUnit *string,
+	userName, amount, coinUnit, address *string,
 	eventType usedfor.UsedFor,
 ) *notifmgrpb.NotifReq {
 	notifChannel := channelpb.NotifChannel_ChannelEmail
@@ -202,15 +206,18 @@ func createEmailNotif(
 	}
 
 	useTemplate := true
+	date := time.Now().Format("2006-01-02")
+	time1 := time.Now().Format("15:04:05")
+
 	content := thirdpkg.ReplaceVariable(
 		templateInfo.Body,
 		userName,
 		nil,
 		amount,
 		coinUnit,
-		nil,
-		nil,
-		nil,
+		&date,
+		&time1,
+		address,
 	)
 
 	return &notifmgrpb.NotifReq{
@@ -228,7 +235,7 @@ func createEmailNotif(
 func createSMSNotif(
 	ctx context.Context,
 	appID, userID string,
-	userName, amount, coinUnit *string,
+	userName, amount, coinUnit, address *string,
 	eventType usedfor.UsedFor,
 ) *notifmgrpb.NotifReq {
 	notifChannel := channelpb.NotifChannel_ChannelSMS
@@ -275,28 +282,27 @@ func createSMSNotif(
 	if templateInfo == nil {
 		logger.Sugar().Errorw(
 			"CreateNotif",
-			"AppID",
-			appID,
-			"UsedFor",
-			eventType.String(),
-			"LangID",
-			mainLang.LangID,
-			"error",
-			"template not exists",
+			"AppID", appID,
+			"UsedFor", eventType.String(),
+			"LangID", mainLang.LangID,
+			"error", "template not exists",
 		)
 		return nil
 	}
 
 	useTemplate := true
+	date := time.Now().Format("2006-01-02")
+	time1 := time.Now().Format("15:04:05")
+
 	content := thirdpkg.ReplaceVariable(
 		templateInfo.Message,
 		userName,
 		nil,
 		amount,
 		coinUnit,
-		nil,
-		nil,
-		nil,
+		&date,
+		&time1,
+		address,
 	)
 
 	return &notifmgrpb.NotifReq{

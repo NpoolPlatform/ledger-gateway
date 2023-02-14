@@ -464,7 +464,15 @@ func CreateWithdraw(
 
 	needUnlock = false
 
-	CreateNotif(ctx, appID, userID, &user.Username, &amountS, &coin.FeeCoinUnit, usedfor.UsedFor_WithdrawalRequest)
+	CreateNotif(
+		ctx,
+		appID,
+		userID,
+		&user.Username,
+		&amountS,
+		&coin.Unit,
+		&account.Address,
+		usedfor.UsedFor_WithdrawalRequest)
 
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)
