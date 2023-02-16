@@ -5,19 +5,22 @@ import (
 	"fmt"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
-	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
-	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
-	"go.opentelemetry.io/otel"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.opentelemetry.io/otel"
 	scodes "go.opentelemetry.io/otel/codes"
 
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	mledger "github.com/NpoolPlatform/ledger-gateway/pkg/ledger"
+
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 func (s *Server) CreateTransfer(ctx context.Context, in *ledger.CreateTransferRequest) (resp *ledger.CreateTransferResponse, err error) {
@@ -42,12 +45,12 @@ func (s *Server) CreateTransfer(ctx context.Context, in *ledger.CreateTransferRe
 	}
 
 	switch in.GetAccountType() {
-	case signmethodpb.SignMethodType_Email, signmethodpb.SignMethodType_Mobile:
+	case basetypes.SignMethod_Email, basetypes.SignMethod_Mobile:
 		if in.GetAccount() == "" {
 			logger.Sugar().Errorw("CreateTransfer", "Account empty", "Account", in.GetAccount())
 			return &ledger.CreateTransferResponse{}, status.Error(codes.InvalidArgument, "Account id empty")
 		}
-	case signmethodpb.SignMethodType_Google:
+	case basetypes.SignMethod_Google:
 	default:
 		logger.Sugar().Errorw("CreateTransfer", "AccountType empty", "AccountType", in.GetAccountType())
 		return &ledger.CreateTransferResponse{}, status.Error(codes.InvalidArgument, "AccountType id invalid")

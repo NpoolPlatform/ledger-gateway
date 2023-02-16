@@ -6,11 +6,16 @@ import (
 	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-	txnotifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif/txnotifstate"
-	txnotifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif/txnotifstate"
+
+	txnotifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif/tx"
+	txnotifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif/tx"
+
+	notifmwpb "github.com/NpoolPlatform/message/npool/notif/mw/v1/notif"
+	tmplmwpb "github.com/NpoolPlatform/message/npool/notif/mw/v1/template"
+	notifmwcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
-	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
 	"github.com/shopspring/decimal"
 
@@ -50,8 +55,8 @@ import (
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
-	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
-	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
+	usercodemwcli "github.com/NpoolPlatform/basal-middleware/pkg/client/usercode"
+	usercodemwpb "github.com/NpoolPlatform/message/npool/basal/mw/v1/usercode"
 
 	currencymwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin/currency"
 
@@ -67,7 +72,7 @@ func CreateWithdraw(
 	ctx context.Context,
 	appID, userID, coinTypeID, accountID string,
 	amount decimal.Decimal,
-	signMethod signmethodpb.SignMethodType,
+	signMethod basetypes.SignMethod,
 	signAccount, verificationCode string,
 ) (
 	*npool.Withdraw, error,
@@ -81,17 +86,18 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("permission denied")
 	}
 
-	if signMethod == signmethodpb.SignMethodType_Google {
+	if signMethod == basetypes.SignMethod_Google {
 		signAccount = user.GetGoogleSecret()
 	}
-	if err := thirdmwcli.VerifyCode(
-		ctx,
-		appID,
-		signAccount,
-		verificationCode,
-		signMethod,
-		usedfor.UsedFor_Withdraw,
-	); err != nil {
+
+	if err := usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
+		Prefix:      basetypes.Prefix_PrefixUserCode.String(),
+		AppID:       appID,
+		Account:     signAccount,
+		AccountType: signMethod,
+		UsedFor:     basetypes.UsedFor_Withdraw,
+		Code:        verificationCode,
+	}); err != nil {
 		return nil, err
 	}
 
@@ -419,7 +425,7 @@ func CreateWithdraw(
 			info.ID,
 		)
 
-		txType := txmgrpb.TxType_TxWithdraw
+		txType := basetypes.TxType_TxWithdraw
 
 		// TODO: should be in dtm
 		tx, err := txmwcli.CreateTx(ctx, &txmgrpb.TxReq{
@@ -445,34 +451,39 @@ func CreateWithdraw(
 			return nil, err
 		}
 
-		txNotifState := txnotifmgrpb.TxState_WaitTxSuccess
-		txNotifType := txnotifmgrpb.TxType_Withdraw
+		txNotifState := txnotifmgrpb.TxState_WaitSuccess
+		txNotifType := basetypes.TxType_TxWithdraw
 		logger.Sugar().Errorw(
-			"CreateTxNotifState",
+			"CreateTx",
 			"txNotifState", txNotifState,
 			"txNotifType", txNotifType,
 		)
-		_, err = txnotifcli.CreateTxNotifState(ctx, &txnotifmgrpb.TxNotifStateReq{
+		_, err = txnotifcli.CreateTx(ctx, &txnotifmgrpb.TxReq{
 			TxID:       &tx.ID,
 			NotifState: &txNotifState,
-			NotifType:  &txNotifType,
+			TxType:     &txNotifType,
 		})
 		if err != nil {
-			logger.Sugar().Errorw("CreateTxNotifState", "error", err.Error())
+			logger.Sugar().Errorw("CreateTx", "Error", err)
 		}
 	}
 
 	needUnlock = false
 
-	CreateNotif(
-		ctx,
-		appID,
-		userID,
-		&user.Username,
-		&amountS,
-		&coin.Unit,
-		&account.Address,
-		usedfor.UsedFor_WithdrawalRequest)
+	_, err = notifmwcli.GenerateNotifs(ctx, &notifmwpb.GenerateNotifsRequest{
+		AppID:     appID,
+		UserID:    userID,
+		EventType: basetypes.UsedFor_WithdrawalRequest,
+		Vars: &tmplmwpb.TemplateVars{
+			Username: &user.Username,
+			Amount:   &amountS,
+			CoinUnit: &coin.Unit,
+			Address:  &account.Address,
+		},
+	})
+	if err != nil {
+		logger.Sugar().Errorw("CreateTx", "Error", err)
+	}
 
 	// Get withdraw
 	return GetWithdraw(ctx, info.ID)

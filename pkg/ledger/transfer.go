@@ -7,9 +7,10 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/NpoolPlatform/message/npool/third/mgr/v1/usedfor"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
-	thirdmwcli "github.com/NpoolPlatform/third-middleware/pkg/client/verify"
+	usercodemwcli "github.com/NpoolPlatform/basal-middleware/pkg/client/usercode"
+	usercodemwpb "github.com/NpoolPlatform/message/npool/basal/mw/v1/usercode"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
@@ -18,8 +19,6 @@ import (
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
-
-	signmethodpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/signmethod"
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 
@@ -48,7 +47,7 @@ func CreateTransfer(
 	appID,
 	userID,
 	account string,
-	accountType signmethodpb.SignMethodType,
+	accountType basetypes.SignMethod,
 	verificationCode,
 	targetUserID,
 	amount,
@@ -70,18 +69,18 @@ func CreateTransfer(
 	if err != nil {
 		return nil, err
 	}
-	if accountType == signmethodpb.SignMethodType_Google {
+	if accountType == basetypes.SignMethod_Google {
 		account = user.GetGoogleSecret()
 	}
 
-	if err := thirdmwcli.VerifyCode(
-		ctx,
-		appID,
-		account,
-		verificationCode,
-		accountType,
-		usedfor.UsedFor_Transfer,
-	); err != nil {
+	if err := usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
+		Prefix:      basetypes.Prefix_PrefixUserCode.String(),
+		AppID:       appID,
+		Account:     account,
+		AccountType: accountType,
+		UsedFor:     basetypes.UsedFor_Transfer,
+		Code:        verificationCode,
+	}); err != nil {
 		return nil, err
 	}
 
