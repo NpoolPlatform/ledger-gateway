@@ -3,7 +3,7 @@ module github.com/NpoolPlatform/ledger-gateway
 go 1.17
 
 require (
-	github.com/NpoolPlatform/account-middleware v0.0.0-20221220111928-0c1abbca2829
+	github.com/NpoolPlatform/account-middleware v0.0.0-20230112023810-a1206cc8bb2e
 	github.com/NpoolPlatform/appuser-manager v0.0.0-20230216022708-2ff4139544d1
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20230216023722-ef86d576f6ab
 	github.com/NpoolPlatform/basal-middleware v0.0.0-20230216050150-a37a157528d1
