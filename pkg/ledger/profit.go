@@ -446,7 +446,10 @@ func GetGoodProfits(
 			total += 1
 		}
 
-		gp.Units += order.Units
+		gp.Units = decimal.
+			RequireFromString(gp.Units).
+			Add(decimal.RequireFromString(order.Units)).
+			String()
 		infos[order.GoodID] = gp
 	}
 
