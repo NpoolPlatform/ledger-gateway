@@ -343,11 +343,7 @@ func GetGoodProfits(
 
 		order, ok := orderMap[e.OrderID]
 		if !ok {
-			logger.Sugar().Warn("order not exist continue")
-			continue
-		}
-
-		if _, ok := profitOrderMap[order.ID]; ok {
+			logger.Sugar().Warnw("GetGoodProfits", "ID", info.ID, "OrderID", e.OrderID)
 			continue
 		}
 
@@ -361,13 +357,13 @@ func GetGoodProfits(
 
 		good, ok := goodMap[order.GoodID]
 		if !ok {
-			logger.Sugar().Warn("good not exist continue")
+			logger.Sugar().Warnw("GetGoodProfits", "ID", info.ID, "GoodID", order.GoodID)
 			continue
 		}
 
 		coin, ok := coinMap[good.CoinTypeID]
 		if !ok {
-			logger.Sugar().Warn("coin not exist continue")
+			logger.Sugar().Warnw("GetGoodProfits", "ID", info.ID, "CoinTypeID", good.CoinTypeID, "GoodID", order.GoodID)
 			continue
 		}
 
