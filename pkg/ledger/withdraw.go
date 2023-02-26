@@ -469,16 +469,18 @@ func CreateWithdraw(
 	}
 
 	needUnlock = false
+	now := uint32(time.Now().Unix())
 
 	_, err = notifmwcli.GenerateNotifs(ctx, &notifmwpb.GenerateNotifsRequest{
 		AppID:     appID,
 		UserID:    userID,
 		EventType: basetypes.UsedFor_WithdrawalRequest,
 		Vars: &tmplmwpb.TemplateVars{
-			Username: &user.Username,
-			Amount:   &amountS,
-			CoinUnit: &coin.Unit,
-			Address:  &account.Address,
+			Username:  &user.Username,
+			Amount:    &amountS,
+			CoinUnit:  &coin.Unit,
+			Address:   &account.Address,
+			Timestamp: &now,
 		},
 	})
 	if err != nil {
