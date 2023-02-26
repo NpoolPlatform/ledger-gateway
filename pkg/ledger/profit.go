@@ -379,7 +379,7 @@ func GetGoodProfits(
 				GoodName:              good.Title,
 				GoodUnit:              good.Unit,
 				GoodServicePeriodDays: uint32(good.DurationDays),
-				Units:                 0,
+				Units:                 decimal.NewFromInt(0).String(),
 				Incoming:              decimal.NewFromInt(0).String(),
 			}
 			total += 1
@@ -391,7 +391,9 @@ func GetGoodProfits(
 				String()
 		}
 
-		gp.Units += order.Units
+		gp.Units = decimal.RequireFromString(gp.Units).
+			Add(decimal.RequireFromString(order.Units)).
+			String()
 
 		profitOrderMap[order.ID] = struct{}{}
 		infos[order.GoodID] = gp
@@ -434,13 +436,16 @@ func GetGoodProfits(
 				GoodName:              good.Title,
 				GoodUnit:              good.Unit,
 				GoodServicePeriodDays: uint32(good.DurationDays),
-				Units:                 0,
+				Units:                 decimal.NewFromInt(0).String(),
 				Incoming:              decimal.NewFromInt(0).String(),
 			}
 			total += 1
 		}
 
-		gp.Units += order.Units
+		gp.Units = decimal.
+			RequireFromString(gp.Units).
+			Add(decimal.RequireFromString(order.Units)).
+			String()
 		infos[order.GoodID] = gp
 	}
 
