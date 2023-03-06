@@ -198,11 +198,13 @@ func GetMiningRewards(ctx context.Context, appID, userID string, start, end uint
 
 		rewardAmount, err := decimal.NewFromString(info.Amount)
 		if err != nil {
+			logger.Sugar().Warnw("GetMiningRewards", "invalid amount", info.Amount)
 			return nil, 0, err
 		}
 
 		units, err := decimal.NewFromString(order.Units)
 		if err != nil {
+			logger.Sugar().Warnw("GetMiningRewards", "invalid Units", order.Units)
 			return nil, 0, err
 		}
 
