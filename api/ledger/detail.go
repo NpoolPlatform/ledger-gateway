@@ -49,6 +49,39 @@ func (s *Server) GetDetails(ctx context.Context, in *npool.GetDetailsRequest) (*
 	}, nil
 }
 
+func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningRewardsRequest) (*npool.GetMiningRewardsResponse, error) {
+	if _, err := uuid.Parse(in.GetAppID()); err != nil {
+		logger.Sugar().Errorw("GetMiningRewards", "AppID", in.GetAppID(), "error", err)
+		return &npool.GetMiningRewardsResponse{}, status.Error(codes.InvalidArgument, "AppID is invalid")
+	}
+
+	if _, err := uuid.Parse(in.GetUserID()); err != nil {
+		logger.Sugar().Errorw("GetMiningRewards", "UserID", in.GetUserID(), "error", err)
+		return &npool.GetMiningRewardsResponse{}, status.Error(codes.InvalidArgument, "UserID is invalid")
+	}
+
+	endAt := in.GetEndAt()
+	if endAt == 0 {
+		endAt = uint32(time.Now().Unix())
+	}
+
+	infos, n, err := ledger1.GetMiningRewards(
+		ctx,
+		in.GetAppID(), in.GetUserID(),
+		in.GetStartAt(), endAt,
+		in.GetOffset(), in.GetLimit(),
+	)
+	if err != nil {
+		logger.Sugar().Errorw("GetMiningRewards", "error", err)
+		return &npool.GetMiningRewardsResponse{}, status.Error(codes.Internal, "fail get mining rewards")
+	}
+
+	return &npool.GetMiningRewardsResponse{
+		Infos: infos,
+		Total: n,
+	}, nil
+}
+
 func (s *Server) GetAppDetails(ctx context.Context, in *npool.GetAppDetailsRequest) (*npool.GetAppDetailsResponse, error) {
 	if _, err := uuid.Parse(in.GetTargetAppID()); err != nil {
 		logger.Sugar().Errorw("GetAppDetails", "TargetAppID", in.GetTargetAppID(), "error", err)
