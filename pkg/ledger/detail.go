@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
@@ -88,7 +89,12 @@ func GetDetails(ctx context.Context, appID, userID string, start, end uint32, of
 	return infos, total, nil
 }
 
-func GetMiningRewards(ctx context.Context, appID, userID string, start, end uint32, offset, limit int32) ([]*npool.MiningReward, uint32, error) {
+// nolint
+func GetMiningRewards(
+	ctx context.Context,
+	appID, userID string,
+	start, end uint32,
+	offset, limit int32) ([]*npool.MiningReward, uint32, error) {
 	details, total, err := ledgermwcli.GetIntervalDetails(ctx, appID, userID, start, end, offset, limit)
 	if err != nil {
 		return nil, 0, err
