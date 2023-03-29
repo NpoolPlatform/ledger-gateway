@@ -163,6 +163,8 @@ func GetMiningRewards(
 	}
 
 	var infos []*npool.MiningReward
+	var length uint32
+
 	for _, info := range details {
 		if info.IOSubType != ledgermgrdetailpb.IOSubType_MiningBenefit {
 			continue
@@ -195,6 +197,8 @@ func GetMiningRewards(
 		default:
 			continue
 		}
+
+		length += 1
 
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
@@ -231,7 +235,7 @@ func GetMiningRewards(
 		})
 	}
 
-	return infos, total, nil
+	return infos, length, nil
 }
 
 func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*npool.Detail, uint32, error) {
