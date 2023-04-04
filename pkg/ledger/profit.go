@@ -391,9 +391,11 @@ func GetGoodProfits(
 				String()
 		}
 
-		gp.Units = decimal.RequireFromString(gp.Units).
-			Add(decimal.RequireFromString(order.Units)).
-			String()
+		if _, ok := profitOrderMap[order.ID]; !ok {
+			gp.Units = decimal.RequireFromString(gp.Units).
+				Add(decimal.RequireFromString(order.Units)).
+				String()
+		}
 
 		profitOrderMap[order.ID] = struct{}{}
 		infos[order.GoodID] = gp
