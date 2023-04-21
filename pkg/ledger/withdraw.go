@@ -3,7 +3,6 @@ package ledger
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
@@ -203,17 +202,15 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("overflow")
 	}
 
-	if !strings.Contains(coin.Name, "ironfish") {
-		bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
-			Name:    coin.Name,
-			Address: account.Address,
-		})
-		if err != nil {
-			return nil, err
-		}
-		if bal == nil {
-			return nil, fmt.Errorf("invalid account")
-		}
+	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
+		Name:    coin.Name,
+		Address: account.Address,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if bal == nil {
+		return nil, fmt.Errorf("invalid account")
 	}
 
 	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
