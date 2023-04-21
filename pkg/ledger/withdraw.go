@@ -3,7 +3,7 @@ package ledger
 import (
 	"context"
 	"fmt"
-	"string"
+	"strings"
 	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
