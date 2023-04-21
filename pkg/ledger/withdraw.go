@@ -247,7 +247,7 @@ func CreateWithdraw(
 		return nil, fmt.Errorf("invalid hot wallet account")
 	}
 
-	bal, err = sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
+	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
 		Name:    coin.Name,
 		Address: hotacc.Address,
 	})
