@@ -13,7 +13,7 @@ import (
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
-	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
 	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
@@ -21,6 +21,7 @@ import (
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
 	"github.com/google/uuid"
 )
@@ -188,12 +189,14 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		userIDs = append(userIDs, info.UserID)
 	}
 
-	users, _, err := usermwcli.GetManyUsers(ctx, userIDs)
+	users, _, err := usermwcli.GetUsers(ctx, &usermwpb.Conds{
+		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
+	}, 0, int32(len(userIDs)))
 	if err != nil {
 		return nil, 0, fmt.Errorf("fail get users: %v", err)
 	}
 
-	userMap := map[string]*appusermwpb.User{}
+	userMap := map[string]*usermwpb.User{}
 	for _, user := range users {
 		userMap[user.ID] = user
 	}

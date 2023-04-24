@@ -13,7 +13,8 @@ import (
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
-	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
@@ -285,12 +286,14 @@ func GetAppDetails(ctx context.Context, appID string, offset, limit int32) ([]*n
 		userIDs = append(userIDs, info.UserID)
 	}
 
-	users, _, err := usermwcli.GetManyUsers(ctx, userIDs)
+	users, _, err := usermwcli.GetUsers(ctx, &usermwpb.Conds{
+		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
+	}, 0, int32(len(userIDs)))
 	if err != nil {
 		return nil, 0, fmt.Errorf("fail get users: %v", err)
 	}
 
-	userMap := map[string]*appusermwpb.User{}
+	userMap := map[string]*usermwpb.User{}
 	for _, user := range users {
 		userMap[user.ID] = user
 	}

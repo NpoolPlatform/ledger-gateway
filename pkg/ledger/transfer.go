@@ -7,8 +7,6 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
-
 	usercodemwcli "github.com/NpoolPlatform/basal-middleware/pkg/client/usercode"
 	usercodemwpb "github.com/NpoolPlatform/message/npool/basal/mw/v1/usercode"
 
@@ -22,8 +20,8 @@ import (
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 
-	appusermgrcli "github.com/NpoolPlatform/appuser-manager/pkg/client/kyc"
-	appusermgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/kyc"
+	kycmwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/kyc"
+	kycmwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/kyc"
 
 	accountmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/transfer"
 	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/transfer"
@@ -36,6 +34,7 @@ import (
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
 	"go.opentelemetry.io/otel"
 	scodes "go.opentelemetry.io/otel/codes"
@@ -84,15 +83,9 @@ func CreateTransfer(
 		return nil, err
 	}
 
-	kyc, err := appusermgrcli.GetKycOnly(ctx, &appusermgrpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: appID,
-		},
-		UserID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: userID,
-		},
+	kyc, err := kycmwcli.GetKycOnly(ctx, &kycmwpb.Conds{
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: appID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: userID},
 	})
 	if err != nil {
 		return nil, err
@@ -101,7 +94,7 @@ func CreateTransfer(
 		return nil, fmt.Errorf("kyc not added")
 	}
 
-	if kyc.State != appusermgrpb.KycState_Approved {
+	if kyc.State != basetypes.KycState_Approved {
 		return nil, fmt.Errorf("kyc state is not approved")
 	}
 

@@ -16,7 +16,6 @@ import (
 	notifmwcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
-	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
 	"github.com/shopspring/decimal"
 
@@ -52,8 +51,6 @@ import (
 	reviewpb "github.com/NpoolPlatform/message/npool/review/mgr/v2"
 	reviewcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 
-	kycmgrpb "github.com/NpoolPlatform/message/npool/appuser/mgr/v2/kyc"
-
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
 
 	usercodemwcli "github.com/NpoolPlatform/basal-middleware/pkg/client/usercode"
@@ -64,6 +61,7 @@ import (
 	uuid1 "github.com/NpoolPlatform/go-service-framework/pkg/const/uuid"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
 	"github.com/google/uuid"
 )
@@ -83,7 +81,7 @@ func CreateWithdraw(
 	if err != nil {
 		return nil, err
 	}
-	if user.State != kycmgrpb.KycState_Approved {
+	if user.State != basetypes.KycState_Approved {
 		return nil, fmt.Errorf("permission denied")
 	}
 
