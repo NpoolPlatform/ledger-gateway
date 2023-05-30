@@ -33,10 +33,10 @@ import (
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 
 	txmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/tx"
-	txmgrpb "github.com/NpoolPlatform/message/npool/chain/mgr/v1/tx"
+	txmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/tx"
 
-	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
-	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	sphinxproxypb "github.com/NpoolPlatform/message/npool/sphinxproxy"
 	sphinxproxycli "github.com/NpoolPlatform/sphinx-proxy/pkg/client"
@@ -57,6 +57,7 @@ import (
 	usercodemwpb "github.com/NpoolPlatform/message/npool/basal/mw/v1/usercode"
 
 	currencymwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin/currency"
+	currencymwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin/currency"
 
 	uuid1 "github.com/NpoolPlatform/go-service-framework/pkg/const/uuid"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
@@ -170,15 +171,15 @@ func CreateWithdraw(
 	}
 
 	appCoin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: coinTypeID,
 		},
-		Disabled: &commonpb.BoolVal{
+		Disabled: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: false,
 		},
@@ -315,7 +316,9 @@ func CreateWithdraw(
 	}
 
 	if appCoin.WithdrawFeeByStableUSD {
-		curr, err := currencymwcli.GetCoinCurrency(ctx, coin.ID)
+		curr, err := currencymwcli.GetCurrencyOnly(ctx, &currencymwpb.Conds{
+			CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: coin.ID},
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -429,7 +432,7 @@ func CreateWithdraw(
 		txType := basetypes.TxType_TxWithdraw
 
 		// TODO: should be in dtm
-		tx, err := txmwcli.CreateTx(ctx, &txmgrpb.TxReq{
+		tx, err := txmwcli.CreateTx(ctx, &txmwpb.TxReq{
 			CoinTypeID:    &coinTypeID,
 			FromAccountID: &hotacc.AccountID,
 			ToAccountID:   &account.AccountID,
@@ -502,11 +505,11 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	}
 
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: info.AppID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: info.CoinTypeID,
 		},
@@ -729,11 +732,11 @@ func expand(
 	}
 
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		CoinTypeIDs: &commonpb.StringSliceVal{
+		CoinTypeIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
 			Value: ids,
 		},
