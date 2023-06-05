@@ -44,7 +44,7 @@ func CreateDeposit(
 		return nil, err
 	}
 	if coin == nil {
-		return nil, fmt.Errorf("invalid coin")
+		return nil, fmt.Errorf("invalid coin app_id:%v coin_type_id:%v", targetAppID, coinTypeID)
 	}
 
 	ioType := ledgermgrpb.IOType_Incoming
