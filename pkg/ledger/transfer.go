@@ -10,8 +10,8 @@ import (
 	usercodemwcli "github.com/NpoolPlatform/basal-middleware/pkg/client/usercode"
 	usercodemwpb "github.com/NpoolPlatform/message/npool/basal/mw/v1/usercode"
 
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
-	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
@@ -161,12 +161,12 @@ func CreateTransfer(
 		return nil, fmt.Errorf("target user not found")
 	}
 
-	coin, err := coininfocli.GetCoinOnly(ctx, &coininfopb.Conds{
-		AppID: &commonpb.StringVal{
+	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: coinTypeID,
 		},

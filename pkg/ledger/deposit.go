@@ -9,13 +9,13 @@ import (
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
-	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
-	commonpb "github.com/NpoolPlatform/message/npool"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 )
 
 func CreateDeposit(
@@ -30,12 +30,12 @@ func CreateDeposit(
 		return nil, fmt.Errorf("target user not exist")
 	}
 
-	coin, err := coininfocli.GetCoinOnly(ctx, &coininfopb.Conds{
-		AppID: &commonpb.StringVal{
+	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: targetAppID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: coinTypeID,
 		},
@@ -44,7 +44,7 @@ func CreateDeposit(
 		return nil, err
 	}
 	if coin == nil {
-		return nil, fmt.Errorf("invalid coin")
+		return nil, fmt.Errorf("invalid coin app_id:%v coin_type_id:%v", targetAppID, coinTypeID)
 	}
 
 	ioType := ledgermgrpb.IOType_Incoming

@@ -15,8 +15,8 @@ import (
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 
-	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/appcoin"
-	coininfopb "github.com/NpoolPlatform/message/npool/chain/mw/v1/appcoin"
+	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
@@ -27,8 +27,8 @@ import (
 )
 
 func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
-	coins, total, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
-		AppID: &commonpb.StringVal{
+	coins, total, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
@@ -125,12 +125,12 @@ func GetIntervalGenerals(
 		ids = append(ids, g.CoinTypeID)
 	}
 
-	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
-		AppID: &commonpb.StringVal{
+	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		CoinTypeIDs: &commonpb.StringSliceVal{
+		CoinTypeIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
 			Value: ids,
 		},
@@ -139,7 +139,7 @@ func GetIntervalGenerals(
 		return nil, 0, err
 	}
 
-	coinMap := map[string]*coininfopb.Coin{}
+	coinMap := map[string]*appcoinmwpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.CoinTypeID] = coin
 	}
@@ -209,12 +209,12 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		ids = append(ids, info.CoinTypeID)
 	}
 
-	coins, _, err := coininfocli.GetCoins(ctx, &coininfopb.Conds{
-		AppID: &commonpb.StringVal{
+	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		IDs: &commonpb.StringSliceVal{
+		IDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
 			Value: ids,
 		},
@@ -223,7 +223,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		return nil, 0, fmt.Errorf("fail get coins: %v", err)
 	}
 
-	coinMap := map[string]*coininfopb.Coin{}
+	coinMap := map[string]*appcoinmwpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.CoinTypeID] = coin
 	}
