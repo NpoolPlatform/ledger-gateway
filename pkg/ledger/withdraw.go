@@ -48,7 +48,7 @@ import (
 	pltfaccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/platform"
 	pltfaccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/platform"
 
-	reviewpb "github.com/NpoolPlatform/message/npool/review/mgr/v2"
+	reviewpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
