@@ -1,3 +1,6 @@
 package constant
 
-const ServiceName = "ledger-gateway.npool.top"
+const (
+	ServiceName   = "ledger-gateway.npool.top"
+	ServiceDomain = "ledger-gateway.npool.top"
+)
