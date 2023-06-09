@@ -12,10 +12,10 @@ require (
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20230301112903-ee77b010c928
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230424032410-c96444b02ed2
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20230606033353-c216c541e63d
+	github.com/NpoolPlatform/message v0.0.0-20230609022557-928f8f5a1bbe
 	github.com/NpoolPlatform/notif-middleware v0.0.0-20230221093008-c752bddbb687
 	github.com/NpoolPlatform/order-middleware v0.0.0-20230226025300-b335a4be0fbb
-	github.com/NpoolPlatform/review-middleware v0.0.0-20230606065721-99dc85d32ed0
+	github.com/NpoolPlatform/review-middleware v0.0.0-20230609023635-8dbb7c3f540c
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20230216075025-a90a86bfd19b
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
