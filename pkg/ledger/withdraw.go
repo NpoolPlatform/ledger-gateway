@@ -8,7 +8,7 @@ import (
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 
-	txnotifmgrpb "github.com/NpoolPlatform/message/npool/notif/mgr/v1/notif/tx"
+	txnotifmwpb "github.com/NpoolPlatform/message/npool/notif/mw/v1/notif/tx"
 	txnotifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif/tx"
 
 	notifmwpb "github.com/NpoolPlatform/message/npool/notif/mw/v1/notif"
@@ -455,14 +455,14 @@ func CreateWithdraw(
 			return nil, err
 		}
 
-		txNotifState := txnotifmgrpb.TxState_WaitSuccess
+		txNotifState := txnotifmwpb.TxState_WaitSuccess
 		txNotifType := basetypes.TxType_TxWithdraw
 		logger.Sugar().Errorw(
 			"CreateTx",
 			"txNotifState", txNotifState,
 			"txNotifType", txNotifType,
 		)
-		_, err = txnotifcli.CreateTx(ctx, &txnotifmgrpb.TxReq{
+		_, err = txnotifcli.CreateTx(ctx, &txnotifmwpb.TxReq{
 			TxID:       &tx.ID,
 			NotifState: &txNotifState,
 			TxType:     &txNotifType,
@@ -479,6 +479,7 @@ func CreateWithdraw(
 		AppID:     appID,
 		UserID:    userID,
 		EventType: basetypes.UsedFor_WithdrawalRequest,
+		NotifType: basetypes.NotifType_NotifUnicast,
 		Vars: &tmplmwpb.TemplateVars{
 			Username:  &user.Username,
 			Amount:    &amountS,
