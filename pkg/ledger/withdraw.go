@@ -82,6 +82,9 @@ func CreateWithdraw(
 	if err != nil {
 		return nil, err
 	}
+	if user == nil {
+		return nil, fmt.Errorf("invalid user")
+	}
 	if user.State != basetypes.KycState_Approved {
 		return nil, fmt.Errorf("permission denied")
 	}
