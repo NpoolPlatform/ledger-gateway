@@ -3,7 +3,7 @@ module github.com/NpoolPlatform/ledger-gateway
 go 1.17
 
 require (
-	github.com/NpoolPlatform/account-middleware v0.0.0-20230112023810-a1206cc8bb2e
+	github.com/NpoolPlatform/account-middleware v0.0.0-20230709121029-4ff9a4fac165
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20230609030803-0b26c1f95713
 	github.com/NpoolPlatform/basal-middleware v0.0.0-20230518061816-62bd589c0f63
 	github.com/NpoolPlatform/chain-middleware v0.0.0-20230605123408-7e083d1f9b54
@@ -12,7 +12,7 @@ require (
 	github.com/NpoolPlatform/ledger-manager v0.0.0-20230301112903-ee77b010c928
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230424032410-c96444b02ed2
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20221109023947-366125b690fb
-	github.com/NpoolPlatform/message v0.0.0-20230629094452-eb2668619b3e
+	github.com/NpoolPlatform/message v0.0.0-20230710013349-5c5a280d40c6
 	github.com/NpoolPlatform/notif-middleware v0.0.0-20230629102531-6aa588cd8391
 	github.com/NpoolPlatform/order-middleware v0.0.0-20230226025300-b335a4be0fbb
 	github.com/NpoolPlatform/review-middleware v0.0.0-20230609030924-eca1f51482e9

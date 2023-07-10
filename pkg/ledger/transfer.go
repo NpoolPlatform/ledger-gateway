@@ -24,7 +24,7 @@ import (
 	kycmwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/kyc"
 
 	accountmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/transfer"
-	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/transfer"
+	accountmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/transfer"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
 
@@ -132,16 +132,16 @@ func CreateTransfer(
 		return nil, fmt.Errorf("insufficient funds")
 	}
 
-	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmgrpb.Conds{
-		AppID: &commonpb.StringVal{
+	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &commonpb.StringVal{
+		UserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
-		TargetUserID: &commonpb.StringVal{
+		TargetUserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: targetUserID,
 		},
