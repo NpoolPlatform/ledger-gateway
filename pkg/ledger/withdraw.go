@@ -42,7 +42,6 @@ import (
 	sphinxproxycli "github.com/NpoolPlatform/sphinx-proxy/pkg/client"
 
 	useraccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/user"
-	accountmgrpb "github.com/NpoolPlatform/message/npool/account/mgr/v1/account"
 	useraccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/user"
 
 	pltfaccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/platform"
@@ -126,33 +125,33 @@ func CreateWithdraw(
 	}
 
 	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &commonpb.StringVal{
+		UserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: coinTypeID,
 		},
-		AccountID: &commonpb.StringVal{
+		AccountID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: accountID,
 		},
-		Active: &commonpb.BoolVal{
+		Active: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: true,
 		},
-		Blocked: &commonpb.BoolVal{
+		Blocked: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: false,
 		},
-		UsedFor: &commonpb.Int32Val{
+		UsedFor: &basetypes.Uint32Val{
 			Op:    cruder.EQ,
-			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
+			Value: uint32(basetypes.AccountUsedFor_UserWithdraw),
 		},
 	})
 	if err != nil {
@@ -221,23 +220,23 @@ func CreateWithdraw(
 	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
 
 	hotacc, err := pltfaccmwcli.GetAccountOnly(ctx, &pltfaccmwpb.Conds{
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: coinTypeID,
 		},
-		UsedFor: &commonpb.Int32Val{
+		UsedFor: &basetypes.Uint32Val{
 			Op:    cruder.EQ,
-			Value: int32(accountmgrpb.AccountUsedFor_UserBenefitHot),
+			Value: uint32(basetypes.AccountUsedFor_UserBenefitHot),
 		},
-		Active: &commonpb.BoolVal{
+		Active: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: true,
 		},
-		Backup: &commonpb.BoolVal{
+		Backup: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: false,
 		},
-		Blocked: &commonpb.BoolVal{
+		Blocked: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: false,
 		},
@@ -526,33 +525,33 @@ func GetWithdraw(ctx context.Context, id string) (*npool.Withdraw, error) {
 	}
 
 	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: info.AppID,
 		},
-		UserID: &commonpb.StringVal{
+		UserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: info.UserID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: info.CoinTypeID,
 		},
-		AccountID: &commonpb.StringVal{
+		AccountID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: info.AccountID,
 		},
-		Active: &commonpb.BoolVal{
+		Active: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: true,
 		},
-		Blocked: &commonpb.BoolVal{
+		Blocked: &basetypes.BoolVal{
 			Op:    cruder.EQ,
 			Value: false,
 		},
-		UsedFor: &commonpb.Int32Val{
+		UsedFor: &basetypes.Uint32Val{
 			Op:    cruder.EQ,
-			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
+			Value: uint32(basetypes.AccountUsedFor_UserWithdraw),
 		},
 	})
 	if err != nil {
@@ -628,19 +627,19 @@ func GetWithdraws(
 	}
 
 	accounts, _, err := useraccmwcli.GetAccounts(ctx, &useraccmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UserID: &commonpb.StringVal{
+		UserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: userID,
 		},
-		UsedFor: &commonpb.Int32Val{
+		UsedFor: &basetypes.Uint32Val{
 			Op:    cruder.EQ,
-			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
+			Value: uint32(basetypes.AccountUsedFor_UserWithdraw),
 		},
-		AccountIDs: &commonpb.StringSliceVal{
+		AccountIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
 			Value: ids,
 		},
@@ -688,15 +687,15 @@ func GetAppWithdraws(
 	}
 
 	accounts, _, err := useraccmwcli.GetAccounts(ctx, &useraccmwpb.Conds{
-		AppID: &commonpb.StringVal{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: appID,
 		},
-		UsedFor: &commonpb.Int32Val{
+		UsedFor: &basetypes.Uint32Val{
 			Op:    cruder.EQ,
-			Value: int32(accountmgrpb.AccountUsedFor_UserWithdraw),
+			Value: uint32(basetypes.AccountUsedFor_UserWithdraw),
 		},
-		AccountIDs: &commonpb.StringSliceVal{
+		AccountIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
 			Value: ids,
 		},
