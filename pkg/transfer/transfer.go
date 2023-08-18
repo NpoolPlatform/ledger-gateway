@@ -1,4 +1,4 @@
-package ledger
+package transfer
 
 import (
 	"context"
@@ -14,9 +14,7 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-
-	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 
@@ -27,65 +25,40 @@ import (
 	accountmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/transfer"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+	statementmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
 
-	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
+	ledgermwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger"
+	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
 
-	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
-	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
-
-	commonpb "github.com/NpoolPlatform/message/npool"
+	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
-
-	"go.opentelemetry.io/otel"
-	scodes "go.opentelemetry.io/otel/codes"
 )
 
 //nolint:funlen,gocyclo
-func CreateTransfer(
-	ctx context.Context,
-	appID,
-	userID,
-	account string,
-	accountType basetypes.SignMethod,
-	verificationCode,
-	targetUserID,
-	amount,
-	coinTypeID string,
-) (*ledger.Transfer, error) {
-	var err error
-
-	_, span := otel.Tracer(constant.ServiceName).Start(ctx, "CreateTransfer")
-	defer span.End()
-
-	defer func() {
-		if err != nil {
-			span.SetStatus(scodes.Error, err.Error())
-			span.RecordError(err)
-		}
-	}()
-
-	user, err := appusermwcli.GetUser(ctx, appID, userID)
+func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
+	user, err := appusermwcli.GetUser(ctx, *h.AppID, *h.UserID)
 	if err != nil {
 		return nil, err
 	}
-	if accountType == basetypes.SignMethod_Google {
-		account = user.GetGoogleSecret()
+
+	if h.AccountType == basetypes.SignMethod_Google {
+		h.Account = &user.GoogleSecret
 	}
 
 	if err := usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
 		Prefix:      basetypes.Prefix_PrefixUserCode.String(),
-		AppID:       appID,
-		Account:     account,
-		AccountType: accountType,
+		AppID:       *h.AppID,
+		Account:     *h.Account,
+		AccountType: h.AccountType,
 		UsedFor:     basetypes.UsedFor_Transfer,
-		Code:        verificationCode,
+		Code:        *h.VerificationCode,
 	}); err != nil {
 		return nil, err
 	}
 
 	kyc, err := kycmwcli.GetKycOnly(ctx, &kycmwpb.Conds{
-		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: appID},
-		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: userID},
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 	})
 	if err != nil {
 		return nil, err
@@ -98,33 +71,33 @@ func CreateTransfer(
 		return nil, fmt.Errorf("kyc state is not approved")
 	}
 
-	general, err := ledgermgrgeneralcli.GetGeneralOnly(ctx, &ledgermgrgeneralpb.Conds{
-		AppID: &commonpb.StringVal{
+	ledger, err := ledgermwcli.GetLedgerOnly(ctx, &ledgermwpb.Conds{
+		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: *h.AppID,
 		},
-		UserID: &commonpb.StringVal{
+		UserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: userID,
+			Value: *h.UserID,
 		},
-		CoinTypeID: &commonpb.StringVal{
+		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: coinTypeID,
+			Value: *h.CoinTypeID,
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
-	if general == nil {
-		return nil, fmt.Errorf("insufficient funds")
+	if ledger == nil {
+		return nil, fmt.Errorf("ledger not exist")
 	}
 
-	ad, err := decimal.NewFromString(amount)
+	ad, err := decimal.NewFromString(*h.Amount)
 	if err != nil {
 		return nil, err
 	}
 
-	spendable, err := decimal.NewFromString(general.Spendable)
+	spendable, err := decimal.NewFromString(ledger.Spendable)
 	if err != nil {
 		return nil, err
 	}
@@ -135,15 +108,15 @@ func CreateTransfer(
 	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: *h.AppID,
 		},
 		UserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: userID,
+			Value: *h.UserID,
 		},
 		TargetUserID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: targetUserID,
+			Value: *h.TargetUserID,
 		},
 	})
 	if err != nil {
@@ -153,7 +126,7 @@ func CreateTransfer(
 		return nil, fmt.Errorf("target user not set")
 	}
 
-	targetUser, err := appusermwcli.GetUser(ctx, appID, targetUserID)
+	targetUser, err := appusermwcli.GetUser(ctx, *h.AppID, *h.TargetUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -164,11 +137,11 @@ func CreateTransfer(
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: *h.AppID,
 		},
 		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: coinTypeID,
+			Value: *h.CoinTypeID,
 		},
 	})
 	if err != nil {
@@ -178,66 +151,62 @@ func CreateTransfer(
 		return nil, fmt.Errorf("invalid coin")
 	}
 
-	out := ledgermgrpb.IOType_Outcoming
+	out := ledgerpb.IOType_Outcoming
 	outIoExtra := fmt.Sprintf(
 		`{"AppID":"%v","UserID":"%v","TargetUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
-		appID,
-		userID,
-		targetUserID,
+		*h.AppID,
+		*h.UserID,
+		*h.TargetUserID,
 		coin.Name,
-		amount,
+		*h.Amount,
 		time.Now(),
 	)
 
-	subType := ledgermgrpb.IOSubType_Transfer
+	subType := ledgerpb.IOSubType_Transfer
 
-	in := ledgermgrpb.IOType_Incoming
+	in := ledgerpb.IOType_Incoming
 	inIoExtra := fmt.Sprintf(
 		`{"AppID":"%v","UserID":"%v","FromUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
-		appID,
-		targetUserID,
-		userID,
+		*h.AppID,
+		*h.TargetUserID,
+		*h.UserID,
 		coin.Name,
-		amount,
+		h.Amount,
 		time.Now(),
 	)
 
 	createdAt := uint32(time.Now().Unix())
-
-	err = ledgermwcli.BookKeeping(ctx, []*ledgermgrpb.DetailReq{
+	_, err = statementmwcli.CreateStatements(ctx, []*statementpb.StatementReq{
 		{
-			AppID:      &appID,
-			UserID:     &userID,
-			CoinTypeID: &coinTypeID,
+			AppID:      h.AppID,
+			UserID:     h.UserID,
+			CoinTypeID: h.CoinTypeID,
 			IOType:     &out,
 			IOSubType:  &subType,
-			Amount:     &amount,
+			Amount:     h.Amount,
 			IOExtra:    &outIoExtra,
 			CreatedAt:  &createdAt,
 		}, {
-			AppID:      &appID,
-			UserID:     &targetUserID,
-			CoinTypeID: &coinTypeID,
+			AppID:      h.AppID,
+			UserID:     h.TargetUserID,
+			CoinTypeID: h.CoinTypeID,
 			IOType:     &in,
 			IOSubType:  &subType,
-			Amount:     &amount,
+			Amount:     h.Amount,
 			IOExtra:    &inIoExtra,
 			CreatedAt:  &createdAt,
 		},
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	return &ledger.Transfer{
+	return &npool.Transfer{
 		CoinTypeID:         coin.CoinTypeID,
 		CoinName:           coin.Name,
 		DisplayNames:       coin.DisplayNames,
 		CoinLogo:           coin.Logo,
 		CoinUnit:           coin.Unit,
-		Amount:             amount,
+		Amount:             *h.Amount,
 		CreatedAt:          createdAt,
-		TargetUserID:       targetUserID,
+		TargetUserID:       *h.TargetUserID,
 		TargetEmailAddress: targetUser.EmailAddress,
 		TargetPhoneNO:      targetUser.PhoneNO,
 		TargetUsername:     targetUser.Username,
