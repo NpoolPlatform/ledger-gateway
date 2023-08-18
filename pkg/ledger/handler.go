@@ -1,13 +1,14 @@
-package profit
+package ledger
 
 import (
 	"context"
 
-	"github.com/NpoolPlatform/ledger-gateway/pkg/handler"
+	"github.com/NpoolPlatform/ledger-gateway/pkg/ledger/handler"
 )
 
 type Handler struct {
 	*handler.Handler
+	CoinTypeIDs []string
 }
 
 func NewHandler(ctx context.Context, options ...interface{}) (*Handler, error) {

@@ -3,7 +3,7 @@ package statement
 import (
 	"context"
 
-	"github.com/NpoolPlatform/ledger-gateway/pkg/handler"
+	"github.com/NpoolPlatform/ledger-gateway/pkg/ledger/handler"
 )
 
 type Handler struct {

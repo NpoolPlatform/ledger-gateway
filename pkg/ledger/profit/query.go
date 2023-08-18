@@ -1,73 +1,166 @@
-package ledger
+package profit
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-	"github.com/shopspring/decimal"
-
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-
-	ledgermgrprofitcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/profit"
-	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
-	ledgermgrprofitpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/profit"
-
-	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
-
-	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
-
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
-	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
-
+	statementhandler "github.com/NpoolPlatform/ledger-gateway/pkg/ledger/statement"
+	profitmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/profit"
+	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
+	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+	commonpb "github.com/NpoolPlatform/message/npool"
+	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	goodsmgrpb "github.com/NpoolPlatform/message/npool/good/mgr/v1/good"
-
+	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	profitpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/profit"
+	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
+	orderpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
+	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
-
-	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	commonpb "github.com/NpoolPlatform/message/npool"
-	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
-
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
-func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.Profit, uint32, error) {
-	conds := &ledgermgrprofitpb.Conds{
-		AppID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: appID,
-		},
-		UserID: &commonpb.StringVal{
-			Op:    cruder.EQ,
-			Value: userID,
-		},
+func (h *Handler) setConds() *profitpb.Conds {
+	conds := &profitpb.Conds{}
+	if h.AppID != nil {
+		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
 	}
+	if h.UserID != nil {
+		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
+	}
+	return conds
+}
 
-	infos, total, err := ledgermgrprofitcli.GetProfits(ctx, conds, offset, limit)
+// Export In Frontend
+func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
+	statementHandler := &statementhandler.Handler{
+		Handler: h.Handler,
+	}
+	statements, total, err := statementHandler.GetStatements(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
-	if len(infos) == 0 {
+
+	ofs := int32(0)
+	lim := int32(100)
+	var orders []*ordermwpb.Order
+
+	for {
+		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
+			AppID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: *h.AppID,
+			},
+			UserID: &commonpb.StringVal{
+				Op:    cruder.EQ,
+				Value: *h.UserID,
+			},
+		}, ofs, lim)
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(ords) == 0 {
+			break
+		}
+
+		orders = append(orders, ords...)
+
+		ofs += lim
+	}
+	orderMap := map[string]*ordermwpb.Order{}
+	for _, order := range orders {
+		orderMap[order.ID] = order
+	}
+
+	var infos []*npool.MiningReward
+	for _, info := range statements {
+		type extra struct {
+			GoodID  string
+			OrderID string
+		}
+
+		e := extra{}
+		err := json.Unmarshal([]byte(info.IOExtra), &e)
+		if err != nil {
+			return nil, 0, fmt.Errorf("invalid io extra")
+		}
+
+		order, ok := orderMap[e.OrderID]
+		if !ok {
+			logger.Sugar().Warn("order not exist, id(%v)", e.OrderID)
+			continue
+		}
+
+		switch order.OrderState {
+		case orderpb.OrderState_Paid:
+		case orderpb.OrderState_InService:
+		case orderpb.OrderState_Expired:
+		default:
+			continue
+		}
+
+		rewardAmount, err := decimal.NewFromString(info.Amount)
+		if err != nil {
+			logger.Sugar().Warnw("GetMiningRewards", "amount cannot convert to number", info.Amount)
+			continue
+		}
+
+		units, err := decimal.NewFromString(order.Units)
+		if err != nil {
+			logger.Sugar().Warnw("GetMiningRewards", "order units cannot convert to number", order.Units)
+			continue
+		}
+
+		infos = append(infos, &npool.MiningReward{
+			CoinTypeID:          info.CoinTypeID,
+			CoinName:            info.CoinName,
+			CoinLogo:            info.CoinLogo,
+			CoinUnit:            info.CoinUnit,
+			IOType:              info.IOType,
+			IOSubType:           info.IOSubType,
+			RewardAmount:        info.Amount,
+			RewardAmountPerUnit: rewardAmount.Div(units).String(),
+			Units:               order.Units,
+			Extra:               info.IOExtra,
+			GoodID:              e.GoodID,
+			OrderID:             e.OrderID,
+			CreatedAt:           info.CreatedAt,
+		})
+	}
+	return infos, total, nil
+}
+
+// Mining Summary
+func (h *Handler) GetProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
+	profits, total, err := profitmwcli.GetProfits(ctx, h.setConds(), h.Offset, h.Limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(profits) == 0 {
 		return nil, total, nil
 	}
 
 	coinTypeIDs := []string{}
-	for _, val := range infos {
-		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+	for _, profit := range profits {
+		if _, err := uuid.Parse(profit.CoinTypeID); err != nil {
 			continue
 		}
-		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+		coinTypeIDs = append(coinTypeIDs, profit.CoinTypeID)
 	}
 
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: *h.AppID,
 		},
 		CoinTypeIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
@@ -83,15 +176,14 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 		coinMap[coin.CoinTypeID] = coin
 	}
 
-	profits := []*npool.Profit{}
-	for _, info := range infos {
+	infos := []*npool.Profit{}
+	for _, info := range profits {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			logger.Sugar().Warn("app coin not exist continue")
+			logger.Sugar().Warn("app coin not exist continue, cointypeid(%v)", info.CoinTypeID)
 			continue
 		}
-
-		profits = append(profits, &npool.Profit{
+		infos = append(infos, &npool.Profit{
 			CoinTypeID:   info.CoinTypeID,
 			CoinName:     coin.Name,
 			DisplayNames: coin.DisplayNames,
@@ -101,40 +193,43 @@ func GetProfits(ctx context.Context, appID, userID string, offset, limit int32) 
 		})
 	}
 
-	return profits, total, nil
+	return infos, total, nil
 }
 
-func GetIntervalProfits(
-	ctx context.Context, appID, userID string, start, end uint32, offset, limit int32,
-) (
-	[]*npool.Profit, uint32, error,
-) {
-	// TODO: move to middleware with aggregate
-	details := []*ledgermgrdetailpb.Detail{}
+// Mining Interval Profit
+func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
+	ioType := ledgerpb.IOType_Incoming
+	ioSubType := ledgerpb.IOSubType_MiningBenefit
+
+	statements := []*statement.Statement{}
+	var total uint32
 	ofs := int32(0)
-	lim := limit
-
-	if lim == 0 {
-		lim = 1000
-	}
-
+	lim := h.Limit
 	for {
-		ds, _, err := ledgermwcli.GetIntervalDetails(
-			ctx, appID, userID, start, end, ofs, lim,
-		)
+		st, _total, err := statementcli.GetStatements(ctx, &statement.Conds{
+			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
+			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
+			StartAt:   &basetypes.Uint32Val{Op: cruder.GT, Value: h.StartAt},
+			EndAt:     &basetypes.Uint32Val{Op: cruder.LT, Value: h.EndAt},
+		}, h.Offset, h.Limit)
 		if err != nil {
 			return nil, 0, err
 		}
-		if len(ds) == 0 {
+		total = _total
+		if len(st) == 0 {
 			break
 		}
-
-		details = append(details, ds...)
+		statements = append(statements, st...)
 		ofs += lim
+	}
+	if len(statements) == 0 {
+		return nil, 0, nil
 	}
 
 	coinTypeIDs := []string{}
-	for _, val := range details {
+	for _, val := range statements {
 		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
 			continue
 		}
@@ -144,7 +239,7 @@ func GetIntervalProfits(
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: *h.AppID,
 		},
 		CoinTypeIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
@@ -161,19 +256,11 @@ func GetIntervalProfits(
 	}
 
 	infos := map[string]*npool.Profit{}
-	total := uint32(0)
-
-	for _, info := range details {
-		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
-			continue
-		}
-		if info.IOSubType != ledgermgrdetailpb.IOSubType_MiningBenefit {
-			continue
-		}
-
+	for _, info := range statements {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
-			return nil, 0, fmt.Errorf("invalid coin")
+			logger.Sugar().Errorf("invalid coin, %v", info.CoinTypeID)
+			continue
 		}
 
 		p, ok := infos[info.CoinTypeID]
@@ -186,7 +273,6 @@ func GetIntervalProfits(
 				CoinUnit:     coin.Unit,
 				Incoming:     decimal.NewFromInt(0).String(),
 			}
-			total += 1
 		}
 
 		p.Incoming = decimal.RequireFromString(p.Incoming).
@@ -204,44 +290,43 @@ func GetIntervalProfits(
 	return profits, total, nil
 }
 
+// Good Card
 // nolint
-func GetGoodProfits(
-	ctx context.Context, appID, userID string, start, end uint32, offset, limit int32,
-) (
-	[]*npool.GoodProfit, uint32, error,
-) {
-	// TODO: move to middleware with aggregate
-	details := []*ledgermgrdetailpb.Detail{}
+func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
+	statements := []*statement.Statement{}
 	ofs := int32(0)
-	lim := int32(100)
-
+	lim := h.Limit
 	for {
-		ds, _, err := ledgermwcli.GetIntervalDetails(
-			ctx, appID, userID, start, end, ofs, lim,
-		)
+		st, _, err := statementcli.GetStatements(ctx, &statement.Conds{
+			AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			StartAt: &basetypes.Uint32Val{Op: cruder.GT, Value: h.StartAt},
+			EndAt:   &basetypes.Uint32Val{Op: cruder.LT, Value: h.EndAt},
+		}, h.Offset, h.Limit)
 		if err != nil {
 			return nil, 0, err
 		}
-		if len(ds) == 0 {
+		if len(st) == 0 {
 			break
 		}
-
-		details = append(details, ds...)
+		statements = append(statements, st...)
 		ofs += lim
+	}
+	if len(statements) == 0 {
+		return nil, 0, nil
 	}
 
 	orders := []*ordermwpb.Order{}
 	ofs = 0
-
 	for {
 		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
 			AppID: &commonpb.StringVal{
 				Op:    cruder.EQ,
-				Value: appID,
+				Value: *h.AppID,
 			},
 			UserID: &commonpb.StringVal{
 				Op:    cruder.EQ,
-				Value: userID,
+				Value: *h.UserID,
 			},
 		}, ofs, lim)
 		if err != nil {
@@ -292,7 +377,7 @@ func GetGoodProfits(
 	}
 
 	coinTypeIDs := []string{}
-	for _, val := range details {
+	for _, val := range statements {
 		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
 			continue
 		}
@@ -309,7 +394,7 @@ func GetGoodProfits(
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: appID,
+			Value: *h.AppID,
 		},
 		CoinTypeIDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
@@ -325,13 +410,13 @@ func GetGoodProfits(
 		coinMap[coin.CoinTypeID] = coin
 	}
 
-	for _, info := range details {
-		if info.IOType != ledgermgrdetailpb.IOType_Incoming {
+	for _, info := range statements {
+		if info.IOType != ledgerpb.IOType_Incoming {
 			continue
 		}
 		switch info.IOSubType {
-		case ledgermgrdetailpb.IOSubType_MiningBenefit:
-		case ledgermgrdetailpb.IOSubType_Payment:
+		case ledgerpb.IOSubType_MiningBenefit:
+		case ledgerpb.IOSubType_Payment:
 		default:
 			continue
 		}
@@ -386,7 +471,7 @@ func GetGoodProfits(
 			total += 1
 		}
 
-		if info.IOSubType == ledgermgrdetailpb.IOSubType_MiningBenefit {
+		if info.IOSubType == ledgerpb.IOSubType_MiningBenefit {
 			gp.Incoming = decimal.RequireFromString(gp.Incoming).
 				Add(decimal.RequireFromString(info.Amount)).
 				String()
