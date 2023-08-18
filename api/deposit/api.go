@@ -1,4 +1,4 @@
-package transfer
+package deposit
 
 import (
 	"context"

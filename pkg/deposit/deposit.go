@@ -1,92 +1,83 @@
-package ledger
+package deposit
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
-	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
-	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
+	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
 )
 
-func CreateDeposit(
-	ctx context.Context,
-	appID, userID, langID, coinTypeID, amount, targetAppID, targetUserID string,
-) (*ledger.Detail, error) {
-	user, err := appusermwcli.GetUser(ctx, appID, userID)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		return nil, fmt.Errorf("target user not exist")
-	}
-
+func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: targetAppID,
+			Value: *h.TargetAppID,
 		},
 		CoinTypeID: &basetypes.StringVal{
 			Op:    cruder.EQ,
-			Value: coinTypeID,
+			Value: *h.CoinTypeID,
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	if coin == nil {
-		return nil, fmt.Errorf("invalid coin app_id:%v coin_type_id:%v", targetAppID, coinTypeID)
+		return nil, fmt.Errorf("invalid coin app_id:%v coin_type_id:%v", *h.TargetAppID, *h.CoinTypeID)
 	}
 
-	ioType := ledgermgrpb.IOType_Incoming
-	ioSubtype := ledgermgrpb.IOSubType_Deposit
 	ioExtra := fmt.Sprintf(
 		`{"AppID":"%v","UserID":"%v","TargetAppID":"%v","TargetUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
-		appID,
-		userID,
-		targetAppID,
-		targetUserID,
+		*h.AppID,
+		*h.UserID,
+		*h.TargetAppID,
+		*h.TargetUserID,
 		coin.Name,
-		amount,
+		*h.Amount,
 		time.Now(),
 	)
-	createdAt := uint32(time.Now().Unix())
 
-	err = ledgermwcli.BookKeeping(ctx, []*ledgermgrpb.DetailReq{
+	ioType := ledgerpb.IOType_Incoming
+	ioSubtype := ledgerpb.IOSubType_Deposit
+	infos, err := ledgermwcli.CreateStatements(ctx, []*statementpb.StatementReq{
 		{
-			AppID:      &targetAppID,
-			UserID:     &targetUserID,
-			CoinTypeID: &coinTypeID,
+			AppID:      h.AppID,
+			UserID:     h.TargetUserID,
+			CoinTypeID: h.CoinTypeID,
 			IOType:     &ioType,
 			IOSubType:  &ioSubtype,
-			Amount:     &amount,
+			Amount:     h.Amount,
 			IOExtra:    &ioExtra,
-			CreatedAt:  &createdAt,
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
+	if len(infos) == 0 {
+		return nil, nil
+	}
+	info := infos[0]
 
-	return &ledger.Detail{
-		CoinTypeID:   coinTypeID,
+	return &npool.Statement{
+		CoinTypeID:   *h.CoinTypeID,
 		CoinName:     coin.Name,
 		DisplayNames: coin.DisplayNames,
 		CoinLogo:     coin.Logo,
 		CoinUnit:     coin.Unit,
-		IOType:       ioType,
-		IOSubType:    ioSubtype,
-		Amount:       amount,
-		IOExtra:      ioExtra,
-		CreatedAt:    createdAt,
+		IOType:       info.IOType,
+		IOSubType:    info.IOSubType,
+		Amount:       info.Amount,
+		IOExtra:      info.IOExtra,
+		CreatedAt:    info.CreatedAt,
 	}, nil
 }

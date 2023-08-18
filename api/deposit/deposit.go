@@ -1,92 +1,47 @@
-package ledger
+package deposit
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-	mledger "github.com/NpoolPlatform/ledger-gateway/pkg/ledger"
-	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
+	deposit1 "github.com/NpoolPlatform/ledger-gateway/pkg/deposit"
 	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
-	"go.opentelemetry.io/otel"
-	scodes "go.opentelemetry.io/otel/codes"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (s *Server) CreateAppUserDeposit(
-	ctx context.Context,
-	in *ledger.CreateAppUserDepositRequest,
-) (
-	resp *ledger.CreateAppUserDepositResponse,
+func (s *Server) CreateAppUserDeposit(ctx context.Context, in *npool.CreateAppUserDepositRequest) (
+	resp *npool.CreateAppUserDepositResponse,
 	err error,
 ) {
-	_, span := otel.Tracer(constant.ServiceName).Start(ctx, "CreateAppUserDeposit")
-	defer span.End()
-
-	defer func() {
-		if err != nil {
-			span.SetStatus(scodes.Error, err.Error())
-			span.RecordError(err)
-		}
-	}()
-
-	if _, err := uuid.Parse(in.GetUserID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "UserID", in.GetUserID(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if _, err := uuid.Parse(in.GetAppID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "AppID", in.GetAppID(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if _, err := uuid.Parse(in.GetLangID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "LangID", in.GetLangID(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if _, err := uuid.Parse(in.GetCoinTypeID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "CoinTypeID", in.GetCoinTypeID(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("CoinTypeID is invalid: %v", err))
-	}
-
-	if _, err := decimal.NewFromString(in.GetAmount()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "Amount", in.GetAmount(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, fmt.Sprintf("Amount is invalid: %v", err))
-	}
-
-	amount := decimal.RequireFromString(in.GetAmount())
-	if amount.Cmp(decimal.NewFromInt(0)) <= 0 {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "Amount", in.GetAmount())
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, "Amount is less than 0")
-	}
-
-	if _, err := uuid.Parse(in.GetTargetAppID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "TargetAppID", in.GetTargetAppID(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if _, err := uuid.Parse(in.GetTargetUserID()); err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "TargetUserID", in.GetTargetUserID(), "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	info, err := mledger.CreateDeposit(
+	handler, err := deposit1.NewHandler(
 		ctx,
-		in.GetAppID(),
-		in.GetUserID(),
-		in.GetLangID(),
-		in.GetCoinTypeID(),
-		in.GetAmount(),
-		in.GetTargetAppID(),
-		in.GetTargetUserID(),
+		deposit1.WithAppID(&in.AppID, true),
+		deposit1.WithUserID(&in.AppID, &in.UserID, true),
+		deposit1.WithCoinTypeID(&in.TargetAppID, &in.CoinTypeID, true),
+		deposit1.WithTargetAppID(&in.TargetAppID, true),
+		deposit1.WithTargetUserID(&in.TargetAppID, &in.TargetUserID, true),
+		deposit1.WithAmount(&in.Amount, true),
 	)
 	if err != nil {
-		logger.Sugar().Errorw("CreateAppUserDeposit", "error", err)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.Internal, err.Error())
+		logger.Sugar().Errorw(
+			"CreateAppUserDeposit",
+			"In", in,
+			"Error", err,
+		)
+		return &npool.CreateAppUserDepositResponse{}, status.Error(codes.Aborted, err.Error())
+	}
+
+	info, err := handler.CreateDeposit(ctx)
+	if err != nil {
+		logger.Sugar().Errorw(
+			"CreateAppUserDeposit",
+			"In", in,
+			"Error", err,
+		)
+		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.Aborted, err.Error())
 	}
 
 	return &ledger.CreateAppUserDepositResponse{
