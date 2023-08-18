@@ -8,7 +8,7 @@ import (
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
-	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
+	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.General, uint32, error) {
+func GetLedgers(ctx context.Context, appID, userID string, offset, limit int32) ([]*npool.Ledger, uint32, error) {
 	coins, total, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
@@ -60,21 +60,21 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 		},
 	}
 
-	infos, _, err := ledgermgrgeneralcli.GetGenerals(ctx, conds, 0, limit)
+	infos, _, err := ledgermgrgeneralcli.GetLedgers(ctx, conds, 0, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	generalMap := map[string]*ledgermgrgeneralpb.General{}
+	generalMap := map[string]*ledgermgrgeneralpb.Ledger{}
 	for _, general := range infos {
 		generalMap[general.CoinTypeID] = general
 	}
 
-	generals := []*npool.General{}
+	generals := []*npool.Ledger{}
 	for _, coin := range coins {
 		general, ok := generalMap[coin.CoinTypeID]
 		if ok {
-			generals = append(generals, &npool.General{
+			generals = append(generals, &npool.Ledger{
 				CoinTypeID:   coin.CoinTypeID,
 				CoinName:     coin.Name,
 				DisplayNames: coin.DisplayNames,
@@ -88,7 +88,7 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 				Spendable:    general.Spendable,
 			})
 		} else {
-			generals = append(generals, &npool.General{
+			generals = append(generals, &npool.Ledger{
 				CoinTypeID:   coin.CoinTypeID,
 				CoinName:     coin.Name,
 				DisplayNames: coin.DisplayNames,
@@ -107,12 +107,12 @@ func GetGenerals(ctx context.Context, appID, userID string, offset, limit int32)
 	return generals, total, nil
 }
 
-func GetIntervalGenerals(
+func GetIntervalLedgers(
 	ctx context.Context, appID, userID string, start, end uint32, offset, limit int32,
 ) (
-	[]*npool.General, uint32, error,
+	[]*npool.Ledger, uint32, error,
 ) {
-	generals, total, err := ledgermwcli.GetIntervalGenerals(ctx, appID, userID, start, end, offset, limit)
+	generals, total, err := ledgermwcli.GetIntervalLedgers(ctx, appID, userID, start, end, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -144,14 +144,14 @@ func GetIntervalGenerals(
 		coinMap[coin.CoinTypeID] = coin
 	}
 
-	infos := []*npool.General{}
+	infos := []*npool.Ledger{}
 	for _, info := range generals {
 		coin, ok := coinMap[info.CoinTypeID]
 		if !ok {
 			return nil, 0, fmt.Errorf("invalid coin")
 		}
 
-		infos = append(infos, &npool.General{
+		infos = append(infos, &npool.Ledger{
 			CoinTypeID:   info.CoinTypeID,
 			CoinName:     coin.Name,
 			DisplayNames: coin.DisplayNames,
@@ -167,7 +167,7 @@ func GetIntervalGenerals(
 	return infos, total, nil
 }
 
-func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*npool.General, uint32, error) {
+func GetAppLedgers(ctx context.Context, appID string, offset, limit int32) ([]*npool.Ledger, uint32, error) {
 	conds := &ledgermgrgeneralpb.Conds{
 		AppID: &commonpb.StringVal{
 			Op:    cruder.EQ,
@@ -175,7 +175,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		},
 	}
 
-	infos, total, err := ledgermgrgeneralcli.GetGenerals(ctx, conds, offset, limit)
+	infos, total, err := ledgermgrgeneralcli.GetLedgers(ctx, conds, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -228,7 +228,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		coinMap[coin.CoinTypeID] = coin
 	}
 
-	generals := []*npool.General{}
+	generals := []*npool.Ledger{}
 	for _, general := range infos {
 		user, ok := userMap[general.UserID]
 		if !ok {
@@ -238,7 +238,7 @@ func GetAppGenerals(ctx context.Context, appID string, offset, limit int32) ([]*
 		if !ok {
 			continue
 		}
-		generals = append(generals, &npool.General{
+		generals = append(generals, &npool.Ledger{
 			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.Name,
 			DisplayNames: coin.DisplayNames,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
+	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"

@@ -10,7 +10,7 @@ import (
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
-	ledgermgrprofitcli "github.com/NpoolPlatform/ledger-manager/pkg/client/profit"
+	ledgermgrprofitcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/profit"
 	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 	ledgermgrprofitpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/profit"
 

@@ -21,13 +21,13 @@ import (
 
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
-	ledgermgrwithdrawcli "github.com/NpoolPlatform/ledger-manager/pkg/client/withdraw"
+	ledgermgrwithdrawcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw"
 	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 	ledgermgrwithdrawpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/withdraw"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
-	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
+	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"

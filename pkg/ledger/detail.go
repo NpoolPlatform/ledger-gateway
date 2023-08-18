@@ -17,11 +17,11 @@ import (
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
+	ledgermgrdetailpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	ledgermgrdetailcli "github.com/NpoolPlatform/ledger-manager/pkg/client/detail"
+	ledgermgrdetailcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"

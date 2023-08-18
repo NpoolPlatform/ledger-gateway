@@ -26,11 +26,11 @@ import (
 	accountmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/transfer"
 	accountmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/transfer"
 
-	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/v2"
+	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
 	ledgermgrpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/detail"
 
-	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-manager/pkg/client/general"
+	ledgermgrgeneralcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
 	ledgermgrgeneralpb "github.com/NpoolPlatform/message/npool/ledger/mgr/v1/ledger/general"
 
 	commonpb "github.com/NpoolPlatform/message/npool"
