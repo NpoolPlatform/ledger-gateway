@@ -154,9 +154,12 @@ func WithAccountType(accountType *basetypes.SignMethod, must bool) func(context.
 	}
 }
 
-func WithAccountID(appID, accountID *string) func(context.Context, *Handler) error {
+func WithAccountID(appID, accountID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if accountID == nil {
+			if must {
+				return fmt.Errorf("invalid account id")
+			}
 			return nil
 		}
 		if _, err := uuid.Parse(*accountID); err != nil {
@@ -204,6 +207,7 @@ func WithCoinTypeID(appID, coinTypeID *string, must bool) func(context.Context, 
 		return nil
 	}
 }
+
 func WithAmount(amount *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if amount == nil {
