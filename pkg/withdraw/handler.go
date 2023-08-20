@@ -26,7 +26,7 @@ type Handler struct {
 	AccountType      *basetypes.SignMethod
 	CoinTypeID       *string
 	AccountID        *string
-	Amount           *string
+	Amount           *decimal.Decimal
 	Offset           int32
 	Limit            int32
 }
@@ -229,7 +229,7 @@ func WithAmount(amount *string, must bool) func(context.Context, *Handler) error
 		if _amount.Cmp(decimal.NewFromInt(0)) <= 0 {
 			return fmt.Errorf("invalid amount %v", *amount)
 		}
-		h.Amount = amount
+		h.Amount = &_amount
 		return nil
 	}
 }
