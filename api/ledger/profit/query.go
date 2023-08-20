@@ -45,6 +45,7 @@ func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*
 	}, nil
 }
 
+//nolint
 func (s *Server) GetIntervalProfits(ctx context.Context, in *npool.GetIntervalProfitsRequest) (*npool.GetIntervalProfitsResponse, error) {
 	handler, err := profit1.NewHandler(
 		ctx,
@@ -80,6 +81,7 @@ func (s *Server) GetIntervalProfits(ctx context.Context, in *npool.GetIntervalPr
 	}, nil
 }
 
+//nolint
 func (s *Server) GetGoodProfits(ctx context.Context, in *npool.GetGoodProfitsRequest) (*npool.GetGoodProfitsResponse, error) {
 	handler, err := profit1.NewHandler(
 		ctx,
@@ -115,6 +117,7 @@ func (s *Server) GetGoodProfits(ctx context.Context, in *npool.GetGoodProfitsReq
 	}, nil
 }
 
+//nolint
 func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningRewardsRequest) (*npool.GetMiningRewardsResponse, error) {
 	handler, err := profit1.NewHandler(
 		ctx,

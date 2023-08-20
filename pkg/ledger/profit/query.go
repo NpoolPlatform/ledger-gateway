@@ -22,7 +22,6 @@ import (
 	profitpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/profit"
 	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
 	orderpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
-	orderstatemgrpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 	"github.com/google/uuid"
@@ -51,7 +50,7 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 	}
 
 	ofs := int32(0)
-	lim := int32(100)
+	lim := int32(100) //nolint
 	var orders []*ordermwpb.Order
 
 	for {
@@ -434,9 +433,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		}
 
 		switch order.OrderState {
-		case orderstatemgrpb.OrderState_Paid:
-		case orderstatemgrpb.OrderState_InService:
-		case orderstatemgrpb.OrderState_Expired:
+		case orderpb.OrderState_Paid:
+		case orderpb.OrderState_InService:
+		case orderpb.OrderState_Expired:
 		default:
 			continue
 		}
@@ -493,9 +492,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		}
 
 		switch order.OrderState {
-		case orderstatemgrpb.OrderState_Paid:
-		case orderstatemgrpb.OrderState_InService:
-		case orderstatemgrpb.OrderState_Expired:
+		case orderpb.OrderState_Paid:
+		case orderpb.OrderState_InService:
+		case orderpb.OrderState_Expired:
 		default:
 			continue
 		}

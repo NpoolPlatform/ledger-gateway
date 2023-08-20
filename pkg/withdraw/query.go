@@ -20,6 +20,7 @@ import (
 	reviewcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 )
 
+//nolint
 func (h *Handler) GetWithdraws(ctx context.Context) ([]*npool.Withdraw, uint32, error) {
 	withdraws, total, err := withdrawmwcli.GetWithdraws(ctx, &withdrawpb.Conds{
 		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},

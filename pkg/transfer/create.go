@@ -198,6 +198,9 @@ func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 			CreatedAt:  &now,
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &npool.Transfer{
 		CoinTypeID:         coin.CoinTypeID,
