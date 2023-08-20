@@ -41,9 +41,12 @@ func NewHandler(ctx context.Context, options ...func(context.Context, *Handler) 
 	return handler, nil
 }
 
-func WithID(id *string) func(context.Context, *Handler) error {
+func WithID(id *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if id == nil {
+			if must {
+				return fmt.Errorf("invali id")
+			}
 			return nil
 		}
 		if _, err := uuid.Parse(*id); err != nil {
@@ -54,9 +57,12 @@ func WithID(id *string) func(context.Context, *Handler) error {
 	}
 }
 
-func WithAppID(appID *string) func(context.Context, *Handler) error {
+func WithAppID(appID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if appID == nil {
+			if must {
+				return fmt.Errorf("invali app id")
+			}
 			return nil
 		}
 		if _, err := uuid.Parse(*appID); err != nil {
@@ -74,7 +80,7 @@ func WithAppID(appID *string) func(context.Context, *Handler) error {
 	}
 }
 
-func WithUserID(appID, userID *string) func(context.Context, *Handler) error {
+func WithUserID(appID, userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if appID == nil || userID == nil {
 			return nil
