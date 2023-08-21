@@ -26,8 +26,6 @@ import (
 	withdrawmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw"
 	withdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw"
 
-	lockcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
-
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 
 	txmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/tx"
@@ -263,7 +261,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	// TODO: move to TX
 	// TODO: unlock if we fail before transaction created
 
-	if _, err := lockcli.AddBalance(ctx, &ledgermwpb.LedgerReq{
+	if _, err := ledgermwcli.AddBalance(ctx, &ledgermwpb.LedgerReq{
 		AppID:      h.AppID,
 		UserID:     h.UserID,
 		CoinTypeID: h.CoinTypeID,
@@ -284,7 +282,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 
 		ioSubType := ledgerpb.IOSubType_Withdrawal
 		extra := fmt.Sprintf(`{"AccountID":"%v","Timestamp":"%v"}`, *h.AccountID, time.Now())
-		_, err := lockcli.SubBalance(ctx, &ledgermwpb.LedgerReq{
+		_, err := ledgermwcli.SubBalance(ctx, &ledgermwpb.LedgerReq{
 			AppID:      h.AppID,
 			UserID:     h.UserID,
 			CoinTypeID: h.CoinTypeID,

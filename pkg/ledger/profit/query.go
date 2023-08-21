@@ -12,12 +12,10 @@ import (
 	profitmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/profit"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	commonpb "github.com/NpoolPlatform/message/npool"
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	orderpb "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-	goodsmgrpb "github.com/NpoolPlatform/message/npool/good/mgr/v1/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	profitpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/profit"
@@ -348,8 +346,8 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		goodIDs = append(goodIDs, val.GetGoodID())
 	}
 
-	goods, _, err := goodscli.GetGoods(ctx, &goodsmgrpb.Conds{
-		IDs: &commonpb.StringSliceVal{
+	goods, _, err := goodscli.GetGoods(ctx, &goodspb.Conds{
+		IDs: &basetypes.StringSliceVal{
 			Op:    cruder.IN,
 			Value: goodIDs,
 		},
