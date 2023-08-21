@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-	deposit1 "github.com/NpoolPlatform/ledger-gateway/pkg/deposit"
+	deposit1 "github.com/NpoolPlatform/ledger-gateway/pkg/ledger/deposit"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/deposit"
 
 	"google.golang.org/grpc/codes"
