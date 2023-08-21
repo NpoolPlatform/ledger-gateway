@@ -9,19 +9,19 @@ import (
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
 	statementhandler "github.com/NpoolPlatform/ledger-gateway/pkg/ledger/statement"
-	profitmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/profit"
-	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
+	profitmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/profit"
+	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	commonpb "github.com/NpoolPlatform/message/npool"
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
+	orderpb "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	goodsmgrpb "github.com/NpoolPlatform/message/npool/good/mgr/v1/good"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	profitpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/profit"
-	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
-	orderpb "github.com/NpoolPlatform/message/npool/order/mgr/v1/order"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
+	profitpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/profit"
+	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 	"github.com/google/uuid"
@@ -55,14 +55,8 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 
 	for {
 		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
-			AppID: &commonpb.StringVal{
-				Op:    cruder.EQ,
-				Value: *h.AppID,
-			},
-			UserID: &commonpb.StringVal{
-				Op:    cruder.EQ,
-				Value: *h.UserID,
-			},
+			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		}, ofs, lim)
 		if err != nil {
 			return nil, 0, err
@@ -100,9 +94,9 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 		}
 
 		switch order.OrderState {
-		case orderpb.OrderState_Paid:
-		case orderpb.OrderState_InService:
-		case orderpb.OrderState_Expired:
+		case orderpb.OrderState_OrderStatePaid:
+		case orderpb.OrderState_OrderStateInService:
+		case orderpb.OrderState_OrderStateExpired:
 		default:
 			continue
 		}
@@ -319,14 +313,8 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	ofs = 0
 	for {
 		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
-			AppID: &commonpb.StringVal{
-				Op:    cruder.EQ,
-				Value: *h.AppID,
-			},
-			UserID: &commonpb.StringVal{
-				Op:    cruder.EQ,
-				Value: *h.UserID,
-			},
+			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		}, ofs, lim)
 		if err != nil {
 			return nil, 0, err
@@ -433,9 +421,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		}
 
 		switch order.OrderState {
-		case orderpb.OrderState_Paid:
-		case orderpb.OrderState_InService:
-		case orderpb.OrderState_Expired:
+		case orderpb.OrderState_OrderStatePaid:
+		case orderpb.OrderState_OrderStateInService:
+		case orderpb.OrderState_OrderStateExpired:
 		default:
 			continue
 		}
@@ -492,9 +480,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		}
 
 		switch order.OrderState {
-		case orderpb.OrderState_Paid:
-		case orderpb.OrderState_InService:
-		case orderpb.OrderState_Expired:
+		case orderpb.OrderState_OrderStatePaid:
+		case orderpb.OrderState_OrderStateInService:
+		case orderpb.OrderState_OrderStateExpired:
 		default:
 			continue
 		}

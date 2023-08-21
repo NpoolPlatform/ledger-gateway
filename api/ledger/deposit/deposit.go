@@ -5,8 +5,7 @@ import (
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	deposit1 "github.com/NpoolPlatform/ledger-gateway/pkg/deposit"
-	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/deposit"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,10 +40,10 @@ func (s *Server) CreateAppUserDeposit(ctx context.Context, in *npool.CreateAppUs
 			"In", in,
 			"Error", err,
 		)
-		return &ledger.CreateAppUserDepositResponse{}, status.Error(codes.Aborted, err.Error())
+		return &npool.CreateAppUserDepositResponse{}, status.Error(codes.Aborted, err.Error())
 	}
 
-	return &ledger.CreateAppUserDepositResponse{
+	return &npool.CreateAppUserDepositResponse{
 		Info: info,
 	}, nil
 }

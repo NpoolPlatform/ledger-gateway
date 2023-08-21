@@ -14,7 +14,7 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/transfer"
 
 	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 
@@ -25,10 +25,10 @@ import (
 	accountmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/transfer"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
-	statementmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
+	statementmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 
 	ledgermwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger"
-	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
+	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"

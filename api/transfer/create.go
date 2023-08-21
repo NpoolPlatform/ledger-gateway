@@ -5,8 +5,7 @@ import (
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	transfer1 "github.com/NpoolPlatform/ledger-gateway/pkg/transfer"
-	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/transfer"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,10 +42,10 @@ func (s *Server) CreateTransfer(ctx context.Context, in *npool.CreateTransferReq
 			"In", in,
 			"Error", err,
 		)
-		return &ledger.CreateTransferResponse{}, status.Error(codes.Aborted, err.Error())
+		return &npool.CreateTransferResponse{}, status.Error(codes.Aborted, err.Error())
 	}
 
-	return &ledger.CreateTransferResponse{
+	return &npool.CreateTransferResponse{
 		Info: info,
 	}, nil
 }

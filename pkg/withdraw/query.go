@@ -6,7 +6,7 @@ import (
 	withdrawmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw"
 	withdrawpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw"
 
 	useraccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/user"

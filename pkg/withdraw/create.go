@@ -19,15 +19,14 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw"
 	ledgermwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger"
-	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/lock"
 
 	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 	withdrawmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw"
 	withdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw"
 
-	lockcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/lock"
+	lockcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
 
@@ -260,38 +259,44 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 
 	amountStr := h.Amount.String()
 	feeAmountStr := feeAmount.String()
+	outcoming := "0"
 	// TODO: move to TX
 	// TODO: unlock if we fail before transaction created
 
-	if _, err := lockcli.LockBalance(ctx, &lock.BalanceReq{
-		AppID:      *h.AppID,
-		UserID:     *h.UserID,
-		CoinTypeID: *h.CoinTypeID,
-		Amount:     h.Amount.String(),
+	if _, err := lockcli.AddBalance(ctx, &ledgermwpb.LedgerReq{
+		AppID:      h.AppID,
+		UserID:     h.UserID,
+		CoinTypeID: h.CoinTypeID,
+		Locked:     &amountStr,
+		Outcoming:  &outcoming,
 	}); err != nil {
 		return nil, err
 	}
 
-	// TODO:
-	// needUnlock := true
-	// defer func() {
-	// 	if err == nil {
-	// 		return
-	// 	}
-	// 	if !needUnlock {
-	// 		return
-	// 	}
-	// 	_ = ledgermwcli.UnlockBalance(
-	// 		ctx,
-	// 		appID, userID, coinTypeID,
-	// 		ledgermgrdetailpb.IOSubType_Withdrawal,
-	// 		amount, decimal.NewFromInt(0),
-	// 		fmt.Sprintf(
-	// 			`{"AccountID":"%v","Timestamp":"%v"}`,
-	// 			accountID, time.Now(),
-	// 		),
-	// 	)
-	// }()
+	needUnlock := true
+	defer func() {
+		if err == nil {
+			return
+		}
+		if !needUnlock {
+			return
+		}
+
+		ioSubType := ledgerpb.IOSubType_Withdrawal
+		extra := fmt.Sprintf(`{"AccountID":"%v","Timestamp":"%v"}`, *h.AccountID, time.Now())
+		_, err := lockcli.SubBalance(ctx, &ledgermwpb.LedgerReq{
+			AppID:      h.AppID,
+			UserID:     h.UserID,
+			CoinTypeID: h.CoinTypeID,
+			IOSubType:  &ioSubType,
+			IOExtra:    &extra,
+			Locked:     &amountStr,
+			Outcoming:  &outcoming,
+		})
+		if err != nil {
+			logger.Sugar().Error("SubBalance failed, err %v", err)
+		}
+	}()
 
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
@@ -367,7 +372,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 			PlatformTransactionID: &tx.ID,
 			State:                 &state,
 		}); err != nil {
-			// needUnlock = false
+			needUnlock = false
 			return nil, err
 		}
 
@@ -388,7 +393,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		}
 	}
 
-	// needUnlock = false
+	needUnlock = false
 	now := uint32(time.Now().Unix())
 
 	_, err = notifmwcli.GenerateNotifs(ctx, &notifmwpb.GenerateNotifsRequest{

@@ -7,13 +7,13 @@ import (
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/statement"
+	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/statement"
+	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	"github.com/google/uuid"
 )
 

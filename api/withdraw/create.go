@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw"
 
 	withdraw1 "github.com/NpoolPlatform/ledger-gateway/pkg/withdraw"
 

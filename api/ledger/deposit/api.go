@@ -3,22 +3,22 @@ package deposit
 import (
 	"context"
 
-	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	deposit "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/deposit"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
 
 type Server struct {
-	ledger.UnimplementedGatewayServer
+	deposit.UnimplementedGatewayServer
 }
 
 func Register(server grpc.ServiceRegistrar) {
-	ledger.RegisterGatewayServer(server, &Server{})
+	deposit.RegisterGatewayServer(server, &Server{})
 }
 
 func RegisterGateway(mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	if err := ledger.RegisterGatewayHandlerFromEndpoint(context.Background(), mux, endpoint, opts); err != nil {
+	if err := deposit.RegisterGatewayHandlerFromEndpoint(context.Background(), mux, endpoint, opts); err != nil {
 		return err
 	}
 	return nil
