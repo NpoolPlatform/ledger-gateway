@@ -257,16 +257,14 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 
 	amountStr := h.Amount.String()
 	feeAmountStr := feeAmount.String()
-	outcoming := "0"
 	// TODO: move to TX
 	// TODO: unlock if we fail before transaction created
 
-	if _, err := ledgermwcli.AddBalance(ctx, &ledgermwpb.LedgerReq{
+	if _, err := ledgermwcli.SubBalance(ctx, &ledgermwpb.LedgerReq{
 		AppID:      h.AppID,
 		UserID:     h.UserID,
 		CoinTypeID: h.CoinTypeID,
-		Locked:     &amountStr,
-		Outcoming:  &outcoming,
+		Spendable:  &amountStr,
 	}); err != nil {
 		return nil, err
 	}
@@ -282,14 +280,13 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 
 		ioSubType := ledgerpb.IOSubType_Withdrawal
 		extra := fmt.Sprintf(`{"AccountID":"%v","Timestamp":"%v"}`, *h.AccountID, time.Now())
-		_, err := ledgermwcli.SubBalance(ctx, &ledgermwpb.LedgerReq{
+		_, err := ledgermwcli.AddBalance(ctx, &ledgermwpb.LedgerReq{
 			AppID:      h.AppID,
 			UserID:     h.UserID,
 			CoinTypeID: h.CoinTypeID,
 			IOSubType:  &ioSubType,
 			IOExtra:    &extra,
 			Locked:     &amountStr,
-			Outcoming:  &outcoming,
 		})
 		if err != nil {
 			logger.Sugar().Error("SubBalance failed, err %v", err)
