@@ -57,12 +57,12 @@ github.com/NpoolPlatform/go-service-framework v0.0.0-20230814035104-e1466b5c157e
 github.com/NpoolPlatform/go-service-framework v0.0.0-20230814035104-e1466b5c157e/go.mod h1:Kh7DMkWnYOMHxEKq7QfJqbxm1HaUPkhTNN74lfHQxyE=
 github.com/NpoolPlatform/good-middleware v0.0.0-20230823161324-5a4bd20d6177 h1:iVih3LOTwriGuqLhLcMHiZ9IT1SEZDkEkXNZKf3+HoE=
 github.com/NpoolPlatform/good-middleware v0.0.0-20230823161324-5a4bd20d6177/go.mod h1:7h7sIeNWy5yGuNFiepl4UMMpvmSGwFrGV8ErlYjNK4Y=
-github.com/NpoolPlatform/ledger-middleware v0.0.0-20230823120025-03869aa40235 h1:/1zBI5cXLtZoWz9MlPjScNuJ6JvTt3l73vggFCihTws=
-github.com/NpoolPlatform/ledger-middleware v0.0.0-20230823120025-03869aa40235/go.mod h1:RwCOAMnUjITlw21sFrb7tMEGxjbP54/Rvdm5q3KfaAk=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20230824093703-57d7fb01413c h1:08rcNp1t4hlHc9OIitgZ9vLLkFrdSXByWNnqsFk2UsE=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20230824093703-57d7fb01413c/go.mod h1:Ds1Zw4xfCpXMpQwkS8aICXMgufxdtZCSChevzZEt3LA=
 github.com/NpoolPlatform/libent-cruder v0.0.0-20230822060122-512da6e5c8bf h1:YysNU0GfIyd8iC4KwdZmTIx6TJYairrVrLqu8E9T0yM=
 github.com/NpoolPlatform/libent-cruder v0.0.0-20230822060122-512da6e5c8bf/go.mod h1:1B4hvnPiGavpCYaEjW5H6xDz+UizFdRTIRBtNIGbx5s=
-github.com/NpoolPlatform/message v0.0.0-20230823160403-d8d978204813 h1:pPGKUDjsRBBIM41juPJQdKyUmME/riKVPR3doPGYPtU=
-github.com/NpoolPlatform/message v0.0.0-20230823160403-d8d978204813/go.mod h1:PxJpF0vSSOke+NJskbRBRQ2fK2K3SRe8zaEja+GxSHk=
+github.com/NpoolPlatform/message v0.0.0-20230824074057-5857f9d46a2c h1:J7z87bcKnqzzyVh2IWk+GuOt1EU8sZLJGyuMLhn9eIc=
+github.com/NpoolPlatform/message v0.0.0-20230824074057-5857f9d46a2c/go.mod h1:PxJpF0vSSOke+NJskbRBRQ2fK2K3SRe8zaEja+GxSHk=
 github.com/NpoolPlatform/notif-middleware v0.0.0-20230712041535-89b4cc04d32d h1:x+PE5XvTPAo8G/Mf/iq6SYQ7kk1gyKej108YsEutbG4=
 github.com/NpoolPlatform/notif-middleware v0.0.0-20230712041535-89b4cc04d32d/go.mod h1:CFO8LWM6uoKfl/HcHYvgmM4DVz3EYDgZr35H3HZdefI=
 github.com/NpoolPlatform/order-middleware v0.0.0-20230821095253-7b8c754f568d h1:vbTK+LBkf0OWKmfQqzpziw13zZjvLaJ/i4qpuKZx+s0=
