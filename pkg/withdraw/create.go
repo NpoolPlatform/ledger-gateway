@@ -286,7 +286,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 			CoinTypeID: h.CoinTypeID,
 			IOSubType:  &ioSubType,
 			IOExtra:    &extra,
-			Locked:     &amountStr,
+			Spendable:  &amountStr,
 		})
 		if err != nil {
 			logger.Sugar().Error("SubBalance failed, err %v", err)
