@@ -27,11 +27,13 @@ import (
 	withdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw"
 
 	coininfocli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin"
+	coinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin"
 
 	txmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/tx"
 	txmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/tx"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
 	sphinxproxypb "github.com/NpoolPlatform/message/npool/sphinxproxy"
 	sphinxproxycli "github.com/NpoolPlatform/sphinx-proxy/pkg/client"
@@ -59,11 +61,22 @@ import (
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 )
 
-// nolint
-func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
+type createHandler struct {
+	*Handler
+	account                *useraccmwpb.Account
+	accountBalance         decimal.Decimal
+	platformAccount        *pltfaccmwpb.Account
+	platformAccountBalance decimal.Decimal
+	coin                   *coinmwpb.Coin
+	feecoin                *coinmwpb.Coin
+	appcoin                *appcoinmwpb.Coin
+	feeBalance             decimal.Decimal
+}
+
+func (h *createHandler) verifyUserCode(ctx context.Context) error {
 	user, _ := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
 	if user.State != basetypes.KycState_Approved {
-		return nil, fmt.Errorf("kyc not approved, user id(%v)", h.UserID)
+		return fmt.Errorf("kyc not approved, user id(%v)", h.UserID)
 	}
 	if *h.AccountType == basetypes.SignMethod_Google {
 		h.Account = &user.GoogleSecret
@@ -77,29 +90,41 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		UsedFor:     basetypes.UsedFor_Withdraw,
 		Code:        *h.VerificationCode,
 	}); err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
 
+func (h *createHandler) checkBalance(ctx context.Context) error {
 	ledger, err := ledgermwcli.GetLedgerOnly(ctx, &ledgermwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if ledger == nil {
-		return nil, fmt.Errorf("ledger not exist, appid(%v), userid(%v), cointypeid(%v)", *h.AppID, *h.UserID, *h.CoinTypeID)
+		return fmt.Errorf("ledger not exist, appid(%v), userid(%v), cointypeid(%v)", *h.AppID, *h.UserID, *h.CoinTypeID)
 	}
-
 	spendable, err := decimal.NewFromString(ledger.Spendable)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if spendable.Cmp(*h.Amount) < 0 {
-		return nil, fmt.Errorf("insufficient funds, spendable(%v)", spendable.String())
+		return fmt.Errorf("insufficient funds, spendable(%v)", spendable.String())
 	}
+	maxAmount, err := decimal.NewFromString(h.appcoin.MaxAmountPerWithdraw)
+	if err != nil {
+		return err
+	}
+	if h.Amount.Cmp(maxAmount) > 0 {
+		return fmt.Errorf("overflow")
+	}
+	return nil
+}
 
+func (h *createHandler) getUserAccount(ctx context.Context) error {
 	account, err := useraccmwcli.GetAccountOnly(ctx, &useraccmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
@@ -110,45 +135,30 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		UsedFor:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(basetypes.AccountUsedFor_UserWithdraw)},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if account == nil {
-		return nil, fmt.Errorf("could not find active account for withdraw, cointypeid(%v)", *h.CoinTypeID)
+		return fmt.Errorf("could not find active account for withdraw, cointypeid(%v)", *h.CoinTypeID)
 	}
+	h.account = account
 
-	coin, _ := coininfocli.GetCoin(ctx, *h.CoinTypeID)
-	if coin.Disabled {
-		return nil, fmt.Errorf("coin disabled")
-	}
-	appCoin, err := appcoinmwcli.GetCoin(ctx, *h.CoinTypeID)
-	if err != nil {
-		return nil, err
-	}
-	if appCoin.Disabled {
-		return nil, fmt.Errorf("app coin disabled")
-	}
-
-	maxWithdrawAmount, err := decimal.NewFromString(appCoin.MaxAmountPerWithdraw)
-	if err != nil {
-		return nil, err
-	}
-	if h.Amount.Cmp(maxWithdrawAmount) > 0 {
-		return nil, fmt.Errorf("amount greater than max amount per withdraw %v", maxWithdrawAmount.String())
-	}
-
-	if !strings.Contains(coin.Name, "ironfish") {
+	if !strings.Contains(h.coin.Name, "ironfish") {
 		bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
-			Name:    coin.Name,
+			Name:    h.coin.Name,
 			Address: account.Address,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if bal == nil {
-			return nil, fmt.Errorf("coin get balance fail, name(%v), address(%v)", coin.Name, account.Address)
+			return fmt.Errorf("can not get balance")
 		}
+		h.accountBalance = decimal.RequireFromString(bal.BalanceStr)
 	}
+	return nil
+}
 
+func (h *createHandler) getPlatformAccount(ctx context.Context) error {
 	hotacc, err := pltfaccmwcli.GetAccountOnly(ctx, &pltfaccmwpb.Conds{
 		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
 		UsedFor:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(basetypes.AccountUsedFor_UserBenefitHot)},
@@ -157,57 +167,118 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		Blocked:    &basetypes.BoolVal{Op: cruder.EQ, Value: false},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if hotacc == nil {
-		return nil, fmt.Errorf("invalid hot wallet account")
+		return fmt.Errorf("invalid hot wallet account")
 	}
 
 	bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
-		Name:    coin.Name,
+		Name:    h.coin.Name,
 		Address: hotacc.Address,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if bal == nil {
-		return nil, fmt.Errorf("platform account get balance fail, name(%v), hot address(%v)", coin.Name, hotacc.Address)
+		return fmt.Errorf("can not get balance")
 	}
+	h.platformAccountBalance = decimal.RequireFromString(bal.BalanceStr)
+	return nil
+}
 
-	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
-
-	balance := decimal.RequireFromString(bal.BalanceStr)
-	if balance.Cmp(*h.Amount) <= 0 {
-		reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFunds
-	}
-
-	if coin.ID != coin.FeeCoinTypeID {
-		feecoin, err := coininfocli.GetCoin(ctx, coin.FeeCoinTypeID)
+func (h *createHandler) getFeeCoinBalance(ctx context.Context) error {
+	if h.coin.ID != h.coin.FeeCoinTypeID {
+		feecoin, err := coininfocli.GetCoin(ctx, h.coin.FeeCoinTypeID)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if feecoin == nil {
-			return nil, fmt.Errorf("invalid fee coin, cointypeid(%v)", coin.FeeCoinTypeID)
+			return fmt.Errorf("invalid fee coin")
 		}
+		h.feecoin = feecoin
 
 		bal, err := sphinxproxycli.GetBalance(ctx, &sphinxproxypb.GetBalanceRequest{
 			Name:    feecoin.Name,
-			Address: hotacc.Address,
+			Address: h.platformAccount.Address,
 		})
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if bal == nil {
-			return nil, fmt.Errorf("fee coin get balance fail")
+			return fmt.Errorf("invalid balance")
 		}
+		h.feeBalance = decimal.RequireFromString(bal.BalanceStr)
+	}
+	return nil
+}
 
-		feeAmount, err := decimal.NewFromString(feecoin.LowFeeAmount)
+func (h *createHandler) checkCoin(ctx context.Context) error {
+	coin, err := coininfocli.GetCoin(ctx, *h.CoinTypeID)
+	if coin == nil {
+		return fmt.Errorf("coin not found %v", *h.CoinTypeID)
+	}
+	if err != nil {
+		return err
+	}
+	if coin.Disabled {
+		return fmt.Errorf("coin disabled")
+	}
+	appCoin, err := appcoinmwcli.GetCoin(ctx, *h.CoinTypeID)
+	if err != nil {
+		return err
+	}
+	if appCoin == nil {
+		return fmt.Errorf("app coin not found %v", *h.CoinTypeID)
+	}
+	if appCoin.Disabled {
+		return fmt.Errorf("app coin disabled")
+	}
+	return nil
+}
+
+func (h *createHandler) getWithdrawFeeAmount(ctx context.Context) (string, error) {
+	feeAmount, err := decimal.NewFromString(h.appcoin.WithdrawFeeAmount)
+	if err != nil {
+		return "", err
+	}
+	if feeAmount.Cmp(decimal.NewFromInt(0)) <= 0 {
+		return "", fmt.Errorf("invalid fee amount")
+	}
+
+	if h.appcoin.WithdrawFeeByStableUSD {
+		curr, err := currencymwcli.GetCurrencyOnly(ctx, &currencymwpb.Conds{
+			CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: h.coin.ID},
+		})
 		if err != nil {
-			return nil, err
+			return "", err
 		}
+		value, err := decimal.NewFromString(curr.MarketValueLow)
+		if err != nil {
+			return "", err
+		}
+		if value.Cmp(decimal.NewFromInt(0)) <= 0 {
+			return "", fmt.Errorf("invalid coin price")
+		}
+		feeAmount = feeAmount.Div(value)
+	}
+	if h.Amount.Cmp(feeAmount) <= 0 {
+		return "", fmt.Errorf("amount(%v) less than fee amount(%v)", h.Amount.String(), feeAmount.String())
+	}
+	return feeAmount.String(), nil
+}
 
-		balance := decimal.RequireFromString(bal.BalanceStr)
-		if balance.Cmp(feeAmount) <= 0 {
+func (h *createHandler) getReviewTrigger(ctx context.Context) (reviewpb.ReviewTriggerType, error) {
+	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
+	if h.platformAccountBalance.Cmp(*h.Amount) <= 0 {
+		reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFunds
+	}
+	if h.feecoin != nil {
+		feeAmount, err := decimal.NewFromString(h.feecoin.LowFeeAmount)
+		if err != nil {
+			return reviewTrigger, err
+		}
+		if h.feeBalance.Cmp(feeAmount) <= 0 {
 			switch reviewTrigger {
 			case reviewpb.ReviewTriggerType_InsufficientFunds:
 				reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFundsGas
@@ -216,43 +287,46 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 			}
 		}
 	}
-
-	threshold, err := decimal.NewFromString(appCoin.WithdrawAutoReviewAmount)
+	thresold, err := decimal.NewFromString(h.appcoin.WithdrawAutoReviewAmount)
 	if err != nil {
-		return nil, err
+		return reviewTrigger, err
 	}
-
-	if h.Amount.Cmp(threshold) > 0 && reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
+	if h.Amount.Cmp(thresold) > 0 && reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
 		reviewTrigger = reviewpb.ReviewTriggerType_LargeAmount
 	}
+	return reviewTrigger, nil
+}
 
-	feeAmount, err := decimal.NewFromString(appCoin.WithdrawFeeAmount)
+// nolint
+func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
+	handler := &createHandler{
+		Handler: h,
+	}
+	if err := handler.verifyUserCode(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkCoin(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkBalance(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.getUserAccount(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.getPlatformAccount(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.getFeeCoinBalance(ctx); err != nil {
+		return nil, err
+	}
+	reviewTrigger, err := handler.getReviewTrigger(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if feeAmount.Cmp(decimal.NewFromInt(0)) <= 0 {
-		return nil, fmt.Errorf("invalid withdraw fee amount")
-	}
-
-	if appCoin.WithdrawFeeByStableUSD {
-		curr, err := currencymwcli.GetCurrencyOnly(ctx, &currencymwpb.Conds{
-			CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: coin.ID},
-		})
-		if err != nil {
-			return nil, err
-		}
-		value, err := decimal.NewFromString(curr.MarketValueLow)
-		if err != nil {
-			return nil, err
-		}
-		if value.Cmp(decimal.NewFromInt(0)) <= 0 {
-			return nil, fmt.Errorf("invalid coin price")
-		}
-		feeAmount = feeAmount.Div(value)
-	}
-
-	if h.Amount.Cmp(feeAmount) <= 0 {
-		return nil, fmt.Errorf("amount(%v) less than fee amount(%v)", h.Amount.String(), feeAmount.String())
+	feeAmount, err := handler.getWithdrawFeeAmount(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	amountStr := h.Amount.String()
@@ -293,6 +367,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		}
 	}()
 
+	// create withdraw & create review in dtm
 	// TODO: move to dtm to ensure data integrity
 	// Create withdraw
 	info, err := withdrawmwcli.CreateWithdraw(ctx, &withdrawmwpb.WithdrawReq{
