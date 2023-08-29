@@ -16,6 +16,8 @@ import (
 	notifmwcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
+	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+
 
 	"github.com/shopspring/decimal"
 
@@ -63,6 +65,7 @@ import (
 
 type createHandler struct {
 	*Handler
+	user                   *usermwpb.User
 	account                *useraccmwpb.Account
 	accountBalance         decimal.Decimal
 	platformAccount        *pltfaccmwpb.Account
@@ -74,13 +77,20 @@ type createHandler struct {
 }
 
 func (h *createHandler) verifyUserCode(ctx context.Context) error {
-	user, _ := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
+	user,err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("invalid user")
+	}
 	if user.State != basetypes.KycState_Approved {
 		return fmt.Errorf("kyc not approved, user id(%v)", h.UserID)
 	}
 	if *h.AccountType == basetypes.SignMethod_Google {
 		h.Account = &user.GoogleSecret
 	}
+	h.user = user
 
 	if err := usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
 		Prefix:      basetypes.Prefix_PrefixUserCode.String(),
@@ -330,7 +340,6 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	}
 
 	amountStr := h.Amount.String()
-	feeAmountStr := feeAmount.String()
 	// TODO: move to TX
 	// TODO: unlock if we fail before transaction created
 
@@ -375,7 +384,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		UserID:     h.UserID,
 		CoinTypeID: h.CoinTypeID,
 		AccountID:  h.AccountID,
-		Address:    &account.Address,
+		Address:    &handler.account.Address,
 		Amount:     &amountStr,
 	})
 	if err != nil {
@@ -415,8 +424,8 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 			`{"AppID":"%v","UserID":"%v","Address":"%v","CoinName":"%v","WithdrawID":"%v"}`,
 			*h.AppID,
 			*h.UserID,
-			account.Address,
-			coin.Name,
+			handler.account.Address,
+			handler.coin.Name,
 			info.ID,
 		)
 
@@ -425,10 +434,10 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		// TODO: should be in dtm
 		tx, err := txmwcli.CreateTx(ctx, &txmwpb.TxReq{
 			CoinTypeID:    h.CoinTypeID,
-			FromAccountID: &hotacc.AccountID,
-			ToAccountID:   &account.AccountID,
+			FromAccountID: &handler.platformAccount.AccountID,
+			ToAccountID:   &handler.account.AccountID,
 			Amount:        &amountStr,
-			FeeAmount:     &feeAmountStr,
+			FeeAmount:     &feeAmount,
 			Extra:         &message,
 			Type:          &txType,
 		})
@@ -472,10 +481,10 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		EventType: basetypes.UsedFor_WithdrawalRequest,
 		NotifType: basetypes.NotifType_NotifUnicast,
 		Vars: &tmplmwpb.TemplateVars{
-			Username:  &user.Username,
+			Username:  &handler.user.Username,
 			Amount:    &amountStr,
-			CoinUnit:  &coin.Unit,
-			Address:   &account.Address,
+			CoinUnit:  &handler.coin.Unit,
+			Address:   &handler.account.Address,
 			Timestamp: &now,
 		},
 	})
