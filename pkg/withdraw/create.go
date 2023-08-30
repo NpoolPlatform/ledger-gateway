@@ -329,6 +329,9 @@ func (h *createHandler) withCreateWithdraw(dispose *dtmcli.SagaDispose) {
 		Address:    &h.account.Address,
 		Amount:     &amount,
 	}
+	if h.reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
+		req.PlatformTransactionID = h.txID
+	}
 
 	dispose.Add(
 		ledgermwsvcname.ServiceDomain,
