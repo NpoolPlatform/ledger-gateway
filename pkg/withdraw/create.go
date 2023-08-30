@@ -63,6 +63,7 @@ import (
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
+	"github.com/NpoolPlatform/go-service-framework/pkg/pubsub"
 	ledgermwsvcname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
 	reviewmwsvcname "github.com/NpoolPlatform/review-middleware/pkg/servicename"
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
@@ -82,6 +83,7 @@ type createHandler struct {
 	feeBalance             decimal.Decimal
 	reviewTrigger          reviewpb.ReviewTriggerType
 	reviewID               *string
+	txID                   *string
 }
 
 func (h *createHandler) verifyUserCode(ctx context.Context) error {
@@ -360,6 +362,32 @@ func (h *createHandler) withCreateReview(dispose *dtmcli.SagaDispose) {
 	)
 }
 
+func (h *createHandler) notifyCreateTx(req *txmwpb.TxReq) {
+	if err := pubsub.WithPublisher(func(publisher *pubsub.Publisher) error {
+		return publisher.Update(
+			basetypes.MsgID_CreateTxReq.String(),
+			nil,
+			nil,
+			nil,
+			req,
+		)
+	}); err != nil {
+		logger.Sugar().Errorw(
+			"notifyCreateTx",
+			"ID", *req.ID,
+			"CoinTypeID", *req.CoinTypeID,
+			"FromAccountID", *req.FromAccountID,
+			"ToAccountID", *req.ToAccountID,
+			"Amount", *req.Amount,
+			"FeeAmount", *req.FeeAmount,
+			"Extra", *req.Extra,
+			"Type", *req.Type,
+			"Error", err,
+		)
+	}
+
+}
+
 // nolint
 func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	handler := &createHandler{
@@ -392,7 +420,6 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	if err != nil {
 		return nil, err
 	}
-	amountStr := h.Amount.String()
 
 	id := uuid.NewString()
 	if h.ID == nil {
@@ -402,6 +429,11 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	reviewID := uuid.NewString()
 	if handler.reviewID == nil {
 		handler.reviewID = &reviewID
+	}
+
+	txID := uuid.NewString()
+	if handler.txID == nil {
+		handler.txID = &txID
 	}
 
 	sagaDispose := dtmcli.NewSagaDispose(dtmimp.TransOptions{
@@ -426,6 +458,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		}); err != nil {
 			return nil, err
 		}
+
 		message := fmt.Sprintf(
 			`{"AppID":"%v","UserID":"%v","Address":"%v","CoinName":"%v","WithdrawID":"%v"}`,
 			*h.AppID,
@@ -434,9 +467,10 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 			handler.coin.Name,
 			*h.ID,
 		)
-
 		txType := basetypes.TxType_TxWithdraw
-		tx, err := txmwcli.CreateTx(ctx, &txmwpb.TxReq{
+		amountStr := h.Amount.String()
+		req := &txmwpb.TxReq{
+			ID:            handler.txID,
 			CoinTypeID:    h.CoinTypeID,
 			FromAccountID: &handler.platformAccount.AccountID,
 			ToAccountID:   &handler.account.AccountID,
@@ -444,8 +478,10 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 			FeeAmount:     &feeAmount,
 			Extra:         &message,
 			Type:          &txType,
-		})
+		}
+		tx, err := txmwcli.CreateTx(ctx, req)
 		if err != nil {
+			handler.notifyCreateTx(req)
 			return nil, err
 		}
 
@@ -476,6 +512,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	}
 
 	now := uint32(time.Now().Unix())
+	amountStr := h.Amount.String()
 	_, err = notifmwcli.GenerateNotifs(ctx, &notifmwpb.GenerateNotifsRequest{
 		AppID:     *h.AppID,
 		UserID:    *h.UserID,
