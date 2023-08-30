@@ -288,7 +288,7 @@ func (h *createHandler) getWithdrawFeeAmount(ctx context.Context) (string, error
 	return feeAmount.String(), nil
 }
 
-func (h *createHandler) setReviewTrigger(ctx context.Context) error {
+func (h *createHandler) setReviewTrigger() error {
 	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
 	if h.platformAccountBalance.Cmp(*h.Amount) <= 0 {
 		reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFunds
@@ -385,7 +385,6 @@ func (h *createHandler) notifyCreateTx(req *txmwpb.TxReq) {
 			"Error", err,
 		)
 	}
-
 }
 
 // nolint
@@ -413,7 +412,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	if err := handler.getFeeCoinBalance(ctx); err != nil {
 		return nil, err
 	}
-	if err := handler.setReviewTrigger(ctx); err != nil {
+	if err := handler.setReviewTrigger(); err != nil {
 		return nil, err
 	}
 	feeAmount, err := handler.getWithdrawFeeAmount(ctx)
