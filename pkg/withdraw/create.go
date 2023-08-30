@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+	"github.com/google/uuid"
 
 	txnotifmwpb "github.com/NpoolPlatform/message/npool/notif/mw/v1/notif/tx"
 	txnotifcli "github.com/NpoolPlatform/notif-middleware/pkg/client/notif/tx"
@@ -17,7 +18,6 @@ import (
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
-
 
 	"github.com/shopspring/decimal"
 
@@ -49,7 +49,7 @@ import (
 	reviewpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 
-	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
+	constant "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 
 	usercodemwcli "github.com/NpoolPlatform/basal-middleware/pkg/client/usercode"
 	usercodemwpb "github.com/NpoolPlatform/message/npool/basal/mw/v1/usercode"
@@ -61,10 +61,16 @@ import (
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+
+	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
+	ledgermwsvcname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
+	reviewmwsvcname "github.com/NpoolPlatform/review-middleware/pkg/servicename"
+	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
 )
 
 type createHandler struct {
 	*Handler
+	RequestTimeoutSeconds  int64
 	user                   *usermwpb.User
 	account                *useraccmwpb.Account
 	accountBalance         decimal.Decimal
@@ -74,10 +80,12 @@ type createHandler struct {
 	feecoin                *coinmwpb.Coin
 	appcoin                *appcoinmwpb.Coin
 	feeBalance             decimal.Decimal
+	reviewTrigger          reviewpb.ReviewTriggerType
+	reviewID               *string
 }
 
 func (h *createHandler) verifyUserCode(ctx context.Context) error {
-	user,err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
+	user, err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
 	if err != nil {
 		return err
 	}
@@ -278,7 +286,7 @@ func (h *createHandler) getWithdrawFeeAmount(ctx context.Context) (string, error
 	return feeAmount.String(), nil
 }
 
-func (h *createHandler) getReviewTrigger(ctx context.Context) (reviewpb.ReviewTriggerType, error) {
+func (h *createHandler) setReviewTrigger(ctx context.Context) error {
 	reviewTrigger := reviewpb.ReviewTriggerType_AutoReviewed
 	if h.platformAccountBalance.Cmp(*h.Amount) <= 0 {
 		reviewTrigger = reviewpb.ReviewTriggerType_InsufficientFunds
@@ -286,7 +294,7 @@ func (h *createHandler) getReviewTrigger(ctx context.Context) (reviewpb.ReviewTr
 	if h.feecoin != nil {
 		feeAmount, err := decimal.NewFromString(h.feecoin.LowFeeAmount)
 		if err != nil {
-			return reviewTrigger, err
+			return err
 		}
 		if h.feeBalance.Cmp(feeAmount) <= 0 {
 			switch reviewTrigger {
@@ -299,18 +307,65 @@ func (h *createHandler) getReviewTrigger(ctx context.Context) (reviewpb.ReviewTr
 	}
 	thresold, err := decimal.NewFromString(h.appcoin.WithdrawAutoReviewAmount)
 	if err != nil {
-		return reviewTrigger, err
+		return err
 	}
 	if h.Amount.Cmp(thresold) > 0 && reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
 		reviewTrigger = reviewpb.ReviewTriggerType_LargeAmount
 	}
-	return reviewTrigger, nil
+	h.reviewTrigger = reviewTrigger
+	return nil
+}
+
+func (h *createHandler) withCreateWithdraw(dispose *dtmcli.SagaDispose) {
+	amount := h.Amount.String()
+	req := &withdrawmwpb.WithdrawReq{
+		ID:         h.ID,
+		AppID:      h.AppID,
+		UserID:     h.UserID,
+		CoinTypeID: h.CoinTypeID,
+		AccountID:  h.AccountID,
+		Address:    &h.account.Address,
+		Amount:     &amount,
+	}
+
+	dispose.Add(
+		ledgermwsvcname.ServiceDomain,
+		"ledger.middleware.withdraw.v2.Middleware/CreateWithdraw",
+		"ledger.middleware.withdraw.v2.Middleware/DeleteWithdraw",
+		&withdrawmwpb.CreateWithdrawRequest{
+			Info: req,
+		},
+	)
+}
+
+func (h *createHandler) withCreateReview(dispose *dtmcli.SagaDispose) {
+	domain := constant.ServiceDomain
+	objectType := reviewpb.ReviewObjectType_ObjectWithdrawal
+
+	req := &reviewpb.ReviewReq{
+		ID:         h.reviewID,
+		AppID:      h.AppID,
+		Domain:     &domain,
+		ObjectType: &objectType,
+		ObjectID:   h.ID,
+		Trigger:    &h.reviewTrigger,
+	}
+	dispose.Add(
+		reviewmwsvcname.ServiceDomain,
+		"review.middleware.review.v2.Middleware/CreateReview",
+		"review.middleware.review.v2.Middleware/DeleteReview",
+		&reviewpb.CreateReviewRequest{
+			Info: req,
+		},
+	)
 }
 
 // nolint
 func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	handler := &createHandler{
-		Handler: h,
+		Handler:               h,
+		reviewTrigger:         reviewpb.ReviewTriggerType_AutoReviewed,
+		RequestTimeoutSeconds: 10,
 	}
 	if err := handler.verifyUserCode(ctx); err != nil {
 		return nil, err
@@ -330,108 +385,57 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	if err := handler.getFeeCoinBalance(ctx); err != nil {
 		return nil, err
 	}
-	reviewTrigger, err := handler.getReviewTrigger(ctx)
-	if err != nil {
+	if err := handler.setReviewTrigger(ctx); err != nil {
 		return nil, err
 	}
 	feeAmount, err := handler.getWithdrawFeeAmount(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	amountStr := h.Amount.String()
-	// TODO: move to TX
-	// TODO: unlock if we fail before transaction created
 
-	if _, err := ledgermwcli.SubBalance(ctx, &ledgermwpb.LedgerReq{
-		AppID:      h.AppID,
-		UserID:     h.UserID,
-		CoinTypeID: h.CoinTypeID,
-		Spendable:  &amountStr,
-	}); err != nil {
-		return nil, err
+	id := uuid.NewString()
+	if h.ID == nil {
+		h.ID = &id
 	}
 
-	needUnlock := true
-	defer func() {
-		if err == nil {
-			return
-		}
-		if !needUnlock {
-			return
-		}
+	reviewID := uuid.NewString()
+	if handler.reviewID == nil {
+		handler.reviewID = &reviewID
+	}
 
-		ioSubType := ledgerpb.IOSubType_Withdrawal
-		extra := fmt.Sprintf(`{"AccountID":"%v","Timestamp":"%v"}`, *h.AccountID, time.Now())
-		_, err := ledgermwcli.AddBalance(ctx, &ledgermwpb.LedgerReq{
-			AppID:      h.AppID,
-			UserID:     h.UserID,
-			CoinTypeID: h.CoinTypeID,
-			IOSubType:  &ioSubType,
-			IOExtra:    &extra,
-			Spendable:  &amountStr,
-		})
-		if err != nil {
-			logger.Sugar().Error("add balance failed, err %v", err)
-		}
-	}()
-
-	// create withdraw & create review in dtm
-	// TODO: move to dtm to ensure data integrity
-	// Create withdraw
-	info, err := withdrawmwcli.CreateWithdraw(ctx, &withdrawmwpb.WithdrawReq{
-		AppID:      h.AppID,
-		UserID:     h.UserID,
-		CoinTypeID: h.CoinTypeID,
-		AccountID:  h.AccountID,
-		Address:    &handler.account.Address,
-		Amount:     &amountStr,
+	sagaDispose := dtmcli.NewSagaDispose(dtmimp.TransOptions{
+		WaitResult:     true,
+		RequestTimeout: handler.RequestTimeoutSeconds,
 	})
-	if err != nil {
+
+	handler.withCreateWithdraw(sagaDispose)
+	handler.withCreateReview(sagaDispose)
+	if err := dtmcli.WithSaga(ctx, sagaDispose); err != nil {
 		return nil, err
 	}
 
-	serviceName := constant.ServiceName
-	objectType := reviewpb.ReviewObjectType_ObjectWithdrawal
-
-	rv, err := reviewcli.CreateReview(ctx, &reviewpb.ReviewReq{
-		AppID:      h.AppID,
-		Domain:     &serviceName,
-		ObjectType: &objectType,
-		ObjectID:   &info.ID,
-		Trigger:    &reviewTrigger,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if rv == nil {
-		return nil, fmt.Errorf("invalid review")
-	}
-
-	if reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
+	if handler.reviewTrigger == reviewpb.ReviewTriggerType_AutoReviewed {
 		rstate := reviewpb.ReviewState_Approved
 		reviewer := uuid1.InvalidUUIDStr
 
 		if _, err := reviewcli.UpdateReview(ctx, &reviewpb.ReviewReq{
-			ID:         &rv.ID,
+			ID:         &reviewID,
 			ReviewerID: &reviewer,
 			State:      &rstate,
 		}); err != nil {
 			return nil, err
 		}
-
 		message := fmt.Sprintf(
 			`{"AppID":"%v","UserID":"%v","Address":"%v","CoinName":"%v","WithdrawID":"%v"}`,
 			*h.AppID,
 			*h.UserID,
 			handler.account.Address,
 			handler.coin.Name,
-			info.ID,
+			*h.ID,
 		)
 
 		txType := basetypes.TxType_TxWithdraw
-
-		// TODO: should be in dtm
 		tx, err := txmwcli.CreateTx(ctx, &txmwpb.TxReq{
 			CoinTypeID:    h.CoinTypeID,
 			FromAccountID: &handler.platformAccount.AccountID,
@@ -447,11 +451,10 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 
 		state := ledgerpb.WithdrawState_Transferring
 		if _, err := withdrawmwcli.UpdateWithdraw(ctx, &withdrawmwpb.WithdrawReq{
-			ID:                    &info.ID,
+			ID:                    h.ID,
 			PlatformTransactionID: &tx.ID,
 			State:                 &state,
 		}); err != nil {
-			needUnlock = false
 			return nil, err
 		}
 
@@ -472,9 +475,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		}
 	}
 
-	needUnlock = false
 	now := uint32(time.Now().Unix())
-
 	_, err = notifmwcli.GenerateNotifs(ctx, &notifmwpb.GenerateNotifsRequest{
 		AppID:     *h.AppID,
 		UserID:    *h.UserID,
