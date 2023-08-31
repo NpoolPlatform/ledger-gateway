@@ -12,7 +12,7 @@ import (
 	useraccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/user"
 	useraccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/user"
 
-	constant "github.com/NpoolPlatform/ledger-gateway/pkg/message/const"
+	servicename "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
@@ -80,7 +80,7 @@ func (h *Handler) GetWithdraws(ctx context.Context) ([]*npool.Withdraw, uint32, 
 	reviews, err := reviewcli.GetObjectReviews(
 		ctx,
 		*h.AppID,
-		constant.ServiceName,
+		servicename.ServiceDomain,
 		withdrawIDs,
 		reviewpb.ReviewObjectType_ObjectWithdrawal,
 	)
