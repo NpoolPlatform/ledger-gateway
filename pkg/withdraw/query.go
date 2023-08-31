@@ -22,10 +22,13 @@ import (
 
 //nolint
 func (h *Handler) GetWithdraws(ctx context.Context) ([]*npool.Withdraw, uint32, error) {
-	withdraws, total, err := withdrawmwcli.GetWithdraws(ctx, &withdrawpb.Conds{
-		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-	}, h.Offset, h.Limit)
+	conds := &withdrawpb.Conds{
+		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+	}
+	if h.UserID != nil {
+		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
+	}
+	withdraws, total, err := withdrawmwcli.GetWithdraws(ctx, conds, h.Offset, h.Limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -42,7 +45,7 @@ func (h *Handler) GetWithdraws(ctx context.Context) ([]*npool.Withdraw, uint32, 
 		withdrawIDs = append(withdrawIDs, info.ID)
 	}
 
-	conds := &useraccmwpb.Conds{
+	conds1 := &useraccmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UsedFor:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(basetypes.AccountUsedFor_UserWithdraw)},
 		AccountIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: accountIDs},
@@ -51,7 +54,7 @@ func (h *Handler) GetWithdraws(ctx context.Context) ([]*npool.Withdraw, uint32, 
 		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
 	}
 
-	accounts, _, err := useraccmwcli.GetAccounts(ctx, conds, 0, int32(len(accountIDs)))
+	accounts, _, err := useraccmwcli.GetAccounts(ctx, conds1, 0, int32(len(accountIDs)))
 	if err != nil {
 		return nil, 0, err
 	}
