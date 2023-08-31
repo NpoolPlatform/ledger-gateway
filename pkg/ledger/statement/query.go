@@ -25,8 +25,10 @@ func (h *Handler) setConds() *statement.Conds {
 	if h.UserID != nil {
 		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
 	}
-	conds.StartAt = &basetypes.Uint32Val{Op: cruder.GT, Value: h.StartAt}
-	conds.EndAt = &basetypes.Uint32Val{Op: cruder.LT, Value: h.EndAt}
+	conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt}
+	if h.EndAt != 0 {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt}
+	}
 	return conds
 }
 

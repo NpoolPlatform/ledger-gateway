@@ -202,8 +202,8 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 			IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
 			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
-			StartAt:   &basetypes.Uint32Val{Op: cruder.GT, Value: h.StartAt},
-			EndAt:     &basetypes.Uint32Val{Op: cruder.LT, Value: h.EndAt},
+			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
 		}, h.Offset, h.Limit)
 		if err != nil {
 			return nil, 0, err
@@ -291,8 +291,8 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		st, _, err := statementcli.GetStatements(ctx, &statement.Conds{
 			AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			StartAt: &basetypes.Uint32Val{Op: cruder.GT, Value: h.StartAt},
-			EndAt:   &basetypes.Uint32Val{Op: cruder.LT, Value: h.EndAt},
+			StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+			EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
 		}, h.Offset, h.Limit)
 		if err != nil {
 			return nil, 0, err
