@@ -3,7 +3,7 @@ package ledger
 import (
 	"context"
 
-	"github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	ledger "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"

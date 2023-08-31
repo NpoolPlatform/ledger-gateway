@@ -22,6 +22,7 @@ type Server struct {
 
 func Register(server grpc.ServiceRegistrar) {
 	ledger.RegisterGatewayServer(server, &Server{})
+	ledger1.Register(server)
 	deposit.Register(server)
 	transfer.Register(server)
 	profit.Register(server)
