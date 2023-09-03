@@ -13,6 +13,7 @@ import (
 	"github.com/NpoolPlatform/message/npool/account/mw/v1/user"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
+
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -26,7 +27,7 @@ type Handler struct {
 	AccountType      *basetypes.SignMethod
 	CoinTypeID       *string
 	AccountID        *string
-	Amount           *decimal.Decimal
+	Amount           *string
 	Offset           int32
 	Limit            int32
 }
@@ -222,14 +223,10 @@ func WithAmount(amount *string, must bool) func(context.Context, *Handler) error
 			}
 			return nil
 		}
-		_amount, err := decimal.NewFromString(*amount)
-		if err != nil {
+		if _, err := decimal.NewFromString(*amount); err != nil {
 			return err
 		}
-		if _amount.Cmp(decimal.NewFromInt(0)) <= 0 {
-			return fmt.Errorf("invalid amount %v", *amount)
-		}
-		h.Amount = &_amount
+		h.Amount = amount
 		return nil
 	}
 }
