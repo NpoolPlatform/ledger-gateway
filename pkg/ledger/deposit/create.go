@@ -20,14 +20,8 @@ import (
 
 func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.TargetAppID,
-		},
-		CoinTypeID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.CoinTypeID,
-		},
+		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.TargetAppID},
+		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
 	})
 	if err != nil {
 		return nil, err

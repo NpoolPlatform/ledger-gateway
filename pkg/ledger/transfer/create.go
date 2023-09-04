@@ -97,18 +97,9 @@ func (h *createHandler) checkKyc(ctx context.Context) error {
 
 func (h *createHandler) checkTransferAmount(ctx context.Context) error {
 	info, err := ledgermwcli.GetLedgerOnly(ctx, &ledgermwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.AppID,
-		},
-		UserID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.UserID,
-		},
-		CoinTypeID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.CoinTypeID,
-		},
+		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
 	})
 	if err != nil {
 		return err
@@ -129,18 +120,9 @@ func (h *createHandler) checkTransferAmount(ctx context.Context) error {
 
 func (h *createHandler) checkAccount(ctx context.Context) error {
 	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.AppID,
-		},
-		UserID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.UserID,
-		},
-		TargetUserID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.TargetUserID,
-		},
+		AppID:        &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		TargetUserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.TargetUserID},
 	})
 	if err != nil {
 		return err
@@ -153,14 +135,8 @@ func (h *createHandler) checkAccount(ctx context.Context) error {
 
 func (h *createHandler) getCoin(ctx context.Context) error {
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.AppID,
-		},
-		CoinTypeID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.CoinTypeID,
-		},
+		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
 	})
 	if err != nil {
 		return err
