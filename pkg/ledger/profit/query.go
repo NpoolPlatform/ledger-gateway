@@ -32,6 +32,7 @@ func (h *Handler) setConds() *profitmwpb.Conds {
 	return conds
 }
 
+//nolint
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
 	for _, profit := range h.profits {

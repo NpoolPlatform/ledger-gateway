@@ -172,7 +172,6 @@ func (h *createHandler) getCoin(ctx context.Context) error {
 	return nil
 }
 
-//nolint:funlen,gocyclo
 func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 	handler := &createHandler{
 		Handler:    h,

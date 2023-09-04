@@ -32,6 +32,7 @@ type profitHandler struct {
 	goodProfits   []*npool.GoodProfit
 }
 
+//nolint
 func (h *profitHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
 	for _, val := range h.statements {
@@ -138,7 +139,7 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 	ioSubType := types.IOSubType_MiningBenefit
 	total := uint32(0)
 	offset := int32(0)
-	limit := int32(1000)
+	limit := int32(1000) //nolint
 	statements := []*statementmwpb.Statement{}
 	for {
 		infos, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
@@ -280,7 +281,7 @@ func (h *profitHandler) getGoods(ctx context.Context) error {
 	return nil
 }
 
-func (h *profitHandler) goodProfitsFormalize() {
+func (h *profitHandler) goodProfitsFormalize() { //nolint
 	type extra struct {
 		BenefitDate string
 		OrderID     string
@@ -407,7 +408,6 @@ func (h *profitHandler) goodProfitsFormalize() {
 	}
 }
 
-// nolint
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	total := uint32(0)
 	statements := []*statementmwpb.Statement{}
