@@ -220,25 +220,26 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 
 	statements := []*statementmwpb.Statement{}
 	var total uint32
-	offset := int32(0)
+	offset := h.Offset
 	limit := h.Limit
 	for {
-		st, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
+		sts, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
 			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 			IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
 			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
 			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, h.Offset, h.Limit)
+		}, offset, limit)
 		if err != nil {
 			return nil, 0, err
 		}
 		total = _total
-		if len(st) == 0 {
+
+		if len(sts) == 0 {
 			break
 		}
-		statements = append(statements, st...)
+		statements = append(statements, sts...)
 		offset += limit
 	}
 	if len(statements) == 0 {
