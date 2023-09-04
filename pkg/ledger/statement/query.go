@@ -2,23 +2,28 @@ package statement
 
 import (
 	"context"
-	"fmt"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/statement"
-	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
-	"github.com/google/uuid"
+	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 )
 
-func (h *Handler) setConds() *statement.Conds {
-	conds := &statement.Conds{}
+type queryHandler struct {
+	*Handler
+	statements []*statementmwpb.Statement
+	appcoin    map[string]*appcoinmwpb.Coin
+	appuser    map[string]*appusermwpb.User
+	infos      []*npool.Statement
+}
+
+func (h *Handler) setConds() *statementmwpb.Conds {
+	conds := &statementmwpb.Conds{}
 	if h.AppID != nil {
 		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
 	}
@@ -32,20 +37,9 @@ func (h *Handler) setConds() *statement.Conds {
 	return conds
 }
 
-func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32, error) {
-	statements, total, err := statementcli.GetStatements(ctx, h.setConds(), h.Offset, h.Limit)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(statements) == 0 {
-		return nil, 0, nil
-	}
-
+func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
-	for _, val := range statements {
-		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
-			continue
-		}
+	for _, val := range h.statements {
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
@@ -59,58 +53,85 @@ func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32
 		},
 	}, 0, int32(len(coinTypeIDs)))
 	if err != nil {
-		return nil, 0, err
-	}
-	coinMap := map[string]*appcoinmwpb.Coin{}
-	for _, coin := range coins {
-		coinMap[coin.CoinTypeID] = coin
+		return err
 	}
 
+	for _, coin := range coins {
+		h.appcoin[coin.CoinTypeID] = coin
+	}
+	return nil
+}
+
+func (h *queryHandler) getAppUsers(ctx context.Context) error {
 	userIDs := []string{}
-	for _, info := range statements {
+	for _, info := range h.statements {
 		userIDs = append(userIDs, info.UserID)
 	}
 
-	users, _, err := usermwcli.GetUsers(ctx, &usermwpb.Conds{
+	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
 		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
 	}, 0, int32(len(userIDs)))
 	if err != nil {
-		return nil, 0, fmt.Errorf("fail get users: %v", err)
+		return err
 	}
 
-	userMap := map[string]*usermwpb.User{}
 	for _, user := range users {
-		userMap[user.ID] = user
+		h.appuser[user.ID] = user
 	}
+	return nil
+}
 
-	infos := []*npool.Statement{}
-	for _, info := range statements {
-		coin, ok := coinMap[info.CoinTypeID]
-		if !ok {
-			logger.Sugar().Warnw("GetStatements", "app coin not exist", "appid", coin.AppID, "cointypeid", coin.CoinTypeID)
-			continue
-		}
-		user, ok := userMap[info.UserID]
+func (h *queryHandler) formalize() {
+	for _, statement := range h.statements {
+		coin, ok := h.appcoin[statement.CoinTypeID]
 		if !ok {
 			continue
 		}
+		user, ok := h.appuser[statement.UserID]
+		if !ok {
+			continue
+		}
 
-		infos = append(infos, &npool.Statement{
-			CoinTypeID:   info.CoinTypeID,
-			CoinName:     coin.Name,
+		h.infos = append(h.infos, &npool.Statement{
+			CoinTypeID:   coin.CoinTypeID,
+			CoinName:     coin.CoinName,
 			DisplayNames: coin.DisplayNames,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,
-			IOType:       info.IOType,
-			IOSubType:    info.IOSubType,
-			Amount:       info.Amount,
-			IOExtra:      info.IOExtra,
-			CreatedAt:    info.CreatedAt,
-			UserID:       info.UserID,
+			IOType:       statement.IOType,
+			IOSubType:    statement.IOSubType,
+			IOExtra:      statement.IOExtra,
+			Amount:       statement.Amount,
+			CreatedAt:    statement.CreatedAt,
+			UserID:       user.ID,
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
 		})
 	}
+}
+func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32, error) {
+	statements, total, err := statementcli.GetStatements(ctx, h.setConds(), h.Offset, h.Limit)
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(statements) == 0 {
+		return nil, total, nil
+	}
 
-	return infos, total, nil
+	handler := &queryHandler{
+		Handler:    h,
+		statements: statements,
+		appcoin:    map[string]*appcoinmwpb.Coin{},
+		appuser:    map[string]*appusermwpb.User{},
+	}
+
+	if err := handler.getAppCoins(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getAppUsers(ctx); err != nil {
+		return nil, 0, err
+	}
+
+	handler.formalize()
+	return handler.infos, total, nil
 }
