@@ -18,7 +18,7 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
-	profitpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/profit"
+	profitmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/profit"
 	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
@@ -26,8 +26,16 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (h *Handler) setConds() *profitpb.Conds {
-	conds := &profitpb.Conds{}
+type queryHandler struct {
+	*Handler
+	orders   map[string]*ordermwpb.Order
+	appcoins map[string]*appcoinmwpb.Coin
+	profits  []*profitmwpb.Profit
+	infos    []*npool.Profit
+}
+
+func (h *Handler) setConds() *profitmwpb.Conds {
+	conds := &profitmwpb.Conds{}
 	if h.AppID != nil {
 		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
 	}
@@ -35,6 +43,41 @@ func (h *Handler) setConds() *profitpb.Conds {
 		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
 	}
 	return conds
+}
+
+func (h *queryHandler) getAppCoins(ctx context.Context) error {
+	coinTypeIDs := []string{}
+	for _, profit := range h.profits {
+		coinTypeIDs = append(coinTypeIDs, profit.CoinTypeID)
+	}
+	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
+		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
+	}, 0, int32(len(coinTypeIDs)))
+	if err != nil {
+		return err
+	}
+	for _, coin := range coins {
+		h.appcoins[coin.CoinTypeID] = coin
+	}
+	return nil
+}
+
+func (h *queryHandler) formalize() {
+	for _, info := range h.profits {
+		coin, ok := h.appcoins[info.CoinTypeID]
+		if !ok {
+			continue
+		}
+		h.infos = append(h.infos, &npool.Profit{
+			CoinTypeID:   info.CoinTypeID,
+			CoinName:     coin.Name,
+			DisplayNames: coin.DisplayNames,
+			CoinLogo:     coin.Logo,
+			CoinUnit:     coin.Unit,
+			Incoming:     info.Incoming,
+		})
+	}
 }
 
 // Export In Frontend
@@ -140,51 +183,17 @@ func (h *Handler) GetProfits(ctx context.Context) ([]*npool.Profit, uint32, erro
 		return nil, total, nil
 	}
 
-	coinTypeIDs := []string{}
-	for _, profit := range profits {
-		if _, err := uuid.Parse(profit.CoinTypeID); err != nil {
-			continue
-		}
-		coinTypeIDs = append(coinTypeIDs, profit.CoinTypeID)
+	handler := &queryHandler{
+		Handler:  h,
+		profits:  profits,
+		appcoins: map[string]*appcoinmwpb.Coin{},
 	}
-
-	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.AppID,
-		},
-		CoinTypeIDs: &basetypes.StringSliceVal{
-			Op:    cruder.IN,
-			Value: coinTypeIDs,
-		},
-	}, 0, int32(len(coinTypeIDs)))
-	if err != nil {
+	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
 	}
+	handler.formalize()
 
-	coinMap := map[string]*appcoinmwpb.Coin{}
-	for _, coin := range coins {
-		coinMap[coin.CoinTypeID] = coin
-	}
-
-	infos := []*npool.Profit{}
-	for _, info := range profits {
-		coin, ok := coinMap[info.CoinTypeID]
-		if !ok {
-			logger.Sugar().Warn("app coin not exist continue, cointypeid(%v)", info.CoinTypeID)
-			continue
-		}
-		infos = append(infos, &npool.Profit{
-			CoinTypeID:   info.CoinTypeID,
-			CoinName:     coin.Name,
-			DisplayNames: coin.DisplayNames,
-			CoinLogo:     coin.Logo,
-			CoinUnit:     coin.Unit,
-			Incoming:     info.Incoming,
-		})
-	}
-
-	return infos, total, nil
+	return handler.infos, total, nil
 }
 
 // Mining Interval Profit
