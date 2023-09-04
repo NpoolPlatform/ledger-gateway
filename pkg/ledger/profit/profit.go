@@ -137,16 +137,18 @@ func (h *profitHandler) miningRewardsFormalize() {
 }
 
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
+	ioSubType := types.IOSubType_MiningBenefit
 	total := uint32(0)
 	offset := int32(0)
 	limit := int32(1000)
 	statements := []*statementmwpb.Statement{}
 	for {
 		infos, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
+			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
 		}, h.Offset, h.Limit)
 		if err != nil {
 			return nil, total, err
