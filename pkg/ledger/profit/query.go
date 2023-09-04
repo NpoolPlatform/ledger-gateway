@@ -8,7 +8,6 @@ import (
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	goodscli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
-	statementhandler "github.com/NpoolPlatform/ledger-gateway/pkg/ledger/statement"
 	profitmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/profit"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
@@ -19,7 +18,8 @@ import (
 	goodspb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	profitmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/profit"
-	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
+	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
+	"github.com/NpoolPlatform/message/npool/ledger/mw/v2/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 	"github.com/google/uuid"
@@ -28,10 +28,11 @@ import (
 
 type queryHandler struct {
 	*Handler
-	orders   map[string]*ordermwpb.Order
-	appcoins map[string]*appcoinmwpb.Coin
-	profits  []*profitmwpb.Profit
-	infos    []*npool.Profit
+	orders     map[string]*ordermwpb.Order
+	appcoins   map[string]*appcoinmwpb.Coin
+	profits    []*profitmwpb.Profit
+	infos      []*npool.Profit
+	statements []*statementmwpb.Statement
 }
 
 func (h *Handler) setConds() *profitmwpb.Conds {
@@ -80,99 +81,6 @@ func (h *queryHandler) formalize() {
 	}
 }
 
-// Export In Frontend
-func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
-	statementHandler := &statementhandler.Handler{
-		Handler: h.Handler,
-	}
-	statements, total, err := statementHandler.GetStatements(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	ofs := int32(0)
-	lim := int32(100) //nolint
-	var orders []*ordermwpb.Order
-
-	for {
-		ords, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
-			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		}, ofs, lim)
-		if err != nil {
-			return nil, 0, err
-		}
-		if len(ords) == 0 {
-			break
-		}
-
-		orders = append(orders, ords...)
-
-		ofs += lim
-	}
-	orderMap := map[string]*ordermwpb.Order{}
-	for _, order := range orders {
-		orderMap[order.ID] = order
-	}
-
-	var infos []*npool.MiningReward
-	for _, info := range statements {
-		type extra struct {
-			GoodID  string
-			OrderID string
-		}
-
-		e := extra{}
-		err := json.Unmarshal([]byte(info.IOExtra), &e)
-		if err != nil {
-			return nil, 0, fmt.Errorf("invalid io extra")
-		}
-
-		order, ok := orderMap[e.OrderID]
-		if !ok {
-			logger.Sugar().Warn("order not exist, id(%v)", e.OrderID)
-			continue
-		}
-
-		switch order.OrderState {
-		case orderpb.OrderState_OrderStatePaid:
-		case orderpb.OrderState_OrderStateInService:
-		case orderpb.OrderState_OrderStateExpired:
-		default:
-			continue
-		}
-
-		rewardAmount, err := decimal.NewFromString(info.Amount)
-		if err != nil {
-			logger.Sugar().Warnw("GetMiningRewards", "amount cannot convert to number", info.Amount)
-			continue
-		}
-
-		units, err := decimal.NewFromString(order.Units)
-		if err != nil {
-			logger.Sugar().Warnw("GetMiningRewards", "order units cannot convert to number", order.Units)
-			continue
-		}
-
-		infos = append(infos, &npool.MiningReward{
-			CoinTypeID:          info.CoinTypeID,
-			CoinName:            info.CoinName,
-			CoinLogo:            info.CoinLogo,
-			CoinUnit:            info.CoinUnit,
-			IOType:              info.IOType,
-			IOSubType:           info.IOSubType,
-			RewardAmount:        info.Amount,
-			RewardAmountPerUnit: rewardAmount.Div(units).String(),
-			Units:               order.Units,
-			Extra:               info.IOExtra,
-			GoodID:              e.GoodID,
-			OrderID:             e.OrderID,
-			CreatedAt:           info.CreatedAt,
-		})
-	}
-	return infos, total, nil
-}
-
 // Mining Summary
 func (h *Handler) GetProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
 	profits, total, err := profitmwcli.GetProfits(ctx, h.setConds(), h.Offset, h.Limit)
@@ -194,100 +102,6 @@ func (h *Handler) GetProfits(ctx context.Context) ([]*npool.Profit, uint32, erro
 	handler.formalize()
 
 	return handler.infos, total, nil
-}
-
-// Mining Interval Profit
-func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
-	ioType := ledgerpb.IOType_Incoming
-	ioSubType := ledgerpb.IOSubType_MiningBenefit
-
-	statements := []*statement.Statement{}
-	var total uint32
-	ofs := int32(0)
-	lim := h.Limit
-	for {
-		st, _total, err := statementcli.GetStatements(ctx, &statement.Conds{
-			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
-			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
-			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, h.Offset, h.Limit)
-		if err != nil {
-			return nil, 0, err
-		}
-		total = _total
-		if len(st) == 0 {
-			break
-		}
-		statements = append(statements, st...)
-		ofs += lim
-	}
-	if len(statements) == 0 {
-		return nil, 0, nil
-	}
-
-	coinTypeIDs := []string{}
-	for _, val := range statements {
-		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
-			continue
-		}
-		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
-	}
-
-	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.AppID,
-		},
-		CoinTypeIDs: &basetypes.StringSliceVal{
-			Op:    cruder.IN,
-			Value: coinTypeIDs,
-		},
-	}, 0, int32(len(coinTypeIDs)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	coinMap := map[string]*appcoinmwpb.Coin{}
-	for _, coin := range coins {
-		coinMap[coin.CoinTypeID] = coin
-	}
-
-	infos := map[string]*npool.Profit{}
-	for _, info := range statements {
-		coin, ok := coinMap[info.CoinTypeID]
-		if !ok {
-			logger.Sugar().Errorf("invalid coin, %v", info.CoinTypeID)
-			continue
-		}
-
-		p, ok := infos[info.CoinTypeID]
-		if !ok {
-			p = &npool.Profit{
-				CoinTypeID:   info.CoinTypeID,
-				CoinName:     coin.Name,
-				DisplayNames: coin.DisplayNames,
-				CoinLogo:     coin.Logo,
-				CoinUnit:     coin.Unit,
-				Incoming:     decimal.NewFromInt(0).String(),
-			}
-		}
-
-		p.Incoming = decimal.RequireFromString(p.Incoming).
-			Add(decimal.RequireFromString(info.Amount)).
-			String()
-
-		infos[info.CoinTypeID] = p
-	}
-
-	profits := []*npool.Profit{}
-	for _, info := range infos {
-		profits = append(profits, info)
-	}
-
-	return profits, total, nil
 }
 
 // Good Card
