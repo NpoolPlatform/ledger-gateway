@@ -52,14 +52,14 @@ func (h *profitHandler) getAppCoins(ctx context.Context) error {
 }
 
 func (h *profitHandler) getOrders(ctx context.Context) error {
-	ofs := int32(0)
-	lim := int32(100) //nolint
+	offset := int32(0)
+	limit := int32(1000) //nolint
 	infos := []*ordermwpb.Order{}
 	for {
 		orders, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
 			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		}, ofs, lim)
+		}, offset, limit)
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (h *profitHandler) getOrders(ctx context.Context) error {
 		}
 
 		infos = append(infos, orders...)
-		ofs += lim
+		offset += limit
 	}
 	for _, order := range infos {
 		h.orders[order.ID] = order
@@ -92,11 +92,13 @@ func (h *profitHandler) miningRewardsFormalize() {
 
 		order, ok := h.orders[e.OrderID]
 		if !ok {
+            logger.Sugar().Errorf("invalid order id %v", e.OrderID)
 			continue
 		}
 
 		coin, ok := h.appcoins[val.CoinTypeID]
 		if !ok {
+            logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
 			continue
 		}
 
@@ -445,6 +447,7 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		statements: statements,
 		appcoins:   map[string]*appcoinmwpb.Coin{},
 		orders:     map[string]*ordermwpb.Order{},
+		goods:     map[string]*goodmwpb.Good{},
 	}
 
 	if err := handler.getOrders(ctx); err != nil {
