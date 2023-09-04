@@ -28,16 +28,14 @@ type profitHandler struct {
 	appcoins      map[string]*appcoinmwpb.Coin
 	goods         map[string]*goodmwpb.Good
 	miningRewards []*npool.MiningReward
-	IOType        *types.IOType
-	IOSubType     *types.IOSubType
 	infos         []*npool.Profit
 	goodProfits   []*npool.GoodProfit
 }
 
 func (h *profitHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
-	for _, profit := range h.statements {
-		coinTypeIDs = append(coinTypeIDs, profit.CoinTypeID)
+	for _, val := range h.statements {
+		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
@@ -221,8 +219,8 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 
 	statements := []*statementmwpb.Statement{}
 	var total uint32
-	ofs := int32(0)
-	lim := h.Limit
+	offset := int32(0)
+	limit := h.Limit
 	for {
 		st, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
 			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
@@ -240,7 +238,7 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 			break
 		}
 		statements = append(statements, st...)
-		ofs += lim
+		offset += limit
 	}
 	if len(statements) == 0 {
 		return nil, 0, nil
@@ -250,7 +248,6 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 		Handler:    h,
 		statements: statements,
 		appcoins:   map[string]*appcoinmwpb.Coin{},
-		orders:     map[string]*ordermwpb.Order{},
 	}
 
 	if err := handler.getAppCoins(ctx); err != nil {
