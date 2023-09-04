@@ -33,7 +33,7 @@ func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 		return nil, err
 	}
 	if coin == nil {
-		return nil, fmt.Errorf("invalid coin app_id:%v coin_type_id:%v", *h.TargetAppID, *h.CoinTypeID)
+		return nil, fmt.Errorf("invalid coin")
 	}
 
 	ioExtra := fmt.Sprintf(
@@ -49,24 +49,21 @@ func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 
 	ioType := ledgerpb.IOType_Incoming
 	ioSubtype := ledgerpb.IOSubType_Deposit
-	infos, err := ledgermwcli.CreateStatements(ctx, []*statementpb.StatementReq{
-		{
-			AppID:      h.AppID,
-			UserID:     h.TargetUserID,
-			CoinTypeID: h.CoinTypeID,
-			IOType:     &ioType,
-			IOSubType:  &ioSubtype,
-			Amount:     h.Amount,
-			IOExtra:    &ioExtra,
-		},
+	info, err := ledgermwcli.CreateStatement(ctx, &statementpb.StatementReq{
+		AppID:      h.AppID,
+		UserID:     h.TargetUserID,
+		CoinTypeID: h.CoinTypeID,
+		IOType:     &ioType,
+		IOSubType:  &ioSubtype,
+		Amount:     h.Amount,
+		IOExtra:    &ioExtra,
 	})
 	if err != nil {
 		return nil, err
 	}
-	if len(infos) == 0 {
+	if info == nil {
 		return nil, nil
 	}
-	info := infos[0]
 
 	return &npool.Statement{
 		CoinTypeID:   *h.CoinTypeID,
