@@ -109,6 +109,7 @@ func (h *queryHandler) formalize() {
 		})
 	}
 }
+
 func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32, error) {
 	statements, total, err := statementcli.GetStatements(ctx, h.setConds(), h.Offset, h.Limit)
 	if err != nil {
