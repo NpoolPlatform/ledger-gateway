@@ -44,7 +44,7 @@ func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 	ioType := ledgerpb.IOType_Incoming
 	ioSubtype := ledgerpb.IOSubType_Deposit
 	info, err := ledgermwcli.CreateStatement(ctx, &statementpb.StatementReq{
-		AppID:      h.AppID,
+		AppID:      h.TargetAppID,
 		UserID:     h.TargetUserID,
 		CoinTypeID: h.CoinTypeID,
 		IOType:     &ioType,
