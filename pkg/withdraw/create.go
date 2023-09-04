@@ -270,15 +270,12 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		return nil, err
 	}
 
-	infos, _, err := h.GetWithdraws(ctx)
+	info, err := h.GetWithdraw(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(infos) == 0 {
-		return nil, fmt.Errorf("cannot find withdraw")
+	if info == nil {
+		return nil, fmt.Errorf("invalid withdraw")
 	}
-	if len(infos) > 1 {
-		return nil, fmt.Errorf("to many records")
-	}
-	return infos[0], nil
+	return info, nil
 }
