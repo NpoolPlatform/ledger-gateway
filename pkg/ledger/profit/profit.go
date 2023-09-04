@@ -293,13 +293,6 @@ func (h *profitHandler) goodProfitsFormalize() {
 
 	profitOrderMap := map[string]struct{}{}
 	for _, info := range h.statements {
-		switch info.IOSubType {
-		case types.IOSubType_MiningBenefit:
-		case types.IOSubType_Payment:
-		default:
-			continue
-		}
-
 		e := extra{}
 		err := json.Unmarshal([]byte(info.IOExtra), &e)
 		if err != nil {
@@ -426,9 +419,12 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	ioType := types.IOType_Incoming
 	for {
 		st, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType:  &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
+			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
+			IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
+				uint32(types.IOSubType_MiningBenefit), uint32(types.IOSubType_Payment),
+			}},
 			StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 			EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
 		}, h.Offset, h.Limit)
