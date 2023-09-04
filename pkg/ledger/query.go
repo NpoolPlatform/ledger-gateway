@@ -23,11 +23,10 @@ import (
 
 type queryHandler struct {
 	*Handler
-	ledgers    []*ledgermwpb.Ledger
-	appcoins   []*appcoinmwpb.Coin
-	appcoinMap map[string]*appcoinmwpb.Coin
-	appusers   map[string]*appusermwpb.User
-	infos      []*npool.Ledger
+	ledgers  []*ledgermwpb.Ledger
+	appcoins []*appcoinmwpb.Coin
+	appusers map[string]*appusermwpb.User
+	infos    []*npool.Ledger
 }
 
 func (h *Handler) setConds() *ledgermwpb.Conds {
@@ -63,10 +62,7 @@ func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	for _, coin := range coins {
-		h.appcoinMap[coin.CoinTypeID] = coin
-	}
+	h.appcoins = coins
 	return nil
 }
 
@@ -155,12 +151,17 @@ func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, erro
 }
 
 func (h *queryHandler) formalize1() {
+	coinMap := map[string]*appcoinmwpb.Coin{}
+	for _, coin := range h.appcoins {
+		coinMap[coin.CoinTypeID] = coin
+	}
+
 	for _, val := range h.ledgers {
 		user, ok := h.appusers[val.UserID]
 		if !ok {
 			continue
 		}
-		coin, ok := h.appcoinMap[val.CoinTypeID]
+		coin, ok := coinMap[val.CoinTypeID]
 		if !ok {
 			continue
 		}
