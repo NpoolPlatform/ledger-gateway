@@ -148,7 +148,7 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
 			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, h.Offset, h.Limit)
+		}, offset, limit)
 		if err != nil {
 			return nil, total, err
 		}
@@ -412,11 +412,11 @@ func (h *profitHandler) goodProfitsFormalize() { //nolint
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	total := uint32(0)
 	statements := []*statementmwpb.Statement{}
-	ofs := int32(0)
+	offset := int32(0)
 	limit := h.Limit
 	ioType := types.IOType_Incoming
 	for {
-		st, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
+		sts, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
 			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 			IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
@@ -425,16 +425,16 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 			}},
 			StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 			EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, h.Offset, h.Limit)
+		}, offset, limit)
 		if err != nil {
 			return nil, 0, err
 		}
 		total = _total
-		if len(st) == 0 {
+		if len(sts) == 0 {
 			break
 		}
-		statements = append(statements, st...)
-		ofs += limit
+		statements = append(statements, sts...)
+		offset += limit
 	}
 	if len(statements) == 0 {
 		return nil, 0, nil
