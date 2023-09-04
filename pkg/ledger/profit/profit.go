@@ -92,13 +92,13 @@ func (h *profitHandler) miningRewardsFormalize() {
 
 		order, ok := h.orders[e.OrderID]
 		if !ok {
-            logger.Sugar().Errorf("invalid order id %v", e.OrderID)
+			logger.Sugar().Errorf("invalid order id %v", e.OrderID)
 			continue
 		}
 
 		coin, ok := h.appcoins[val.CoinTypeID]
 		if !ok {
-            logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
+			logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
 			continue
 		}
 
@@ -447,7 +447,7 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		statements: statements,
 		appcoins:   map[string]*appcoinmwpb.Coin{},
 		orders:     map[string]*ordermwpb.Order{},
-		goods:     map[string]*goodmwpb.Good{},
+		goods:      map[string]*goodmwpb.Good{},
 	}
 
 	if err := handler.getOrders(ctx); err != nil {
