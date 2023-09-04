@@ -278,7 +278,7 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 		return nil, fmt.Errorf("cannot find withdraw")
 	}
 	if len(infos) > 1 {
-		return nil, fmt.Errorf("to many ")
+		return nil, fmt.Errorf("to many records")
 	}
 	return infos[0], nil
 }
