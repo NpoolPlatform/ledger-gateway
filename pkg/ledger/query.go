@@ -2,9 +2,7 @@ package ledger
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
@@ -27,7 +25,6 @@ type queryHandler struct {
 	*Handler
 	ledgers  map[string]*ledgermwpb.Ledger
 	appcoins []*appcoinmwpb.Coin
-	appusers map[string]*appusermwpb.User
 	infos    []*npool.Ledger
 	total    uint32
 }
@@ -48,10 +45,7 @@ func (h *Handler) setConds() *ledgermwpb.Conds {
 
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	coins, total, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{
-			Op:    cruder.EQ,
-			Value: *h.AppID,
-		},
+		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 	}, h.Offset, h.Limit)
 	if err != nil {
 		return err
@@ -68,25 +62,6 @@ func (h *queryHandler) getLedgers(ctx context.Context) error {
 	}
 	for _, val := range infos {
 		h.ledgers[val.CoinTypeID] = val
-	}
-	return nil
-}
-
-func (h *queryHandler) getAppUsers(ctx context.Context) error {
-	userIDs := []string{}
-	for _, info := range h.ledgers {
-		userIDs = append(userIDs, info.UserID)
-	}
-
-	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
-		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
-	}, 0, int32(len(userIDs)))
-	if err != nil {
-		return err
-	}
-
-	for _, user := range users {
-		h.appusers[user.ID] = user
 	}
 	return nil
 }
@@ -130,7 +105,6 @@ func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, erro
 	handler := &queryHandler{
 		Handler:  h,
 		appcoins: []*appcoinmwpb.Coin{},
-		appusers: map[string]*appusermwpb.User{},
 	}
 
 	if err := handler.getAppCoins(ctx); err != nil {
@@ -145,37 +119,19 @@ func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, erro
 }
 
 func (h *Handler) GetAppLedgers(ctx context.Context) ([]*npool.Ledger, uint32, error) {
-	infos, total, err := ledgermwcli.GetLedgers(ctx, h.setConds(), h.Offset, h.Limit)
+	ledgers, total, err := ledgermwcli.GetLedgers(ctx, h.setConds(), h.Offset, h.Limit)
 	if err != nil {
 		return nil, 0, err
 	}
-	if len(infos) == 0 {
+	if len(ledgers) == 0 {
 		return nil, 0, nil
 	}
 
-	userIDs := []string{}
-	for _, info := range infos {
-		userIDs = append(userIDs, info.UserID)
-	}
-
-	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
-		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
-	}, 0, int32(len(userIDs)))
-	if err != nil {
-		return nil, 0, fmt.Errorf("fail get users: %v", err)
-	}
-
-	userMap := map[string]*appusermwpb.User{}
-	for _, user := range users {
-		userMap[user.ID] = user
-	}
-
 	ids := []string{}
-	for _, info := range infos {
-		if _, err := uuid.Parse(info.CoinTypeID); err != nil {
-			continue
-		}
+	userIDs := []string{}
+	for _, info := range ledgers {
 		ids = append(ids, info.CoinTypeID)
+		userIDs = append(userIDs, info.UserID)
 	}
 
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
@@ -189,38 +145,48 @@ func (h *Handler) GetAppLedgers(ctx context.Context) ([]*npool.Ledger, uint32, e
 		},
 	}, 0, int32(len(ids)))
 	if err != nil {
-		return nil, 0, fmt.Errorf("fail get coins: %v", err)
+		return nil, 0, err
 	}
-
 	coinMap := map[string]*appcoinmwpb.Coin{}
 	for _, coin := range coins {
 		coinMap[coin.CoinTypeID] = coin
 	}
 
-	ledgers := []*npool.Ledger{}
-	for _, ledger := range infos {
-		user, ok := userMap[ledger.UserID]
+	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
+		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
+	}, 0, int32(len(userIDs)))
+	if err != nil {
+		return nil, 0, err
+	}
+	userMap := map[string]*appusermwpb.User{}
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
+	infos := []*npool.Ledger{}
+	for _, val := range infos {
+		user, ok := userMap[val.UserID]
 		if !ok {
 			continue
 		}
-		coin, ok := coinMap[ledger.CoinTypeID]
+		coin, ok := coinMap[val.CoinTypeID]
 		if !ok {
 			continue
 		}
-		ledgers = append(ledgers, &npool.Ledger{
+		infos = append(infos, &npool.Ledger{
 			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.Name,
 			DisplayNames: coin.DisplayNames,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,
-			Incoming:     ledger.Incoming,
-			Locked:       ledger.Locked,
-			Outcoming:    ledger.Outcoming,
-			Spendable:    ledger.Spendable,
-			UserID:       ledger.UserID,
+			Incoming:     val.Incoming,
+			Locked:       val.Locked,
+			Outcoming:    val.Outcoming,
+			Spendable:    val.Spendable,
+			UserID:       val.UserID,
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
 		})
 	}
-	return ledgers, total, nil
+	return infos, total, nil
 }
