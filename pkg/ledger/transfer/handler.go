@@ -22,7 +22,7 @@ type Handler struct {
 	VerificationCode *string
 	TargetUserID     *string
 	CoinTypeID       *string
-	Amount           *string
+	Amount           *decimal.Decimal
 }
 
 func NewHandler(ctx context.Context, options ...func(context.Context, *Handler) error) (*Handler, error) {
@@ -200,7 +200,7 @@ func WithAmount(amount *string, must bool) func(context.Context, *Handler) error
 		if _amount.Cmp(decimal.NewFromInt(0)) <= 0 {
 			return fmt.Errorf("invalid amount %v", *amount)
 		}
-		h.Amount = amount
+		h.Amount = &_amount
 		return nil
 	}
 }

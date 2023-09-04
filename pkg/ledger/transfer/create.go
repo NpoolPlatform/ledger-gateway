@@ -16,10 +16,10 @@ import (
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/transfer"
 
-	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
-
 	kycmwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/kyc"
+	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	kycmwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/kyc"
+	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 
 	accountmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/transfer"
 	accountmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/transfer"
@@ -34,44 +34,69 @@ import (
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 )
 
-//nolint:funlen,gocyclo
-func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
+type createHandler struct {
+	*Handler
+	user       *appusermwpb.User
+	targetUser *appusermwpb.User
+	appcoin    *appcoinmwpb.Coin
+	info       *npool.Transfer
+}
+
+func (h *createHandler) checkUser(ctx context.Context) error {
 	user, err := appusermwcli.GetUser(ctx, *h.AppID, *h.UserID)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	if user == nil {
+		return fmt.Errorf("invalid user")
+	}
+	h.user = user
 
+	targetUser, err := appusermwcli.GetUser(ctx, *h.AppID, *h.TargetUserID)
+	if err != nil {
+		return err
+	}
+	if targetUser == nil {
+		return fmt.Errorf("target user not found")
+	}
+	h.targetUser = targetUser
+	return nil
+}
+
+func (h *createHandler) verifyUserCode(ctx context.Context) error {
 	if h.AccountType == basetypes.SignMethod_Google {
-		h.Account = &user.GoogleSecret
+		h.Account = &h.user.GoogleSecret
 	}
-
-	if err := usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
+	return usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
 		Prefix:      basetypes.Prefix_PrefixUserCode.String(),
 		AppID:       *h.AppID,
 		Account:     *h.Account,
 		AccountType: h.AccountType,
 		UsedFor:     basetypes.UsedFor_Transfer,
 		Code:        *h.VerificationCode,
-	}); err != nil {
-		return nil, err
-	}
+	})
+}
 
+func (h *createHandler) checkKyc(ctx context.Context) error {
 	kyc, err := kycmwcli.GetKycOnly(ctx, &kycmwpb.Conds{
 		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if kyc == nil {
-		return nil, fmt.Errorf("kyc not added")
+		return fmt.Errorf("kyc not added")
 	}
 
 	if kyc.State != basetypes.KycState_Approved {
-		return nil, fmt.Errorf("kyc state is not approved")
+		return fmt.Errorf("kyc state is not approved")
 	}
+	return nil
+}
 
-	ledger, err := ledgermwcli.GetLedgerOnly(ctx, &ledgermwpb.Conds{
+func (h *createHandler) checkTransferAmount(ctx context.Context) error {
+	info, err := ledgermwcli.GetLedgerOnly(ctx, &ledgermwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
 			Value: *h.AppID,
@@ -86,25 +111,23 @@ func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if ledger == nil {
-		return nil, fmt.Errorf("ledger not exist")
+	if info == nil {
+		return fmt.Errorf("ledger not exist")
 	}
 
-	ad, err := decimal.NewFromString(*h.Amount)
+	spendable, err := decimal.NewFromString(info.Spendable)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	if spendable.Cmp(*h.Amount) < 0 {
+		return fmt.Errorf("insufficient funds")
+	}
+	return nil
+}
 
-	spendable, err := decimal.NewFromString(ledger.Spendable)
-	if err != nil {
-		return nil, err
-	}
-	if spendable.Cmp(ad) < 0 {
-		return nil, fmt.Errorf("insufficient funds")
-	}
-
+func (h *createHandler) checkAccount(ctx context.Context) error {
 	exist, err := accountmwcli.ExistTransferConds(ctx, &accountmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
@@ -120,20 +143,15 @@ func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if !exist {
-		return nil, fmt.Errorf("target user not set")
+		return fmt.Errorf("target user not set")
 	}
+	return nil
+}
 
-	targetUser, err := appusermwcli.GetUser(ctx, *h.AppID, *h.TargetUserID)
-	if err != nil {
-		return nil, err
-	}
-	if targetUser == nil {
-		return nil, fmt.Errorf("target user not found")
-	}
-
+func (h *createHandler) getCoin(ctx context.Context) error {
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
 		AppID: &basetypes.StringVal{
 			Op:    cruder.EQ,
@@ -145,56 +163,88 @@ func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 		},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if coin == nil {
-		return nil, fmt.Errorf("invalid coin")
+		return fmt.Errorf("invalid coin")
+	}
+	h.appcoin = coin
+	return nil
+}
+
+//nolint:funlen,gocyclo
+func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
+	handler := &createHandler{
+		Handler:    h,
+		appcoin:    &appcoinmwpb.Coin{},
+		user:       &appusermwpb.User{},
+		targetUser: &appusermwpb.User{},
+		info:       &npool.Transfer{},
+	}
+
+	if err := handler.checkUser(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.verifyUserCode(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkKyc(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkTransferAmount(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkAccount(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.getCoin(ctx); err != nil {
+		return nil, err
 	}
 
 	now := uint32(time.Now().Unix())
+	subType := ledgerpb.IOSubType_Transfer
+	amount := h.Amount.String()
 
 	out := ledgerpb.IOType_Outcoming
-	outIoExtra := fmt.Sprintf(
+	outIOExtra := fmt.Sprintf(
 		`{"AppID":"%v","UserID":"%v","TargetUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
 		*h.AppID,
 		*h.UserID,
 		*h.TargetUserID,
-		coin.Name,
+		handler.appcoin.Name,
 		*h.Amount,
 		now,
 	)
-
-	subType := ledgerpb.IOSubType_Transfer
-
 	in := ledgerpb.IOType_Incoming
-	inIoExtra := fmt.Sprintf(
+	inIOExtra := fmt.Sprintf(
 		`{"AppID":"%v","UserID":"%v","FromUserID":"%v","CoinName":"%v","Amount":"%v","Date":"%v"}`,
 		*h.AppID,
 		*h.TargetUserID,
 		*h.UserID,
-		coin.Name,
+		handler.appcoin.Name,
 		h.Amount,
 		now,
 	)
 
-	_, err = statementmwcli.CreateStatements(ctx, []*statementpb.StatementReq{
+	_, err := statementmwcli.CreateStatements(ctx, []*statementpb.StatementReq{
 		{
 			AppID:      h.AppID,
 			UserID:     h.UserID,
 			CoinTypeID: h.CoinTypeID,
 			IOType:     &out,
 			IOSubType:  &subType,
-			Amount:     h.Amount,
-			IOExtra:    &outIoExtra,
+			Amount:     &amount,
+			IOExtra:    &outIOExtra,
 			CreatedAt:  &now,
-		}, {
+		},
+		{
 			AppID:      h.AppID,
 			UserID:     h.TargetUserID,
 			CoinTypeID: h.CoinTypeID,
 			IOType:     &in,
 			IOSubType:  &subType,
-			Amount:     h.Amount,
-			IOExtra:    &inIoExtra,
+			Amount:     &amount,
+			IOExtra:    &inIOExtra,
 			CreatedAt:  &now,
 		},
 	})
@@ -203,18 +253,18 @@ func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 	}
 
 	return &npool.Transfer{
-		CoinTypeID:         coin.CoinTypeID,
-		CoinName:           coin.Name,
-		DisplayNames:       coin.DisplayNames,
-		CoinLogo:           coin.Logo,
-		CoinUnit:           coin.Unit,
-		Amount:             *h.Amount,
+		CoinTypeID:         handler.appcoin.CoinTypeID,
+		CoinName:           handler.appcoin.Name,
+		DisplayNames:       handler.appcoin.DisplayNames,
+		CoinLogo:           handler.appcoin.Logo,
+		CoinUnit:           handler.appcoin.Unit,
+		Amount:             amount,
 		CreatedAt:          now,
 		TargetUserID:       *h.TargetUserID,
-		TargetEmailAddress: targetUser.EmailAddress,
-		TargetPhoneNO:      targetUser.PhoneNO,
-		TargetUsername:     targetUser.Username,
-		TargetFirstName:    targetUser.FirstName,
-		TargetLastName:     targetUser.LastName,
+		TargetEmailAddress: handler.targetUser.EmailAddress,
+		TargetPhoneNO:      handler.targetUser.PhoneNO,
+		TargetUsername:     handler.targetUser.Username,
+		TargetFirstName:    handler.targetUser.FirstName,
+		TargetLastName:     handler.targetUser.LastName,
 	}, nil
 }
