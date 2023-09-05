@@ -2,63 +2,89 @@ package profit
 
 import (
 	"context"
+	"encoding/json"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	goodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
+	appgoodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/good"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-	goodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
+	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 )
 
-type BaseHandler struct {
+type baseHandler struct {
 	*Handler
-	statements []*statementmwpb.Statement
+	statements map[string]map[string]map[string][]*statementmwpb.Statement // AppGoodID -> CoinTypeID -> OrderID
 	total      uint32
 	orders     map[string]*ordermwpb.Order
 	appCoins   map[string]*appcoinmwpb.Coin
-	goods      map[string]*goodmwpb.Good
+	appGoods   map[string]*appgoodmwpb.Good
+	ioType     types.IOType
+	ioSubTypes []types.IOSubType
 }
 
-func (h *BaseHandler) getStatements(ctx context.Context, ioType types.IOType, ioSubTypes []types.IOSubType) error {
+func (h *baseHandler) getStatements(ctx context.Context) error {
 	_ioSubTypes := []uint32{}
-	for _, subType := range ioSubTypes {
+	for _, subType := range h.ioSubTypes {
 		_ioSubTypes = append(_ioSubTypes, uint32(subType))
 	}
 
-	statements := []*statementmwpb.Statement{}
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
 	for {
-		sts, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
+		statements, _, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
 			AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType:     &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
+			IOType:     &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(h.ioType)},
 			IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: _ioSubTypes},
 			StartAt:    &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 			EndAt:      &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+			// TODO: CoinTypeIDs
 		}, offset, limit)
 		if err != nil {
 			return err
 		}
-		h.total = _total
-		if len(sts) == 0 {
+		if len(statements) == 0 {
 			break
 		}
-		statements = append(statements, sts...)
+		for _, statement := range statements {
+			e := struct {
+				BenefitDate string
+				OrderID     string
+			}{}
+			if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
+				continue
+			}
+			order, ok := h.orders[e.OrderID]
+			if !ok {
+				continue
+			}
+			goodStatements, ok := h.statements[order.AppGoodID]
+			if !ok {
+				goodStatements = map[string]map[string][]*statementmwpb.Statement{}
+			}
+			coinStatements, ok := goodStatements[order.CoinTypeID]
+			if !ok {
+				coinStatements = map[string][]*statementmwpb.Statement{}
+			}
+			orderStatements, _ := coinStatements[order.ID]
+			orderStatements = append(orderStatements, statement)
+			coinStatements[order.ID] = orderStatements
+			goodStatements[order.CoinTypeID] = coinStatements
+			h.statements[order.AppGoodID] = goodStatements
+		}
 		offset += limit
 	}
-	h.statements = statements
 	return nil
 }
 
-func (h *BaseHandler) getOrders(ctx context.Context) error {
+func (h *baseHandler) getOrders(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
 	infos := []*ordermwpb.Order{}
@@ -83,15 +109,10 @@ func (h *BaseHandler) getOrders(ctx context.Context) error {
 	return nil
 }
 
-func (h *BaseHandler) getAppCoins(ctx context.Context) error {
+func (h *baseHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
-	for _, val := range h.statements {
+	for _, val := range h.appGoods {
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
-	}
-	if h.goods != nil {
-		for _, val := range h.goods {
-			coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
-		}
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
@@ -106,24 +127,21 @@ func (h *BaseHandler) getAppCoins(ctx context.Context) error {
 	return nil
 }
 
-func (h *BaseHandler) getGoods(ctx context.Context) error {
+func (h *baseHandler) getAppGoods(ctx context.Context) error {
 	ids := []string{}
 	for _, order := range h.orders {
-		ids = append(ids, order.GoodID)
+		ids = append(ids, order.AppGoodID)
 	}
 
-	goods, _, err := goodmwcli.GetGoods(ctx, &goodmwpb.Conds{
-		IDs: &basetypes.StringSliceVal{
-			Op:    cruder.IN,
-			Value: ids,
-		},
+	goods, total, err := appgoodmwcli.GetGoods(ctx, &appgoodmwpb.Conds{
+		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
 	}, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
-
 	for _, good := range goods {
-		h.goods[good.ID] = good
+		h.appGoods[good.ID] = good
 	}
+	h.total = total
 	return nil
 }

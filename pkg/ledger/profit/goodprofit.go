@@ -16,147 +16,95 @@ import (
 
 type goodProfitHandler struct {
 	*BaseHandler
-	profits []*npool.GoodProfit
+	infos []*npool.GoodProfit
 }
 
-//nolint
+func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*statementmwpb.Statement) (decimal.Decimal, decimal.Decimal) {
+	incoming := decimal.NewFromInt(0)
+	units := decimal.NewFromInt(0)
+
+	for _, statement := range statements {
+		order, ok := h.orders[orderID]
+		if !ok {
+			continue
+		}
+		switch order.OrderState {
+		case orderpb.OrderState_OrderStatePaid:
+		case orderpb.OrderState_OrderStateInService:
+		case orderpb.OrderState_OrderStateExpired:
+		default:
+			continue
+		}
+		incoming = incoming.Add(decimal.RequireFromString(info.Amount))
+		units = units.Add(decimal.RequireFromString(order.Units))
+	}
+
+	return incoming, units
+}
+
+func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount, units decimal.Decimal) {
+	good, ok := h.appGoods[appGoodID]
+	if !ok {
+		return
+	}
+	coin, ok := h.appCoins[coinTypeID]
+	if !ok {
+		return
+	}
+
+	h.infos = append(h.infos, &npool.GoodProfit{
+		CoinTypeID:            good.CoinTypeID,
+		CoinName:              coin.Name,
+		DisplayNames:          coin.DisplayNames,
+		CoinLogo:              coin.Logo,
+		CoinUnit:              coin.Unit,
+		GoodID:                appGoodID,
+		GoodName:              good.Title,
+		GoodUnit:              good.Unit,
+		GoodServicePeriodDays: uint32(good.DurationDays),
+		Units:                 uints.String(),
+		Incoming:              amount.String(),
+	})
+}
+
 func (h *goodProfitHandler) formalize() {
-	type extra struct {
-		BenefitDate string
-		OrderID     string
-	}
-
-	infos := map[string]*npool.GoodProfit{}
-
-	profitOrderMap := map[string]struct{}{}
-	for _, info := range h.statements {
-		e := extra{}
-		err := json.Unmarshal([]byte(info.IOExtra), &e)
-		if err != nil {
-			logger.Sugar().Warnw("invalid io extra", "ioextra", info.IOExtra)
-			continue
-		}
-
-		order, ok := h.orders[e.OrderID]
+	for appGoodID, good := range h.appGoods {
+		goodStatements, ok := h.statements[appGoodID]
 		if !ok {
+			h.formalizeProfit(appGoodID, good.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
 			continue
 		}
 
-		switch order.OrderState {
-		case orderpb.OrderState_OrderStatePaid:
-		case orderpb.OrderState_OrderStateInService:
-		case orderpb.OrderState_OrderStateExpired:
-		default:
-			continue
-		}
-
-		good, ok := h.goods[order.GoodID]
-		if !ok {
-			continue
-		}
-
-		coin, ok := h.appCoins[good.CoinTypeID]
-		if !ok {
-			continue
-		}
-
-		gp, ok := infos[order.GoodID]
-		if !ok {
-			gp = &npool.GoodProfit{
-				CoinTypeID:            good.CoinTypeID,
-				CoinName:              coin.Name,
-				DisplayNames:          coin.DisplayNames,
-				CoinLogo:              coin.Logo,
-				CoinUnit:              coin.Unit,
-				GoodID:                order.GoodID,
-				GoodName:              good.Title,
-				GoodUnit:              good.Unit,
-				GoodServicePeriodDays: uint32(good.DurationDays),
-				Units:                 decimal.NewFromInt(0).String(),
-				Incoming:              decimal.NewFromInt(0).String(),
+		for coinTypeID, coinStatements := range goodStatements {
+			coin, ok := h.appCoins[coinTypeID]
+			if !ok {
+				continue
 			}
-		}
 
-		if info.IOSubType == types.IOSubType_MiningBenefit {
-			gp.Incoming = decimal.RequireFromString(gp.Incoming).
-				Add(decimal.RequireFromString(info.Amount)).
-				String()
-		}
-
-		if _, ok := profitOrderMap[order.ID]; !ok {
-			gp.Units = decimal.RequireFromString(gp.Units).
-				Add(decimal.RequireFromString(order.Units)).
-				String()
-		}
-
-		profitOrderMap[order.ID] = struct{}{}
-		infos[order.GoodID] = gp
-	}
-
-	for _, order := range h.orders {
-		if _, ok := profitOrderMap[order.ID]; ok {
-			continue
-		}
-
-		switch order.OrderState {
-		case orderpb.OrderState_OrderStatePaid:
-		case orderpb.OrderState_OrderStateInService:
-		case orderpb.OrderState_OrderStateExpired:
-		default:
-			continue
-		}
-
-		good, ok := h.goods[order.GoodID]
-		if !ok {
-			logger.Sugar().Warn("good %v not exist", order.GoodID)
-			continue
-		}
-
-		coin, ok := h.appCoins[good.CoinTypeID]
-		if !ok {
-			logger.Sugar().Warn("coin not exist")
-			continue
-		}
-
-		gp, ok := infos[order.GoodID]
-		if !ok {
-			gp = &npool.GoodProfit{
-				CoinTypeID:            good.CoinTypeID,
-				CoinName:              coin.Name,
-				DisplayNames:          coin.DisplayNames,
-				CoinLogo:              coin.Logo,
-				CoinUnit:              coin.Unit,
-				GoodID:                order.GoodID,
-				GoodName:              good.Title,
-				GoodUnit:              good.Unit,
-				GoodServicePeriodDays: uint32(good.DurationDays),
-				Units:                 decimal.NewFromInt(0).String(),
-				Incoming:              decimal.NewFromInt(0).String(),
+			coinProfitAmount := decimal.NewFromInt(0)
+			coinOrderUnits := decimal.NewFromInt(0)
+			for orderID, statements := range coinStatements {
+				amount, units := h.calculateOrderProfit(orderID, statements)
+				coinProfitAmount = coinProfitAmount.Add(amount)
+				coinOrderUnits = coinOrderUnits.Add(units)
 			}
+			h.formalizeProfit(appGoodID, coinTypeID, coinProfitAmount, coinOrderUnits)
 		}
-
-		gp.Units = decimal.
-			RequireFromString(gp.Units).
-			Add(decimal.RequireFromString(order.Units)).
-			String()
-		infos[order.GoodID] = gp
-	}
-
-	for _, info := range infos {
-		h.profits = append(h.profits, info)
 	}
 }
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	handler := &goodProfitHandler{
 		BaseHandler: &BaseHandler{
-			Handler:  h,
-			appCoins: map[string]*appcoinmwpb.Coin{},
-			orders:   map[string]*ordermwpb.Order{},
-			goods:    map[string]*goodmwpb.Good{},
+			Handler:    h,
+			appCoins:   map[string]*appcoinmwpb.Coin{},
+			orders:     map[string]*ordermwpb.Order{},
+			goods:      map[string]*goodmwpb.Good{},
+			ioType:     types.IOType_Incoming,
+			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit, types.IOSubType_Payment},
 		},
 	}
-	if err := handler.getStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit, types.IOSubType_Payment}); err != nil {
+	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err
 	}
 	if len(handler.statements) == 0 {

@@ -42,6 +42,13 @@ func (h *profitHandler) formalize() {
 	}
 
 	for _, info := range infos {
+		e := struct {
+			BenefitDate string
+			OrderID     string
+		}{}
+		if err := json.Unmarshal([]byte(info.IOExtra), &e); err != nil {
+			continue
+		}
 		h.profits = append(h.profits, info)
 	}
 }
