@@ -45,7 +45,6 @@ func (h *profitHandler) formalize() {
 					infos[coinTypeID] = p
 				}
 			}
-
 		}
 	}
 }

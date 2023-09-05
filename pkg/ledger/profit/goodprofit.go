@@ -18,6 +18,7 @@ type goodProfitHandler struct {
 	infos []*npool.GoodProfit
 }
 
+//nolint
 func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*statementmwpb.Statement) (decimal.Decimal, decimal.Decimal) {
 	incoming := decimal.NewFromInt(0)
 	units := decimal.NewFromInt(0)
@@ -37,7 +38,6 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 		incoming = incoming.Add(decimal.RequireFromString(val.Amount))
 		units = units.Add(decimal.RequireFromString(order.Units))
 	}
-
 	return incoming, units
 }
 
@@ -106,13 +106,13 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	if err := handler.getOrders(ctx); err != nil {
 		return nil, 0, err
 	}
-	if err := handler.getStatements(ctx); err != nil {
-		return nil, 0, err
-	}
 	if err := handler.getAppGoods(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err
 	}
 	handler.formalize()
