@@ -196,8 +196,8 @@ func (h *queryHandler) formalizeUserLedgers() {
 
 func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, error) {
 	handler := &queryHandler{
-		Handler: h,
-		ledgers: map[string]map[string]*ledgermwpb.Ledger{},
+		Handler:  h,
+		ledgers:  map[string]map[string]*ledgermwpb.Ledger{},
 		appCoins: map[string]*appcoinmwpb.Coin{},
 		appUsers: map[string]*appusermwpb.User{},
 	}
