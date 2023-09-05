@@ -17,6 +17,8 @@ func (s *Server) GetStatements(ctx context.Context, in *npool.GetStatementsReque
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
 		handler1.WithUserID(&in.AppID, &in.UserID, true),
+		handler1.WithStartAt(in.StartAt),
+		handler1.WithEndAt(in.EndAt),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)
