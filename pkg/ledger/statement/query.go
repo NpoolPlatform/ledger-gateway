@@ -22,21 +22,6 @@ type queryHandler struct {
 	infos      []*npool.Statement
 }
 
-func (h *Handler) setConds() *statementmwpb.Conds {
-	conds := &statementmwpb.Conds{}
-	if h.AppID != nil {
-		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
-	}
-	if h.UserID != nil {
-		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
-	}
-	conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt}
-	if h.EndAt != 0 {
-		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt}
-	}
-	return conds
-}
-
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
 	for _, val := range h.statements {
@@ -105,7 +90,18 @@ func (h *queryHandler) formalize() {
 }
 
 func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32, error) {
-	statements, total, err := statementcli.GetStatements(ctx, h.setConds(), h.Offset, h.Limit)
+	conds := &statementmwpb.Conds{}
+	if h.AppID != nil {
+		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
+	}
+	if h.UserID != nil {
+		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
+	}
+	conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt}
+	if h.EndAt != 0 {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt}
+	}
+	statements, total, err := statementcli.GetStatements(ctx, conds, h.Offset, h.Limit)
 	if err != nil {
 		return nil, 0, err
 	}
