@@ -10,7 +10,7 @@ import (
 )
 
 type profitHandler struct {
-	BaseHandler
+	*BaseHandler
 	profits []*npool.Profit
 }
 
@@ -48,7 +48,7 @@ func (h *profitHandler) formalize() {
 
 func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
 	handler := &profitHandler{
-		BaseHandler: BaseHandler{
+		BaseHandler: &BaseHandler{
 			Handler:  h,
 			appCoins: map[string]*appcoinmwpb.Coin{},
 		},

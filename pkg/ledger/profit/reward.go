@@ -14,7 +14,7 @@ import (
 )
 
 type rewardHandler struct {
-	BaseHandler
+	*BaseHandler
 	rewards []*npool.MiningReward
 }
 
@@ -81,7 +81,7 @@ func (h *rewardHandler) formalize() {
 
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
 	handler := &rewardHandler{
-		BaseHandler: BaseHandler{
+		BaseHandler: &BaseHandler{
 			Handler:  h,
 			appCoins: map[string]*appcoinmwpb.Coin{},
 			orders:   map[string]*ordermwpb.Order{},
@@ -90,6 +90,7 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 	if err := handler.getStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit}); err != nil {
 		return nil, 0, err
 	}
+
 	if len(handler.statements) == 0 {
 		return nil, 0, nil
 	}

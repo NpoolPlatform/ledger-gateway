@@ -15,7 +15,7 @@ import (
 )
 
 type goodProfitHandler struct {
-	BaseHandler
+	*BaseHandler
 	profits []*npool.GoodProfit
 }
 
@@ -149,7 +149,7 @@ func (h *goodProfitHandler) formalize() {
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	handler := &goodProfitHandler{
-		BaseHandler: BaseHandler{
+		BaseHandler: &BaseHandler{
 			Handler:  h,
 			appCoins: map[string]*appcoinmwpb.Coin{},
 			orders:   map[string]*ordermwpb.Order{},
