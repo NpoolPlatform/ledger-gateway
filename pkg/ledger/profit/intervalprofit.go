@@ -3,6 +3,7 @@ package profit
 import (
 	"context"
 
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
@@ -19,6 +20,7 @@ func (h *profitHandler) formalize() {
 	for _, val := range h.statements {
 		coin, ok := h.appCoins[val.CoinTypeID]
 		if !ok {
+			logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
 			continue
 		}
 

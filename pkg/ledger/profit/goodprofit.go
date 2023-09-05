@@ -39,6 +39,7 @@ func (h *goodProfitHandler) formalize() {
 
 		order, ok := h.orders[e.OrderID]
 		if !ok {
+            logger.Sugar().Errorf("invalid order %v", e.OrderID)
 			continue
 		}
 
@@ -52,11 +53,13 @@ func (h *goodProfitHandler) formalize() {
 
 		good, ok := h.goods[order.GoodID]
 		if !ok {
+            logger.Sugar().Errorf("invalid good %v", order.GoodID)
 			continue
 		}
 
 		coin, ok := h.appCoins[good.CoinTypeID]
 		if !ok {
+            logger.Sugar().Errorf("invalid coin type id %v", good.CoinTypeID)
 			continue
 		}
 
@@ -114,7 +117,7 @@ func (h *goodProfitHandler) formalize() {
 
 		coin, ok := h.appCoins[good.CoinTypeID]
 		if !ok {
-			logger.Sugar().Warn("coin not exist")
+			logger.Sugar().Warn("coin not exist %v", good.CoinTypeID)
 			continue
 		}
 

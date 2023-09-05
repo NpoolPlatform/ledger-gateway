@@ -54,10 +54,12 @@ func (h *rewardHandler) formalize() {
 
 		rewardAmount, err := decimal.NewFromString(val.Amount)
 		if err != nil {
+			logger.Sugar().Errorf("invalid amount %v", val.Amount)
 			continue
 		}
 		units, err := decimal.NewFromString(order.Units)
 		if err != nil {
+			logger.Sugar().Errorf("invalid untis %v", order.Units)
 			continue
 		}
 
