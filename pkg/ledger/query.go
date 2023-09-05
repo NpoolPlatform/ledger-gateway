@@ -198,6 +198,8 @@ func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, erro
 	handler := &queryHandler{
 		Handler: h,
 		ledgers: map[string]map[string]*ledgermwpb.Ledger{},
+		appCoins: map[string]*appcoinmwpb.Coin{},
+		appUsers: map[string]*appusermwpb.User{},
 	}
 	if h.UserID == nil {
 		if err := handler.prepareAppLedgers(ctx); err != nil {
