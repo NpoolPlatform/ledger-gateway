@@ -7,6 +7,7 @@ import (
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	goodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/good"
+	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
@@ -23,20 +24,60 @@ import (
 
 type profitHandler struct {
 	*Handler
-	statements    []*statementmwpb.Statement
-	orders        map[string]*ordermwpb.Order
-	appcoins      map[string]*appcoinmwpb.Coin
-	goods         map[string]*goodmwpb.Good
-	miningRewards []*npool.MiningReward
-	infos         []*npool.Profit
-	goodProfits   []*npool.GoodProfit
+	statements  []*statementmwpb.Statement
+	orders      map[string]*ordermwpb.Order
+	appCoins    map[string]*appcoinmwpb.Coin
+	goods       map[string]*goodmwpb.Good
+	rewards     []*npool.MiningReward
+	profits     []*npool.Profit
+	goodProfits []*npool.GoodProfit
 }
 
-//nolint
+func (h *Handler) GetStatements(ctx context.Context, ioType types.IOType, ioSubTypes []types.IOSubType) (
+	[]*statementmwpb.Statement,
+	uint32,
+	error,
+) {
+	_ioSubTypes := []uint32{}
+	for _, subType := range ioSubTypes {
+		_ioSubTypes = append(_ioSubTypes, uint32(subType))
+	}
+
+	statements := []*statementmwpb.Statement{}
+	offset := int32(0)
+	limit := constant.DefaultRowLimit
+	total := uint32(0)
+	for {
+		sts, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
+			AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			IOType:     &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
+			IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: _ioSubTypes},
+			StartAt:    &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+			EndAt:      &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+		}, offset, limit)
+		if err != nil {
+			return nil, 0, err
+		}
+		total = _total
+		if len(sts) == 0 {
+			break
+		}
+		statements = append(statements, sts...)
+		offset += limit
+	}
+	return statements, total, nil
+}
+
 func (h *profitHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
 	for _, val := range h.statements {
 		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+	}
+	if h.goods != nil {
+		for _, val := range h.goods {
+			coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+		}
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
@@ -46,14 +87,14 @@ func (h *profitHandler) getAppCoins(ctx context.Context) error {
 		return err
 	}
 	for _, coin := range coins {
-		h.appcoins[coin.CoinTypeID] = coin
+		h.appCoins[coin.CoinTypeID] = coin
 	}
 	return nil
 }
 
 func (h *profitHandler) getOrders(ctx context.Context) error {
 	offset := int32(0)
-	limit := int32(1000) //nolint
+	limit := constant.DefaultRowLimit
 	infos := []*ordermwpb.Order{}
 	for {
 		orders, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
@@ -96,7 +137,7 @@ func (h *profitHandler) miningRewardsFormalize() {
 			continue
 		}
 
-		coin, ok := h.appcoins[val.CoinTypeID]
+		coin, ok := h.appCoins[val.CoinTypeID]
 		if !ok {
 			logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
 			continue
@@ -119,7 +160,7 @@ func (h *profitHandler) miningRewardsFormalize() {
 			continue
 		}
 
-		h.miningRewards = append(h.miningRewards, &npool.MiningReward{
+		h.rewards = append(h.rewards, &npool.MiningReward{
 			CoinTypeID:          val.CoinTypeID,
 			CoinName:            coin.CoinName,
 			CoinLogo:            coin.Logo,
@@ -138,28 +179,9 @@ func (h *profitHandler) miningRewardsFormalize() {
 }
 
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
-	ioSubType := types.IOSubType_MiningBenefit
-	total := uint32(0)
-	offset := int32(0)
-	limit := int32(1000) //nolint
-	statements := []*statementmwpb.Statement{}
-	for {
-		infos, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
-			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, offset, limit)
-		if err != nil {
-			return nil, total, err
-		}
-		total = _total
-		if len(infos) == 0 {
-			break
-		}
-		statements = append(statements, infos...)
-		offset += limit
+	statements, total, err := h.GetStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit})
+	if err != nil {
+		return nil, 0, err
 	}
 	if len(statements) == 0 {
 		return nil, 0, nil
@@ -168,25 +190,25 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 	handler := &profitHandler{
 		Handler:    h,
 		statements: statements,
-		appcoins:   map[string]*appcoinmwpb.Coin{},
+		appCoins:   map[string]*appcoinmwpb.Coin{},
 		orders:     map[string]*ordermwpb.Order{},
 	}
 
 	if err := handler.getAppCoins(ctx); err != nil {
-		return nil, total, err
+		return nil, 0, err
 	}
 	if err := handler.getOrders(ctx); err != nil {
-		return nil, total, err
+		return nil, 0, err
 	}
 
 	handler.miningRewardsFormalize()
-	return handler.miningRewards, total, nil
+	return handler.rewards, total, nil
 }
 
 func (h *profitHandler) intervalProfitsFormalize() {
 	infos := map[string]*npool.Profit{}
 	for _, val := range h.statements {
-		coin, ok := h.appcoins[val.CoinTypeID]
+		coin, ok := h.appCoins[val.CoinTypeID]
 		if !ok {
 			continue
 		}
@@ -211,38 +233,15 @@ func (h *profitHandler) intervalProfitsFormalize() {
 	}
 
 	for _, info := range infos {
-		h.infos = append(h.infos, info)
+		h.profits = append(h.profits, info)
 	}
 }
 
 // Mining Interval Profit
 func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
-	ioType := types.IOType_Incoming
-	ioSubType := types.IOSubType_MiningBenefit
-
-	statements := []*statementmwpb.Statement{}
-	var total uint32
-	offset := h.Offset
-	limit := h.Limit
-	for {
-		sts, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
-			IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioSubType)},
-			StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, offset, limit)
-		if err != nil {
-			return nil, 0, err
-		}
-		total = _total
-
-		if len(sts) == 0 {
-			break
-		}
-		statements = append(statements, sts...)
-		offset += limit
+	statements, total, err := h.GetStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit})
+	if err != nil {
+		return nil, 0, err
 	}
 	if len(statements) == 0 {
 		return nil, 0, nil
@@ -251,15 +250,15 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 	handler := &profitHandler{
 		Handler:    h,
 		statements: statements,
-		appcoins:   map[string]*appcoinmwpb.Coin{},
+		appCoins:   map[string]*appcoinmwpb.Coin{},
 	}
 
 	if err := handler.getAppCoins(ctx); err != nil {
-		return nil, total, err
+		return nil, 0, err
 	}
 
 	handler.intervalProfitsFormalize()
-	return handler.infos, total, nil
+	return handler.profits, total, nil
 }
 
 func (h *profitHandler) getGoods(ctx context.Context) error {
@@ -319,7 +318,7 @@ func (h *profitHandler) goodProfitsFormalize() { //nolint
 			continue
 		}
 
-		coin, ok := h.appcoins[good.CoinTypeID]
+		coin, ok := h.appCoins[good.CoinTypeID]
 		if !ok {
 			continue
 		}
@@ -376,7 +375,7 @@ func (h *profitHandler) goodProfitsFormalize() { //nolint
 			continue
 		}
 
-		coin, ok := h.appcoins[good.CoinTypeID]
+		coin, ok := h.appCoins[good.CoinTypeID]
 		if !ok {
 			logger.Sugar().Warn("coin not exist")
 			continue
@@ -412,31 +411,9 @@ func (h *profitHandler) goodProfitsFormalize() { //nolint
 }
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
-	total := uint32(0)
-	statements := []*statementmwpb.Statement{}
-	offset := int32(0)
-	limit := h.Limit
-	ioType := types.IOType_Incoming
-	for {
-		sts, _total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ioType)},
-			IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
-				uint32(types.IOSubType_MiningBenefit), uint32(types.IOSubType_Payment),
-			}},
-			StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-		}, offset, limit)
-		if err != nil {
-			return nil, 0, err
-		}
-		total = _total
-		if len(sts) == 0 {
-			break
-		}
-		statements = append(statements, sts...)
-		offset += limit
+	statements, total, err := h.GetStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit, types.IOSubType_Payment})
+	if err != nil {
+		return nil, 0, err
 	}
 	if len(statements) == 0 {
 		return nil, 0, nil
@@ -445,37 +422,21 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	handler := &profitHandler{
 		Handler:    h,
 		statements: statements,
-		appcoins:   map[string]*appcoinmwpb.Coin{},
+		appCoins:   map[string]*appcoinmwpb.Coin{},
 		orders:     map[string]*ordermwpb.Order{},
 		goods:      map[string]*goodmwpb.Good{},
 	}
 
 	if err := handler.getOrders(ctx); err != nil {
-		return nil, total, err
+		return nil, 0, err
 	}
 	if err := handler.getGoods(ctx); err != nil {
-		return nil, total, err
+		return nil, 0, err
 	}
-
-	coinTypeIDs := []string{}
-	for _, val := range statements {
-		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
-	}
-	for _, val := range handler.goods {
-		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
-	}
-
-	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
-		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
-	}, 0, int32(len(coinTypeIDs)))
-	if err != nil {
+	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
 	}
 
-	for _, coin := range coins {
-		handler.appcoins[coin.CoinTypeID] = coin
-	}
 	handler.goodProfitsFormalize()
 	return handler.goodProfits, total, nil
 }
