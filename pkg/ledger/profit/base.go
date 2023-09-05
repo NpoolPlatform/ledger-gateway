@@ -45,7 +45,6 @@ func (h *baseHandler) getStatements(ctx context.Context) error {
 			IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: _ioSubTypes},
 			StartAt:    &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 			EndAt:      &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-			// TODO: CoinTypeIDs
 		}, offset, limit)
 		if err != nil {
 			return err
@@ -73,7 +72,10 @@ func (h *baseHandler) getStatements(ctx context.Context) error {
 			if !ok {
 				coinStatements = map[string][]*statementmwpb.Statement{}
 			}
-			orderStatements, _ := coinStatements[order.ID]
+			orderStatements, ok := coinStatements[order.ID]
+			if !ok {
+				orderStatements = []*statementmwpb.Statement{}
+			}
 			orderStatements = append(orderStatements, statement)
 			coinStatements[order.ID] = orderStatements
 			goodStatements[order.CoinTypeID] = coinStatements
@@ -128,14 +130,9 @@ func (h *baseHandler) getAppCoins(ctx context.Context) error {
 }
 
 func (h *baseHandler) getAppGoods(ctx context.Context) error {
-	ids := []string{}
-	for _, order := range h.orders {
-		ids = append(ids, order.AppGoodID)
-	}
-
 	goods, total, err := appgoodmwcli.GetGoods(ctx, &appgoodmwpb.Conds{
-		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
-	}, 0, int32(len(ids)))
+		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+	}, h.Offset, h.Limit)
 	if err != nil {
 		return err
 	}

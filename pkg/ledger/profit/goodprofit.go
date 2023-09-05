@@ -2,20 +2,19 @@ package profit
 
 import (
 	"context"
-	"encoding/json"
 
-	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	orderpb "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-	goodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/good"
+	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
+	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	"github.com/shopspring/decimal"
 )
 
 type goodProfitHandler struct {
-	*BaseHandler
+	*baseHandler
 	infos []*npool.GoodProfit
 }
 
@@ -23,7 +22,7 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 	incoming := decimal.NewFromInt(0)
 	units := decimal.NewFromInt(0)
 
-	for _, statement := range statements {
+	for _, val := range statements {
 		order, ok := h.orders[orderID]
 		if !ok {
 			continue
@@ -35,7 +34,7 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 		default:
 			continue
 		}
-		incoming = incoming.Add(decimal.RequireFromString(info.Amount))
+		incoming = incoming.Add(decimal.RequireFromString(val.Amount))
 		units = units.Add(decimal.RequireFromString(order.Units))
 	}
 
@@ -59,10 +58,10 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount
 		CoinLogo:              coin.Logo,
 		CoinUnit:              coin.Unit,
 		GoodID:                appGoodID,
-		GoodName:              good.Title,
+		GoodName:              good.GoodName,
 		GoodUnit:              good.Unit,
 		GoodServicePeriodDays: uint32(good.DurationDays),
-		Units:                 uints.String(),
+		Units:                 units.String(),
 		Incoming:              amount.String(),
 	})
 }
@@ -76,7 +75,7 @@ func (h *goodProfitHandler) formalize() {
 		}
 
 		for coinTypeID, coinStatements := range goodStatements {
-			coin, ok := h.appCoins[coinTypeID]
+			_, ok := h.appCoins[coinTypeID]
 			if !ok {
 				continue
 			}
@@ -95,32 +94,27 @@ func (h *goodProfitHandler) formalize() {
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	handler := &goodProfitHandler{
-		BaseHandler: &BaseHandler{
+		baseHandler: &baseHandler{
 			Handler:    h,
 			appCoins:   map[string]*appcoinmwpb.Coin{},
 			orders:     map[string]*ordermwpb.Order{},
-			goods:      map[string]*goodmwpb.Good{},
+			appGoods:   map[string]*appgoodmwpb.Good{},
 			ioType:     types.IOType_Incoming,
 			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit, types.IOSubType_Payment},
 		},
 	}
-	if err := handler.getStatements(ctx); err != nil {
-		return nil, 0, err
-	}
-	if len(handler.statements) == 0 {
-		return nil, 0, nil
-	}
-
 	if err := handler.getOrders(ctx); err != nil {
 		return nil, 0, err
 	}
-	if err := handler.getGoods(ctx); err != nil {
+	if err := handler.getStatements(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getAppGoods(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
 	}
-
 	handler.formalize()
-	return handler.profits, handler.total, nil
+	return handler.infos, handler.total, nil
 }

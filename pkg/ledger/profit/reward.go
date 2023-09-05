@@ -14,12 +14,23 @@ import (
 )
 
 type rewardHandler struct {
-	*BaseHandler
+	*baseHandler
 	rewards []*npool.MiningReward
 }
 
 // Export In Frontend
 func (h *rewardHandler) formalize() {
+	for appGoodID, good := range h.appGoods {
+		goodStatements, ok := h.statements[appGoodID]
+		if !ok {
+			continue
+		}
+
+		for coinTypeID, coinStatement := range goodStatements {
+			
+		}
+
+	}
 	for _, val := range h.statements {
 		type extra struct {
 			GoodID  string
@@ -81,23 +92,21 @@ func (h *rewardHandler) formalize() {
 
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
 	handler := &rewardHandler{
-		BaseHandler: &BaseHandler{
-			Handler:  h,
-			appCoins: map[string]*appcoinmwpb.Coin{},
-			orders:   map[string]*ordermwpb.Order{},
+		baseHandler: &baseHandler{
+			Handler:    h,
+			appCoins:   map[string]*appcoinmwpb.Coin{},
+			orders:     map[string]*ordermwpb.Order{},
+			ioType:     types.IOType_Incoming,
+			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit},
 		},
 	}
-	if err := handler.getStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit}); err != nil {
+	if err := handler.getOrders(ctx); err != nil {
 		return nil, 0, err
 	}
-
-	if len(handler.statements) == 0 {
-		return nil, 0, nil
+	if err := handler.getStatements(ctx); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
-		return nil, 0, err
-	}
-	if err := handler.getOrders(ctx); err != nil {
 		return nil, 0, err
 	}
 
