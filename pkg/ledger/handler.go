@@ -8,7 +8,6 @@ import (
 
 type Handler struct {
 	*handler.Handler
-	CoinTypeIDs []string
 }
 
 func NewHandler(ctx context.Context, options ...interface{}) (*Handler, error) {

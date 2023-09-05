@@ -21,18 +21,6 @@ type queryHandler struct {
 	infos    []*npool.Profit
 }
 
-func (h *Handler) setConds() *profitmwpb.Conds {
-	conds := &profitmwpb.Conds{}
-	if h.AppID != nil {
-		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
-	}
-	if h.UserID != nil {
-		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
-	}
-	return conds
-}
-
-//nolint
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
 	for _, profit := range h.profits {
@@ -68,9 +56,15 @@ func (h *queryHandler) formalize() {
 	}
 }
 
-// Mining Summary
 func (h *Handler) GetProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
-	profits, total, err := profitmwcli.GetProfits(ctx, h.setConds(), h.Offset, h.Limit)
+	conds := &profitmwpb.Conds{}
+	if h.AppID != nil {
+		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
+	}
+	if h.UserID != nil {
+		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
+	}
+	profits, total, err := profitmwcli.GetProfits(ctx, conds, h.Offset, h.Limit)
 	if err != nil {
 		return nil, 0, err
 	}
