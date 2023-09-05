@@ -20,13 +20,14 @@ import (
 
 type baseHandler struct {
 	*Handler
-	statements map[string]map[string]map[string][]*statementmwpb.Statement // AppGoodID -> CoinTypeID -> OrderID
-	total      uint32
-	orders     map[string]*ordermwpb.Order
-	appCoins   map[string]*appcoinmwpb.Coin
-	appGoods   map[string]*appgoodmwpb.Good
-	ioType     types.IOType
-	ioSubTypes []types.IOSubType
+	statements  map[string]map[string]map[string][]*statementmwpb.Statement // AppGoodID -> CoinTypeID -> OrderID
+	total       uint32
+	orders      map[string]*ordermwpb.Order
+	appCoins    map[string]*appcoinmwpb.Coin
+	appGoods    map[string]*appgoodmwpb.Good
+	ioType      types.IOType
+	ioSubTypes  []types.IOSubType
+	coinTypeIDs []string
 }
 
 func (h *baseHandler) getStatements(ctx context.Context) error {
@@ -39,12 +40,13 @@ func (h *baseHandler) getStatements(ctx context.Context) error {
 	limit := constant.DefaultRowLimit
 	for {
 		statements, _, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType:     &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(h.ioType)},
-			IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: _ioSubTypes},
-			StartAt:    &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:      &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+			AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			UserID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			IOType:      &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(h.ioType)},
+			IOSubTypes:  &basetypes.Uint32SliceVal{Op: cruder.IN, Value: _ioSubTypes},
+			StartAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+			EndAt:       &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+			CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: h.coinTypeIDs},
 		}, offset, limit)
 		if err != nil {
 			return err
@@ -112,14 +114,13 @@ func (h *baseHandler) getOrders(ctx context.Context) error {
 }
 
 func (h *baseHandler) getAppCoins(ctx context.Context) error {
-	coinTypeIDs := []string{}
 	for _, val := range h.appGoods {
-		coinTypeIDs = append(coinTypeIDs, val.CoinTypeID)
+		h.coinTypeIDs = append(h.coinTypeIDs, val.CoinTypeID)
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
-	}, 0, int32(len(coinTypeIDs)))
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: h.coinTypeIDs},
+	}, 0, int32(len(h.coinTypeIDs)))
 	if err != nil {
 		return err
 	}
