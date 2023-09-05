@@ -23,47 +23,47 @@ import (
 
 type queryHandler struct {
 	*Handler
-	ledgers  []*ledgermwpb.Ledger
-	appcoins []*appcoinmwpb.Coin
-	appusers map[string]*appusermwpb.User
-	infos    []*npool.Ledger
+	ledgers      map[string]map[string]*ledgermwpb.Ledger
+	appCoins     map[string]*appcoinmwpb.Coin
+	appUsers     map[string]*appusermwpb.User
+	infos        []*npool.Ledger
+	totalLedgers uint32
+	totalCoins   uint32
 }
 
-func (h *Handler) setConds() *ledgermwpb.Conds {
-	conds := &ledgermwpb.Conds{}
-	if h.AppID != nil {
-		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
-	}
-	if h.UserID != nil {
-		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
-	}
-	if h.CoinTypeIDs != nil {
-		conds.CoinTypeIDs = &basetypes.StringSliceVal{Op: cruder.IN, Value: h.CoinTypeIDs}
-	}
-	return conds
-}
-
-func (h *queryHandler) getAppCoins(ctx context.Context) error {
-	ids := []string{}
-	for _, info := range h.ledgers {
-		ids = append(ids, info.CoinTypeID)
-	}
-
-	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		IDs:   &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
-	}, 0, int32(len(ids)))
+func (h *queryHandler) getAppCoins(ctx context.Context, conds *appcoinmwpb.Conds, offset, limit int32) error {
+	coins, total, err := appcoinmwcli.GetCoins(ctx, conds, offset, limit)
 	if err != nil {
 		return err
 	}
-	h.appcoins = coins
+	for _, coin := range coins {
+		h.appCoins[coin.CoinTypeID] = coin
+	}
+	h.totalCoins = total
+	return nil
+}
+
+func (h *queryHandler) getLedgers(ctx context.Context, conds *ledgermwpb.Conds, offset, limit int32) error {
+	ledgers, total, err := ledgermwcli.GetLedgers(ctx, conds, offset, limit)
+	if err != nil {
+		return err
+	}
+	for _, ledger := range ledgers {
+		ledgers, ok := h.ledgers[ledger.UserID]
+		if !ok {
+			ledgers = map[string]*ledgermwpb.Ledger{}
+		}
+		ledgers[ledger.CoinTypeID] = ledger
+		h.ledgers[ledger.UserID] = ledgers
+	}
+	h.totalLedgers = total
 	return nil
 }
 
 func (h *queryHandler) getAppUsers(ctx context.Context) error {
 	userIDs := []string{}
-	for _, info := range h.ledgers {
-		userIDs = append(userIDs, info.UserID)
+	for userID := range h.ledgers {
+		userIDs = append(userIDs, userID)
 	}
 	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
 		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
@@ -72,92 +72,109 @@ func (h *queryHandler) getAppUsers(ctx context.Context) error {
 		return err
 	}
 	for _, user := range users {
-		h.appusers[user.ID] = user
+		h.appUsers[user.ID] = user
 	}
 	return nil
 }
 
-func (h *queryHandler) formalize() {
-	ledgerMap := map[string]*ledgermwpb.Ledger{}
-	for _, val := range h.ledgers {
-		ledgerMap[val.CoinTypeID] = val
-	}
-
-	for _, coin := range h.appcoins {
-		ledger, ok := ledgerMap[coin.CoinTypeID]
-		if ok {
-			h.infos = append(h.infos, &npool.Ledger{
-				CoinTypeID:   coin.CoinTypeID,
-				CoinName:     coin.Name,
-				DisplayNames: coin.DisplayNames,
-				CoinLogo:     coin.Logo,
-				CoinUnit:     coin.Unit,
-				CoinDisabled: coin.Disabled,
-				CoinDisplay:  coin.Display,
-				Incoming:     ledger.Incoming,
-				Locked:       ledger.Locked,
-				Outcoming:    ledger.Outcoming,
-				Spendable:    ledger.Spendable,
-			})
-		} else {
-			h.infos = append(h.infos, &npool.Ledger{
-				CoinTypeID:   coin.CoinTypeID,
-				CoinName:     coin.Name,
-				DisplayNames: coin.DisplayNames,
-				CoinLogo:     coin.Logo,
-				CoinUnit:     coin.Unit,
-				CoinDisabled: coin.Disabled,
-				CoinDisplay:  coin.Display,
-				Incoming:     decimal.NewFromInt(0).String(),
-				Locked:       decimal.NewFromInt(0).String(),
-				Outcoming:    decimal.NewFromInt(0).String(),
-				Spendable:    decimal.NewFromInt(0).String(),
-			})
-		}
-	}
-}
-
-func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, error) {
-	coins, total, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
+func (h *queryHandler) prepareAppLedgers(ctx context.Context) error {
+	// Get offset/limit ledgers
+	if err := h.getLedgers(ctx, &ledgermwpb.Conds{
 		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-	}, h.Offset, h.Limit)
-	if err != nil {
-		return nil, 0, err
+	}, h.Offset, h.Limit); err != nil {
+		return err
 	}
-
-	for _, coin := range coins {
-		h.CoinTypeIDs = append(h.CoinTypeIDs, coin.CoinTypeID)
+	coinTypeIDs := []string{}
+	for _, ledgers := range h.ledgers {
+		for coinTypeID := range ledgers {
+			coinTypeIDs = append(coinTypeIDs, coinTypeID)
+		}
 	}
-
-	ledgers, _, err := ledgermwcli.GetLedgers(ctx, h.setConds(), 0, int32(len(coins)))
-	if err != nil {
-		return nil, 0, err
+	conds := &appcoinmwpb.Conds{
+		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
 	}
-
-	handler := &queryHandler{
-		Handler:  h,
-		appcoins: coins,
-		ledgers:  ledgers,
+	// Get ledger coins
+	if err := h.getAppCoins(ctx, conds, 0, int32(len(coinTypeIDs))); err != nil {
+		return err
 	}
-
-	handler.formalize()
-	return handler.infos, total, nil
+	return nil
 }
 
-func (h *queryHandler) formalize1() {
-	coinMap := map[string]*appcoinmwpb.Coin{}
-	for _, coin := range h.appcoins {
-		coinMap[coin.CoinTypeID] = coin
+func (h *queryHandler) prepareUserLedgers(ctx context.Context) error {
+	// Get offset/limit coins
+	if err := h.getAppCoins(ctx, &appcoinmwpb.Conds{
+		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+	}, h.Offset, h.Limit); err != nil {
+		return err
 	}
+	coinTypeIDs := []string{}
+	for coinTypeID := range h.appCoins {
+		coinTypeIDs = append(coinTypeIDs, coinTypeID)
+	}
+	// Get coin ledgers
+	conds := &ledgermwpb.Conds{
+		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
+	}
+	if err := h.getLedgers(ctx, conds, 0, int32(len(coinTypeIDs))); err != nil {
+		return err
+	}
+	return nil
+}
 
-	for _, val := range h.ledgers {
-		user, ok := h.appusers[val.UserID]
+func (h *queryHandler) formalize(ledger *ledgermwpb.Ledger, coin *appcoinmwpb.Coin, user *appusermwpb.User) {
+	h.infos = append(h.infos, &npool.Ledger{
+		CoinTypeID:   coin.CoinTypeID,
+		CoinName:     coin.Name,
+		DisplayNames: coin.DisplayNames,
+		CoinLogo:     coin.Logo,
+		CoinUnit:     coin.Unit,
+		CoinDisabled: coin.Disabled,
+		CoinDisplay:  coin.Display,
+		Incoming:     ledger.Incoming,
+		Locked:       ledger.Locked,
+		Outcoming:    ledger.Outcoming,
+		Spendable:    ledger.Spendable,
+		PhoneNO:      user.PhoneNO,
+		EmailAddress: user.EmailAddress,
+	})
+}
+
+func (h *queryHandler) formalizeAppLedgers() {
+	for userID, ledgers := range h.ledgers {
+		user, ok := h.appUsers[userID]
 		if !ok {
 			continue
 		}
-		coin, ok := coinMap[val.CoinTypeID]
-		if !ok {
-			continue
+		for coinTypeID, ledger := range ledgers {
+			coin, ok := h.appCoins[coinTypeID]
+			if !ok {
+				continue
+			}
+			h.formalize(ledger, coin, user)
+		}
+	}
+}
+
+func (h *queryHandler) formalizeUserLedgers() {
+	user, ok := h.appUsers[*h.UserID]
+	if !ok {
+		return
+	}
+
+	ledgers, ok := h.ledgers[*h.UserID]
+	if !ok {
+		return
+	}
+	for coinTypeID, coin := range h.appCoins {
+		if ledgers != nil {
+			ledger, ok := ledgers[coinTypeID]
+			if ok {
+				h.formalize(ledger, coin, user)
+				continue
+			}
 		}
 		h.infos = append(h.infos, &npool.Ledger{
 			CoinTypeID:   coin.CoinTypeID,
@@ -165,36 +182,41 @@ func (h *queryHandler) formalize1() {
 			DisplayNames: coin.DisplayNames,
 			CoinLogo:     coin.Logo,
 			CoinUnit:     coin.Unit,
-			Incoming:     val.Incoming,
-			Locked:       val.Locked,
-			Outcoming:    val.Outcoming,
-			Spendable:    val.Spendable,
-			UserID:       val.UserID,
+			CoinDisabled: coin.Disabled,
+			CoinDisplay:  coin.Display,
+			Incoming:     decimal.NewFromInt(0).String(),
+			Locked:       decimal.NewFromInt(0).String(),
+			Outcoming:    decimal.NewFromInt(0).String(),
+			Spendable:    decimal.NewFromInt(0).String(),
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
 		})
 	}
 }
 
-func (h *Handler) GetAppLedgers(ctx context.Context) ([]*npool.Ledger, uint32, error) {
-	ledgers, total, err := ledgermwcli.GetLedgers(ctx, h.setConds(), h.Offset, h.Limit)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(ledgers) == 0 {
-		return nil, 0, nil
-	}
+func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, error) {
 	handler := &queryHandler{
 		Handler: h,
-		ledgers: ledgers,
+		ledgers: map[string]map[string]*ledgermwpb.Ledger{},
 	}
-	if err := handler.getAppCoins(ctx); err != nil {
-		return nil, total, err
+	if h.UserID == nil {
+		if err := handler.prepareAppLedgers(ctx); err != nil {
+			return nil, 0, err
+		}
+	} else {
+		if err := handler.prepareUserLedgers(ctx); err != nil {
+			return nil, 0, err
+		}
 	}
 	if err := handler.getAppUsers(ctx); err != nil {
-		return nil, total, err
+		return nil, 0, err
 	}
 
-	handler.formalize1()
-	return handler.infos, total, nil
+	if h.UserID == nil {
+		handler.formalizeAppLedgers()
+		return handler.infos, handler.totalLedgers, nil
+	}
+
+	handler.formalizeUserLedgers()
+	return handler.infos, handler.totalCoins, nil
 }
