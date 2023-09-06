@@ -2,7 +2,6 @@ package profit
 
 import (
 	"context"
-	"fmt"
 
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
@@ -24,19 +23,16 @@ func (h *rewardHandler) formalize() {
 	for appGoodID, goodStatements := range h.statements {
 		_, ok := h.appGoods[appGoodID]
 		if !ok {
-			fmt.Println("invalid good id: ", appGoodID)
 			continue
 		}
 		for coinTypeID, coinStatements := range goodStatements {
 			coin, ok := h.appCoins[coinTypeID]
 			if !ok {
-				fmt.Println("invalid coin type id: ", coinTypeID)
 				continue
 			}
 			for orderID, statements := range coinStatements {
 				order, ok := h.orders[orderID]
 				if !ok {
-					fmt.Println("invalid order id: ", orderID)
 					continue
 				}
 				switch order.OrderState {
@@ -71,7 +67,6 @@ func (h *rewardHandler) formalize() {
 						OrderID:             orderID,
 						CreatedAt:           val.CreatedAt,
 					})
-					fmt.Println("rewards: ", h.rewards)
 				}
 			}
 		}
