@@ -66,7 +66,7 @@ func (h *baseHandler) getStatements(ctx context.Context) error {
 			}
 			order, ok := h.orders[e.OrderID]
 			if !ok {
-				logger.Sugar().Errorf("invalid order id from ioextra %v", e.OrderID)
+				logger.Sugar().Errorf("invalid order id(%v) from ioextra", e.OrderID)
 				continue
 			}
 			goodStatements, ok := h.statements[order.AppGoodID]
