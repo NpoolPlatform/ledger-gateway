@@ -20,7 +20,6 @@ func (h *profitHandler) formalize() {
 	for appGoodID, goodStatements := range h.statements {
 		_, ok := h.appGoods[appGoodID]
 		if !ok {
-			logger.Sugar().Errorf("invalid good id %v", appGoodID)
 			continue
 		}
 		for coinTypeID, coinStatements := range goodStatements {
@@ -28,19 +27,19 @@ func (h *profitHandler) formalize() {
 			if !ok {
 				continue
 			}
+			p, ok := infos[coinTypeID]
+			if !ok {
+				p = &npool.Profit{
+					CoinTypeID:   coinTypeID,
+					CoinName:     coin.Name,
+					DisplayNames: coin.DisplayNames,
+					CoinLogo:     coin.Logo,
+					CoinUnit:     coin.Unit,
+					Incoming:     decimal.NewFromInt(0).String(),
+				}
+			}
 			for _, statements := range coinStatements {
 				for _, val := range statements {
-					p, ok := infos[coinTypeID]
-					if !ok {
-						p = &npool.Profit{
-							CoinTypeID:   coinTypeID,
-							CoinName:     coin.Name,
-							DisplayNames: coin.DisplayNames,
-							CoinLogo:     coin.Logo,
-							CoinUnit:     coin.Unit,
-							Incoming:     decimal.NewFromInt(0).String(),
-						}
-					}
 					p.Incoming = decimal.RequireFromString(p.Incoming).
 						Add(decimal.RequireFromString(val.Amount)).
 						String()
