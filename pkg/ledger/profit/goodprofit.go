@@ -98,6 +98,7 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 			Handler:    h,
 			appCoins:   map[string]*appcoinmwpb.Coin{},
 			orders:     map[string]*ordermwpb.Order{},
+            statements: map[string]map[string]map[string][]*statementmwpb.Statement{},
 			appGoods:   map[string]*appgoodmwpb.Good{},
 			ioType:     types.IOType_Incoming,
 			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit, types.IOSubType_Payment},

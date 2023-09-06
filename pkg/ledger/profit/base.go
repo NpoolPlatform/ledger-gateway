@@ -16,6 +16,7 @@ import (
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+    "github.com/NpoolPlatform/go-service-framework/pkg/logger"
 )
 
 type baseHandler struct {
@@ -60,10 +61,12 @@ func (h *baseHandler) getStatements(ctx context.Context) error {
 				OrderID     string
 			}{}
 			if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
+                logger.Sugar().Errorf("invalid io extra %v", statement.IOExtra)
 				continue
 			}
 			order, ok := h.orders[e.OrderID]
 			if !ok {
+                logger.Sugar().Errorf("invalid order id from ioextra %v", e.OrderID)
 				continue
 			}
 			goodStatements, ok := h.statements[order.AppGoodID]
@@ -131,15 +134,24 @@ func (h *baseHandler) getAppCoins(ctx context.Context) error {
 }
 
 func (h *baseHandler) getAppGoods(ctx context.Context) error {
-	goods, total, err := appgoodmwcli.GetGoods(ctx, &appgoodmwpb.Conds{
-		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-	}, h.Offset, h.Limit)
-	if err != nil {
-		return err
-	}
-	for _, good := range goods {
-		h.appGoods[good.ID] = good
-	}
-	h.total = total
-	return nil
+    offset := int32(0)
+    limit := constant.DefaultRowLimit
+    for {
+        goods, total, err := appgoodmwcli.GetGoods(ctx, &appgoodmwpb.Conds{
+            AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+        }, offset, limit)
+        if err != nil {
+            return err
+        }
+        if len(goods) == 0 {
+            break
+        }
+
+        h.total = total
+        for _, good := range goods {
+            h.appGoods[good.ID] = good
+        }
+        offset += limit
+    }
+    return nil
 }

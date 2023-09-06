@@ -5,7 +5,10 @@ import (
 
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
+	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
+    ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
+    statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	"github.com/shopspring/decimal"
 )
 
@@ -57,12 +60,18 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 	handler := &profitHandler{
 		baseHandler: &baseHandler{
 			Handler:    h,
-			appCoins:   map[string]*appcoinmwpb.Coin{},
+            appCoins:   map[string]*appcoinmwpb.Coin{},
+			appGoods:   map[string]*appgoodmwpb.Good{},
+			orders:     map[string]*ordermwpb.Order{},
+			statements: map[string]map[string]map[string][]*statementmwpb.Statement{},
 			ioType:     types.IOType_Incoming,
 			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit},
 		},
 	}
 	if err := handler.getOrders(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getAppGoods(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
