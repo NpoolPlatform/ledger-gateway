@@ -26,7 +26,6 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 	for _, val := range statements {
 		order, ok := h.orders[orderID]
 		if !ok {
-            logger.Sugar().Errorf("invalid order %v", e.OrderID)
 			continue
 		}
 		switch order.OrderState {
@@ -36,55 +35,8 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 		default:
 			continue
 		}
-<<<<<<< HEAD
-
-		good, ok := h.goods[order.GoodID]
-		if !ok {
-            logger.Sugar().Errorf("invalid good %v", order.GoodID)
-			continue
-		}
-
-		coin, ok := h.appCoins[good.CoinTypeID]
-		if !ok {
-            logger.Sugar().Errorf("invalid coin type id %v", good.CoinTypeID)
-			continue
-		}
-
-		gp, ok := infos[order.GoodID]
-		if !ok {
-			gp = &npool.GoodProfit{
-				CoinTypeID:            good.CoinTypeID,
-				CoinName:              coin.Name,
-				DisplayNames:          coin.DisplayNames,
-				CoinLogo:              coin.Logo,
-				CoinUnit:              coin.Unit,
-				GoodID:                order.GoodID,
-				GoodName:              good.Title,
-				GoodUnit:              good.Unit,
-				GoodServicePeriodDays: uint32(good.DurationDays),
-				Units:                 decimal.NewFromInt(0).String(),
-				Incoming:              decimal.NewFromInt(0).String(),
-			}
-		}
-
-		if info.IOSubType == types.IOSubType_MiningBenefit {
-			gp.Incoming = decimal.RequireFromString(gp.Incoming).
-				Add(decimal.RequireFromString(info.Amount)).
-				String()
-		}
-
-		if _, ok := profitOrderMap[order.ID]; !ok {
-			gp.Units = decimal.RequireFromString(gp.Units).
-				Add(decimal.RequireFromString(order.Units)).
-				String()
-		}
-
-		profitOrderMap[order.ID] = struct{}{}
-		infos[order.GoodID] = gp
-=======
 		incoming = incoming.Add(decimal.RequireFromString(val.Amount))
 		units = units.Add(decimal.RequireFromString(order.Units))
->>>>>>> 00047b5422539acf4a20f729f4177a41a306f60f
 	}
 	return incoming, units
 }

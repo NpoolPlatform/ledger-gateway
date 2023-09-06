@@ -20,7 +20,7 @@ func (h *profitHandler) formalize() {
 	for appGoodID, goodStatements := range h.statements {
 		_, ok := h.appGoods[appGoodID]
 		if !ok {
-			logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
+			logger.Sugar().Errorf("invalid good id %v", appGoodID)
 			continue
 		}
 		for coinTypeID, coinStatements := range goodStatements {
