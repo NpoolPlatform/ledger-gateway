@@ -7,8 +7,8 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
-    ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
-    statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
+	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
+	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	"github.com/shopspring/decimal"
 )
 
@@ -60,7 +60,7 @@ func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint
 	handler := &profitHandler{
 		baseHandler: &baseHandler{
 			Handler:    h,
-            appCoins:   map[string]*appcoinmwpb.Coin{},
+			appCoins:   map[string]*appcoinmwpb.Coin{},
 			appGoods:   map[string]*appgoodmwpb.Good{},
 			orders:     map[string]*ordermwpb.Order{},
 			statements: map[string]map[string]map[string][]*statementmwpb.Statement{},

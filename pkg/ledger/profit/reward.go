@@ -9,7 +9,7 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
-    statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
+	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	"github.com/shopspring/decimal"
 )
@@ -24,19 +24,19 @@ func (h *rewardHandler) formalize() {
 	for appGoodID, goodStatements := range h.statements {
 		_, ok := h.appGoods[appGoodID]
 		if !ok {
-            fmt.Println("invalid good id: ", appGoodID)
+			fmt.Println("invalid good id: ", appGoodID)
 			continue
 		}
 		for coinTypeID, coinStatements := range goodStatements {
 			coin, ok := h.appCoins[coinTypeID]
 			if !ok {
-                fmt.Println("invalid coin type id: ", coinTypeID)
+				fmt.Println("invalid coin type id: ", coinTypeID)
 				continue
 			}
 			for orderID, statements := range coinStatements {
 				order, ok := h.orders[orderID]
 				if !ok {
-                    fmt.Println("invalid order id: ", orderID)
+					fmt.Println("invalid order id: ", orderID)
 					continue
 				}
 				switch order.OrderState {
@@ -71,7 +71,7 @@ func (h *rewardHandler) formalize() {
 						OrderID:             orderID,
 						CreatedAt:           val.CreatedAt,
 					})
-                    fmt.Println("rewards: ", h.rewards)
+					fmt.Println("rewards: ", h.rewards)
 				}
 			}
 		}
@@ -85,7 +85,7 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 			appCoins:   map[string]*appcoinmwpb.Coin{},
 			appGoods:   map[string]*appgoodmwpb.Good{},
 			orders:     map[string]*ordermwpb.Order{},
-            statements: map[string]map[string]map[string][]*statementmwpb.Statement{},
+			statements: map[string]map[string]map[string][]*statementmwpb.Statement{},
 			ioType:     types.IOType_Incoming,
 			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit},
 		},
