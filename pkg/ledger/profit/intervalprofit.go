@@ -11,58 +11,66 @@ import (
 )
 
 type profitHandler struct {
-	*BaseHandler
+	*baseHandler
 	profits []*npool.Profit
 }
 
 func (h *profitHandler) formalize() {
 	infos := map[string]*npool.Profit{}
-	for _, val := range h.statements {
-		coin, ok := h.appCoins[val.CoinTypeID]
+	for appGoodID, goodStatements := range h.statements {
+		_, ok := h.appGoods[appGoodID]
 		if !ok {
 			logger.Sugar().Errorf("invalid coin type id %v", val.CoinTypeID)
 			continue
 		}
-
-		p, ok := infos[val.CoinTypeID]
-		if !ok {
-			p = &npool.Profit{
-				CoinTypeID:   val.CoinTypeID,
-				CoinName:     coin.Name,
-				DisplayNames: coin.DisplayNames,
-				CoinLogo:     coin.Logo,
-				CoinUnit:     coin.Unit,
-				Incoming:     decimal.NewFromInt(0).String(),
+		for coinTypeID, coinStatements := range goodStatements {
+			coin, ok := h.appCoins[coinTypeID]
+			if !ok {
+				continue
+			}
+			for _, statements := range coinStatements {
+				for _, val := range statements {
+					p, ok := infos[coinTypeID]
+					if !ok {
+						p = &npool.Profit{
+							CoinTypeID:   coinTypeID,
+							CoinName:     coin.Name,
+							DisplayNames: coin.DisplayNames,
+							CoinLogo:     coin.Logo,
+							CoinUnit:     coin.Unit,
+							Incoming:     decimal.NewFromInt(0).String(),
+						}
+					}
+					p.Incoming = decimal.RequireFromString(p.Incoming).
+						Add(decimal.RequireFromString(val.Amount)).
+						String()
+					infos[coinTypeID] = p
+				}
 			}
 		}
-
-		p.Incoming = decimal.RequireFromString(p.Incoming).
-			Add(decimal.RequireFromString(val.Amount)).
-			String()
-
-		infos[val.CoinTypeID] = p
-	}
-
-	for _, info := range infos {
-		h.profits = append(h.profits, info)
 	}
 }
 
 func (h *Handler) GetIntervalProfits(ctx context.Context) ([]*npool.Profit, uint32, error) {
 	handler := &profitHandler{
-		BaseHandler: &BaseHandler{
-			Handler:  h,
-			appCoins: map[string]*appcoinmwpb.Coin{},
+		baseHandler: &baseHandler{
+			Handler:    h,
+			appCoins:   map[string]*appcoinmwpb.Coin{},
+			ioType:     types.IOType_Incoming,
+			ioSubTypes: []types.IOSubType{types.IOSubType_MiningBenefit},
 		},
 	}
-	if err := handler.getStatements(ctx, types.IOType_Incoming, []types.IOSubType{types.IOSubType_MiningBenefit}); err != nil {
+	if err := handler.getOrders(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getAppCoins(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err
 	}
 	if len(handler.statements) == 0 {
 		return nil, 0, nil
-	}
-	if err := handler.getAppCoins(ctx); err != nil {
-		return nil, 0, err
 	}
 
 	handler.formalize()

@@ -11,7 +11,7 @@ require (
 	github.com/NpoolPlatform/good-middleware v0.0.0-20230823161324-5a4bd20d6177
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230905044604-a324aeb63a35
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20230825073905-d23e4d838f99
-	github.com/NpoolPlatform/message v0.0.0-20230905015825-f9e2699eeb1d
+	github.com/NpoolPlatform/message v0.0.0-20230905105412-2013a089cf18
 	github.com/NpoolPlatform/order-middleware v0.0.0-20230821095253-7b8c754f568d
 	github.com/NpoolPlatform/review-middleware v0.0.0-20230902114106-543c8645c85b
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20230216075025-a90a86bfd19b
