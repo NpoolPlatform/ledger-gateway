@@ -1,0 +1,9 @@
+{
+	"appId": "89089012783789789719823798127398",
+	"cluster": "development",
+	"namespaceName": "cloud-hashing-billing-npool-top",
+	"releaseKey": "20220129135223-2540c5858e1e6035",
+	"configurations": {
+		"database_name": "billing"
+	}
+}

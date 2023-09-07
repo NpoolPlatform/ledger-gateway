@@ -1,0 +1,10 @@
+mode: set
+github.com/NpoolPlatform/ledger-gateway/api/api.go:18.45,21.2 2 0
+github.com/NpoolPlatform/ledger-gateway/api/api.go:23.92,24.109 1 0
+github.com/NpoolPlatform/ledger-gateway/api/api.go:27.2,27.69 1 0
+github.com/NpoolPlatform/ledger-gateway/api/api.go:30.2,30.12 1 0
+github.com/NpoolPlatform/ledger-gateway/api/api.go:24.109,26.3 1 0
+github.com/NpoolPlatform/ledger-gateway/api/api.go:27.69,29.3 1 0
+github.com/NpoolPlatform/ledger-gateway/api/version.go:17.98,19.16 2 0
+github.com/NpoolPlatform/ledger-gateway/api/version.go:23.2,23.18 1 0
+github.com/NpoolPlatform/ledger-gateway/api/version.go:19.16,22.3 2 0

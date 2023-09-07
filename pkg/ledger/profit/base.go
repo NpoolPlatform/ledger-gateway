@@ -57,16 +57,34 @@ func (h *baseHandler) getStatements(ctx context.Context) error {
 		}
 		for _, statement := range statements {
 			e := struct {
-				BenefitDate string
-				OrderID     string
+				OrderID   string
+				AppGoodID string
 			}{}
 			if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
-				logger.Sugar().Errorf("invalid io extra %v", statement.IOExtra)
+				logger.Sugar().Errorw(
+					"getStatements",
+					"IOExtra", statement.IOExtra,
+					"Error", err,
+				)
 				continue
 			}
 			order, ok := h.orders[e.OrderID]
 			if !ok {
-				logger.Sugar().Errorf("invalid order id(%v) from ioextra", e.OrderID)
+				logger.Sugar().Errorw(
+					"getStatements",
+					"OrderID", e.OrderID,
+					"Error", "Invalid order",
+				)
+				continue
+			}
+			if order.AppGoodID != e.AppGoodID {
+				logger.Sugar().Errorw(
+					"getStatements",
+					"OrderAppGoodID", order.AppGoodID,
+					"OrderGoodID", order.GoodID,
+					"StatementAppGoodID", e.AppGoodID,
+					"Error", "Invalid statement",
+				)
 				continue
 			}
 			goodStatements, ok := h.statements[order.AppGoodID]

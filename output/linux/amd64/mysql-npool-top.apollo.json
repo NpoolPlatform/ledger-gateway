@@ -1,0 +1,10 @@
+{
+	"appId": "89089012783789789719823798127398",
+	"cluster": "development",
+	"namespaceName": "mysql-npool-top",
+	"releaseKey": "20220129101854-38134eb2356b1e00",
+	"configurations": {
+		"password": "YUAjNCUyMzQ1XjEy",
+		"username": "root"
+	}
+}

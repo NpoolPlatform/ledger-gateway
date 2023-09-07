@@ -1,0 +1,10 @@
+{
+	"appId": "89089012783789789719823798127398",
+	"cluster": "development",
+	"namespaceName": "rabbitmq-npool-top",
+	"releaseKey": "20221206034754-7e67dcf7b3f0ea40",
+	"configurations": {
+		"password": "cmFiYml0bXEK",
+		"username": "user"
+	}
+}
