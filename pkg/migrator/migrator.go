@@ -106,40 +106,41 @@ func migrateIOExtra(ctx context.Context, tx *ent.Tx) error {
 			continue
 		}
 
+		ioExtraV1Str := statement.IoExtra
 		goodID, ok := ioExtraMap["GoodID"]
-		if !ok {
-			continue
-		}
-		good, err := appgoodmwcli.GetGoodOnly(ctx, &appgoodmwpb.Conds{
-			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: statement.AppID.String()},
-			GoodID: &basetypes.StringVal{Op: cruder.EQ, Value: goodID},
-		})
-		if err != nil {
-			logger.Sugar().Errorf("get good only, err %v", err)
-		}
-
-		if good != nil {
-			ioExtraV1Map := map[string]string{}
-			for key, val := range ioExtraMap {
-				if key == "GoodID" {
-					continue
-				}
-				ioExtraV1Map[key] = val
-			}
-			ioExtraV1Map["AppGoodID"] = good.ID
-
-			ioExtraV1Byte, err := json.Marshal(ioExtraV1Map)
+		if ok {
+			good, err := appgoodmwcli.GetGoodOnly(ctx, &appgoodmwpb.Conds{
+				AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: statement.AppID.String()},
+				GoodID: &basetypes.StringVal{Op: cruder.EQ, Value: goodID},
+			})
 			if err != nil {
-				logger.Sugar().Errorf("error: %v", err)
+				logger.Sugar().Errorf("get good only, err %v", err)
 			}
 
-			if _, err := tx.
-				Statement.
-				UpdateOneID(statement.ID).
-				SetIoExtraV1(string(ioExtraV1Byte)).
-				Save(ctx); err != nil {
-				logger.Sugar().Errorf("error: %v", err)
+			if good != nil {
+				ioExtraV1Map := map[string]string{}
+				for key, val := range ioExtraMap {
+					if key == "GoodID" {
+						continue
+					}
+					ioExtraV1Map[key] = val
+				}
+				ioExtraV1Map["AppGoodID"] = good.ID
+
+				ioExtraV1Byte, err := json.Marshal(ioExtraV1Map)
+				if err != nil {
+					logger.Sugar().Errorf("error: %v", err)
+				}
+				ioExtraV1Str = string(ioExtraV1Byte)
 			}
+		}
+
+		if _, err := tx.
+			Statement.
+			UpdateOneID(statement.ID).
+			SetIoExtraV1(ioExtraV1Str).
+			Save(ctx); err != nil {
+			logger.Sugar().Errorf("error: %v", err)
 		}
 	}
 
