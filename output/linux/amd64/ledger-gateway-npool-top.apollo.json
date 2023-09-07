@@ -1,9 +1,0 @@
-{
-	"appId": "89089012783789789719823798127398",
-	"cluster": "development",
-	"namespaceName": "ledger-gateway-npool-top",
-	"releaseKey": "20230906091742-a647e34f8ad32bc5",
-	"configurations": {
-		"database_name": "ledger_manager"
-	}
-}

@@ -1,9 +1,0 @@
-{
-	"appId": "89089012783789789719823798127398",
-	"cluster": "development",
-	"namespaceName": "account-manager-npool-top",
-	"releaseKey": "20221221070032-eb7f1e347516f6af",
-	"configurations": {
-		"database_name": "account_manager"
-	}
-}
