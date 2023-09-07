@@ -174,7 +174,13 @@ func (h *createHandler) checkCoin(ctx context.Context) error {
 	if coin.Disabled {
 		return fmt.Errorf("coin disabled")
 	}
-	appCoin, err := appcoinmwcli.GetCoin(ctx, *h.CoinTypeID)
+	h.coin = coin
+	appCoin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
+		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
+		Disabled:   &basetypes.BoolVal{Op: cruder.EQ, Value: false},
+	})
+
 	if err != nil {
 		return err
 	}
@@ -184,6 +190,7 @@ func (h *createHandler) checkCoin(ctx context.Context) error {
 	if appCoin.Disabled {
 		return fmt.Errorf("app coin disabled")
 	}
+	h.appCoin = appCoin
 	return nil
 }
 
