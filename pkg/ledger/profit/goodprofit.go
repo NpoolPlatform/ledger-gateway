@@ -57,7 +57,7 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount
 		DisplayNames:          coin.DisplayNames,
 		CoinLogo:              coin.Logo,
 		CoinUnit:              coin.Unit,
-		GoodID:                appGoodID,
+		AppGoodID:             appGoodID,
 		GoodName:              good.GoodName,
 		GoodUnit:              good.Unit,
 		GoodServicePeriodDays: uint32(good.DurationDays),
