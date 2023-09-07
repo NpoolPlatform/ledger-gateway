@@ -60,18 +60,29 @@ func (h *createHandler) checkUser(ctx context.Context) error {
 		return fmt.Errorf("target user not found")
 	}
 	h.targetUser = targetUser
+
+	switch *h.AccountType {
+	case basetypes.SignMethod_Email:
+		h.Account = &user.EmailAddress
+	case basetypes.SignMethod_Mobile:
+		h.Account = &user.PhoneNO
+	case basetypes.SignMethod_Google:
+		h.Account = &user.GoogleSecret
+	default:
+		return fmt.Errorf("invalid account type %v", *h.AccountType)
+	}
 	return nil
 }
 
 func (h *createHandler) verifyUserCode(ctx context.Context) error {
-	if h.AccountType == basetypes.SignMethod_Google {
+	if *h.AccountType == basetypes.SignMethod_Google {
 		h.Account = &h.user.GoogleSecret
 	}
 	return usercodemwcli.VerifyUserCode(ctx, &usercodemwpb.VerifyUserCodeRequest{
 		Prefix:      basetypes.Prefix_PrefixUserCode.String(),
 		AppID:       *h.AppID,
 		Account:     *h.Account,
-		AccountType: h.AccountType,
+		AccountType: *h.AccountType,
 		UsedFor:     basetypes.UsedFor_Transfer,
 		Code:        *h.VerificationCode,
 	})

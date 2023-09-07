@@ -18,7 +18,7 @@ type Handler struct {
 	AppID            *string
 	UserID           *string
 	Account          *string
-	AccountType      basetypes.SignMethod
+	AccountType      *basetypes.SignMethod
 	VerificationCode *string
 	TargetUserID     *string
 	CoinTypeID       *string
@@ -181,7 +181,7 @@ func WithAccountType(accountType *basetypes.SignMethod, must bool) func(context.
 			return fmt.Errorf("invalid account type %v", *accountType)
 		}
 
-		h.AccountType = *accountType
+		h.AccountType = accountType
 		return nil
 	}
 }

@@ -52,8 +52,15 @@ func (h *createHandler) checkUser(ctx context.Context) error {
 	if user.State != basetypes.KycState_Approved {
 		return fmt.Errorf("kyc not approved, user id(%v)", h.UserID)
 	}
-	if *h.AccountType == basetypes.SignMethod_Google {
+	switch *h.AccountType {
+	case basetypes.SignMethod_Email:
+		h.Account = &user.EmailAddress
+	case basetypes.SignMethod_Mobile:
+		h.Account = &user.PhoneNO
+	case basetypes.SignMethod_Google:
 		h.Account = &user.GoogleSecret
+	default:
+		return fmt.Errorf("invalid account type %v", *h.AccountType)
 	}
 	h.user = user
 	return nil

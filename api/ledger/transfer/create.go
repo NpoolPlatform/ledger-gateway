@@ -19,7 +19,6 @@ func (s *Server) CreateTransfer(ctx context.Context, in *npool.CreateTransferReq
 		ctx,
 		transfer1.WithAppID(&in.AppID, true),
 		transfer1.WithUserID(&in.AppID, &in.UserID, true),
-		transfer1.WithAccount(&in.Account, true),
 		transfer1.WithAccountType(&in.AccountType, true),
 		transfer1.WithVerificationCode(&in.VerificationCode, true),
 		transfer1.WithCoinTypeID(&in.AppID, &in.CoinTypeID, true),
