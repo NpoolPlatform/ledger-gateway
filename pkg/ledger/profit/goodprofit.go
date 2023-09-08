@@ -29,7 +29,6 @@ type goodProfitHandler struct {
 	appCoins    map[string]*appcoinmwpb.Coin
 	appGoods    map[string]*appgoodmwpb.Good
 	orders      map[string]*ordermwpb.Order
-	total       uint32
 	coinTypeIDs []string
 }
 
@@ -243,6 +242,7 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	for _, good := range goods {
 		goodMap[good.ID] = good
 	}
+
 	handler := &goodProfitHandler{
 		Handler:    h,
 		appCoins:   map[string]*appcoinmwpb.Coin{},
@@ -260,5 +260,5 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		return nil, 0, err
 	}
 	handler.formalize()
-	return handler.infos, handler.total, nil
+	return handler.infos, total, nil
 }

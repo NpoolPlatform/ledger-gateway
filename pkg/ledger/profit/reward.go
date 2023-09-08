@@ -3,7 +3,6 @@ package profit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
@@ -106,8 +105,6 @@ func (h *rewardHandler) formalize() {
 		if !ok {
 			continue
 		}
-		fmt.Println("OrderID: ", order.ID)
-		fmt.Println("OrderState: ", order.OrderState)
 		switch order.OrderState {
 		case ordertypes.OrderState_OrderStatePaid:
 		case ordertypes.OrderState_OrderStateInService:

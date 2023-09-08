@@ -115,6 +115,7 @@ func migrateIOExtra(ctx context.Context, tx *ent.Tx) error {
 			})
 			if err != nil {
 				logger.Sugar().Errorf("get good only, err %v", err)
+				continue
 			}
 
 			if good != nil {
