@@ -164,10 +164,7 @@ func (h *queryHandler) formalizeUserLedgers() {
 		return
 	}
 
-	ledgers, ok := h.ledgers[*h.UserID]
-	if !ok {
-		return
-	}
+	ledgers, _ := h.ledgers[*h.UserID] //nolint
 	for coinTypeID, coin := range h.appCoins {
 		if ledgers != nil {
 			ledger, ok := ledgers[coinTypeID]
