@@ -11,7 +11,7 @@ import (
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	ledgertypes "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
-	orderpb "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
+	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
@@ -40,32 +40,6 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 	for _, val := range statements {
 		order, ok := h.orders[orderID]
 		if !ok {
-			continue
-		}
-		switch order.OrderState {
-		case orderpb.OrderState_OrderStateCreated:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateWaitPayment:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStatePaymentTimeout:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStatePreCancel:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateRestoreCanceledStock:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateCancelAchievement:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateDeductLockedCommission:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateReturnCanceledBalance:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateCanceledTransferBookKeeping:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateCancelUnlockPaymentAccount:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateUpdateCanceledChilds:
-			fallthrough //nolint
-		case orderpb.OrderState_OrderStateCanceled:
 			continue
 		}
 		incoming = incoming.Add(decimal.RequireFromString(val.Amount))
@@ -133,6 +107,20 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 		orders, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
 			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+			OrderStates: &basetypes.Uint32SliceVal{Op: cruder.NIN, Value: []uint32{
+				uint32(ordertypes.OrderState_OrderStateCreated),
+				uint32(ordertypes.OrderState_OrderStateWaitPayment),
+				uint32(ordertypes.OrderState_OrderStatePaymentTimeout),
+				uint32(ordertypes.OrderState_OrderStatePreCancel),
+				uint32(ordertypes.OrderState_OrderStateRestoreCanceledStock),
+				uint32(ordertypes.OrderState_OrderStateCancelAchievement),
+				uint32(ordertypes.OrderState_OrderStateDeductLockedCommission),
+				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
+				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
+				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
+				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
+				uint32(ordertypes.OrderState_OrderStateCanceled),
+			}},
 		}, offset, limit)
 		if err != nil {
 			return err

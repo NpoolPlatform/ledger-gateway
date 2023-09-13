@@ -55,7 +55,20 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 		orders, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
 			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		}, offset, limit)
+			OrderStates: &basetypes.Uint32SliceVal{Op: cruder.NIN, Value: []uint32{
+				uint32(ordertypes.OrderState_OrderStateCreated),
+				uint32(ordertypes.OrderState_OrderStateWaitPayment),
+				uint32(ordertypes.OrderState_OrderStatePaymentTimeout),
+				uint32(ordertypes.OrderState_OrderStatePreCancel),
+				uint32(ordertypes.OrderState_OrderStateRestoreCanceledStock),
+				uint32(ordertypes.OrderState_OrderStateCancelAchievement),
+				uint32(ordertypes.OrderState_OrderStateDeductLockedCommission),
+				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
+				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
+				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
+				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
+				uint32(ordertypes.OrderState_OrderStateCanceled),
+			}}}, offset, limit)
 		if err != nil {
 			return err
 		}
@@ -103,13 +116,6 @@ func (h *rewardHandler) formalize() {
 		}
 		order, ok := h.orders[e.OrderID]
 		if !ok {
-			continue
-		}
-		switch order.OrderState {
-		case ordertypes.OrderState_OrderStatePaid:
-		case ordertypes.OrderState_OrderStateInService:
-		case ordertypes.OrderState_OrderStateExpired:
-		default:
 			continue
 		}
 

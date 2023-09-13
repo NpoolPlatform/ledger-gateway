@@ -9,6 +9,7 @@ import (
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
+	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
@@ -72,7 +73,20 @@ func (h *profitHandler) getOrders(ctx context.Context) error {
 		orders, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
 			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		}, offset, limit)
+			OrderStates: &basetypes.Uint32SliceVal{Op: cruder.NIN, Value: []uint32{
+				uint32(ordertypes.OrderState_OrderStateCreated),
+				uint32(ordertypes.OrderState_OrderStateWaitPayment),
+				uint32(ordertypes.OrderState_OrderStatePaymentTimeout),
+				uint32(ordertypes.OrderState_OrderStatePreCancel),
+				uint32(ordertypes.OrderState_OrderStateRestoreCanceledStock),
+				uint32(ordertypes.OrderState_OrderStateCancelAchievement),
+				uint32(ordertypes.OrderState_OrderStateDeductLockedCommission),
+				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
+				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
+				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
+				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
+				uint32(ordertypes.OrderState_OrderStateCanceled),
+			}}}, offset, limit)
 		if err != nil {
 			return err
 		}
