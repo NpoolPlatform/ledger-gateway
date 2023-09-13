@@ -43,10 +43,29 @@ func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*s
 			continue
 		}
 		switch order.OrderState {
-		case orderpb.OrderState_OrderStatePaid:
-		case orderpb.OrderState_OrderStateInService:
-		case orderpb.OrderState_OrderStateExpired:
-		default:
+		case orderpb.OrderState_OrderStateCreated:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateWaitPayment:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStatePaymentTimeout:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStatePreCancel:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateRestoreCanceledStock:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateCancelAchievement:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateDeductLockedCommission:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateReturnCanceledBalance:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateCanceledTransferBookKeeping:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateCancelUnlockPaymentAccount:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateUpdateCanceledChilds:
+			fallthrough //nolint
+		case orderpb.OrderState_OrderStateCanceled:
 			continue
 		}
 		incoming = incoming.Add(decimal.RequireFromString(val.Amount))

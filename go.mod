@@ -5,14 +5,14 @@ go 1.17
 require (
 	github.com/NpoolPlatform/account-middleware v0.0.0-20230712122024-60dc0bb4c0c0
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20230609030803-0b26c1f95713
-	github.com/NpoolPlatform/basal-middleware v0.0.0-20230815094824-5e9572b10997
+	github.com/NpoolPlatform/basal-middleware v0.0.0-20230908131959-b37594a23afd
 	github.com/NpoolPlatform/chain-middleware v0.0.0-20230712041523-2e1d215244e0
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20230814035104-e1466b5c157e
 	github.com/NpoolPlatform/good-middleware v0.0.0-20230907024004-9bbf3f8541cb
 	github.com/NpoolPlatform/ledger-middleware v0.0.0-20230907070416-779a1632d5ea
 	github.com/NpoolPlatform/libent-cruder v0.0.0-20230825073905-d23e4d838f99
-	github.com/NpoolPlatform/message v0.0.0-20230908034857-3ce169faa423
-	github.com/NpoolPlatform/order-middleware v0.0.0-20230821095253-7b8c754f568d
+	github.com/NpoolPlatform/message v0.0.0-20230912032744-4ee0bb6c0f79
+	github.com/NpoolPlatform/order-middleware v0.0.0-20230912045639-41b9054a5fd0
 	github.com/NpoolPlatform/review-middleware v0.0.0-20230902114106-543c8645c85b
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20230216075025-a90a86bfd19b
 	github.com/go-resty/resty/v2 v2.7.0
