@@ -1,24 +1,24 @@
-package ledger
+package transfer
 
 import (
 	"context"
 
-	ledger "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
+	transfer "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/transfer"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 )
 
 type Server struct {
-	ledger.UnimplementedGatewayServer
+	transfer.UnimplementedGatewayServer
 }
 
 func Register(server grpc.ServiceRegistrar) {
-	ledger.RegisterGatewayServer(server, &Server{})
+	transfer.RegisterGatewayServer(server, &Server{})
 }
 
 func RegisterGateway(mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
-	if err := ledger.RegisterGatewayHandlerFromEndpoint(context.Background(), mux, endpoint, opts); err != nil {
+	if err := transfer.RegisterGatewayHandlerFromEndpoint(context.Background(), mux, endpoint, opts); err != nil {
 		return err
 	}
 	return nil
