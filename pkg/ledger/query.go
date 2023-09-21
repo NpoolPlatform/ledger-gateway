@@ -187,6 +187,8 @@ func (h *queryHandler) formalizeUserLedgers() {
 			Spendable:    decimal.NewFromInt(0).String(),
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
+			UserID:       user.ID,
+			AppID:        user.AppID,
 		})
 	}
 }
