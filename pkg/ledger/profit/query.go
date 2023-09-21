@@ -47,6 +47,8 @@ func (h *queryHandler) formalize() {
 			continue
 		}
 		h.infos = append(h.infos, &npool.Profit{
+			AppID:        info.AppID,
+			UserID:       info.UserID,
 			CoinTypeID:   info.CoinTypeID,
 			CoinName:     coin.Name,
 			DisplayNames: coin.DisplayNames,

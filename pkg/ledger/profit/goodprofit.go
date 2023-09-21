@@ -59,6 +59,8 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount
 	}
 
 	h.infos = append(h.infos, &npool.GoodProfit{
+		AppID:                 *h.AppID,
+		UserID:                *h.UserID,
 		CoinTypeID:            good.CoinTypeID,
 		CoinName:              coin.Name,
 		DisplayNames:          coin.DisplayNames,

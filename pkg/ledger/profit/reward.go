@@ -129,6 +129,8 @@ func (h *rewardHandler) formalize() {
 		}
 
 		h.infos = append(h.infos, &npool.MiningReward{
+			AppID:               statement.AppID,
+			UserID:              statement.UserID,
 			CoinTypeID:          statement.CoinTypeID,
 			CoinName:            coin.Name,
 			CoinLogo:            coin.Logo,

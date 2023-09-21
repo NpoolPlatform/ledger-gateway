@@ -144,6 +144,8 @@ func (h *profitHandler) formalize() {
 					p.Incoming = decimal.RequireFromString(p.Incoming).
 						Add(decimal.RequireFromString(statement.Amount)).
 						String()
+					p.AppID = statement.AppID
+					p.UserID = statement.UserID
 				}
 			}
 		}
