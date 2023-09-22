@@ -32,21 +32,6 @@ type goodProfitHandler struct {
 }
 
 //nolint
-func (h *goodProfitHandler) calculateOrderProfit(orderID string, statements []*statementmwpb.Statement) (decimal.Decimal, decimal.Decimal) {
-	incoming := decimal.NewFromInt(0)
-	units := decimal.NewFromInt(0)
-
-	for _, val := range statements {
-		order, ok := h.orders[orderID]
-		if !ok {
-			continue
-		}
-		incoming = incoming.Add(decimal.RequireFromString(val.Amount))
-		units = units.Add(decimal.RequireFromString(order.Units))
-	}
-	return incoming, units
-}
-
 func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount, units decimal.Decimal) {
 	good, ok := h.appGoods[appGoodID]
 	if !ok {
@@ -81,14 +66,18 @@ func (h *goodProfitHandler) formalize() {
 		if !ok {
 			continue
 		}
-		statements, ok := h.statements[order.ID]
-		amount, units := h.calculateOrderProfit(order.ID, statements)
+		amount := decimal.NewFromInt(0)
+		for _, statement := range h.statements[order.ID] {
+			amount = amount.Add(decimal.RequireFromString(statement.Amount))
+		}
 		profit, ok := profits[good.ID]
 		if !ok {
-			profit = make([]decimal.Decimal, 2)
+			profit = make([]decimal.Decimal, 2) //nolint
 		}
+		units := decimal.RequireFromString(order.Units)
 		profit[0] = profit[0].Add(amount)
 		profit[1] = profit[1].Add(units)
+		profits[good.ID] = profit
 	}
 
 	for _, good := range h.appGoods {
