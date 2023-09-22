@@ -120,6 +120,8 @@ func (h *profitHandler) formalize() {
 		p, ok := profits[coin.CoinTypeID]
 		if !ok {
 			p = &npool.Profit{
+				AppID:        coin.AppID,
+				UserID:       *h.UserID,
 				CoinTypeID:   coin.CoinTypeID,
 				CoinName:     coin.Name,
 				DisplayNames: coin.DisplayNames,

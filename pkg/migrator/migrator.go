@@ -106,7 +106,7 @@ func migrateIOExtra(ctx context.Context, tx *ent.Tx) error {
 			continue
 		}
 
-		ioExtraV1Str := statement.IoExtra
+		ioExtraV1Str := ""
 		goodID, ok := ioExtraMap["GoodID"]
 		if ok {
 			good, err := appgoodmwcli.GetGoodOnly(ctx, &appgoodmwpb.Conds{
@@ -131,9 +131,13 @@ func migrateIOExtra(ctx context.Context, tx *ent.Tx) error {
 				ioExtraV1Byte, err := json.Marshal(ioExtraV1Map)
 				if err != nil {
 					logger.Sugar().Errorf("error: %v", err)
+					continue
 				}
 				ioExtraV1Str = string(ioExtraV1Byte)
 			}
+		}
+		if !ok {
+			ioExtraV1Str = statement.IoExtra
 		}
 
 		if _, err := tx.
