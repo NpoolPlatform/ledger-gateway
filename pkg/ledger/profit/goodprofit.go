@@ -3,6 +3,7 @@ package profit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appgoodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/good"
@@ -31,7 +32,6 @@ type goodProfitHandler struct {
 	coinTypeIDs []string
 }
 
-//nolint
 func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount, units decimal.Decimal) {
 	good, ok := h.appGoods[appGoodID]
 	if !ok {
@@ -78,6 +78,7 @@ func (h *goodProfitHandler) formalize() {
 		profit[0] = profit[0].Add(amount)
 		profit[1] = profit[1].Add(units)
 		profits[good.ID] = profit
+		fmt.Printf("good id %v order id %v profit %v units %v\n", good.ID, order.ID, amount, units)
 	}
 
 	for _, good := range h.appGoods {
