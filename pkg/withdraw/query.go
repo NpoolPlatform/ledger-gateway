@@ -107,6 +107,7 @@ func (h *queryHandler) formalize() {
 		}
 
 		h.infos = append(h.infos, &npool.Withdraw{
+			ID:            withdraw.ID,
 			AppID:         withdraw.AppID,
 			UserID:        withdraw.UserID,
 			CoinTypeID:    withdraw.CoinTypeID,
