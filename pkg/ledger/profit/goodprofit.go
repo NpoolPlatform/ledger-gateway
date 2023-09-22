@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
 	appgoodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/good"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
@@ -25,7 +24,7 @@ import (
 type goodProfitHandler struct {
 	*Handler
 	infos       []*npool.GoodProfit
-	statements  map[string]map[string]map[string][]*statementmwpb.Statement // AppGoodID -> CoinTypeID -> OrderID
+	statements  map[string][]*statementmwpb.Statement
 	appCoins    map[string]*appcoinmwpb.Coin
 	appGoods    map[string]*appgoodmwpb.Good
 	orders      map[string]*ordermwpb.Order
@@ -76,28 +75,29 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount
 }
 
 func (h *goodProfitHandler) formalize() {
+	profits := map[string][]decimal.Decimal{}
+	for _, order := range h.orders {
+		good, ok := h.appGoods[order.AppGoodID]
+		if !ok {
+			continue
+		}
+		statements, ok := h.statements[order.ID]
+		amount, units := h.calculateOrderProfit(order.ID, statements)
+		profit, ok := profits[good.ID]
+		if !ok {
+			profit = make([]decimal.Decimal, 2)
+		}
+		profit[0] = profit[0].Add(amount)
+		profit[1] = profit[1].Add(units)
+	}
+
 	for _, good := range h.appGoods {
-		goodStatements, ok := h.statements[good.ID]
+		profit, ok := profits[good.ID]
 		if !ok {
 			h.formalizeProfit(good.ID, good.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
 			continue
 		}
-
-		for coinTypeID, coinStatements := range goodStatements {
-			_, ok := h.appCoins[coinTypeID]
-			if !ok {
-				continue
-			}
-
-			coinProfitAmount := decimal.NewFromInt(0)
-			coinOrderUnits := decimal.NewFromInt(0)
-			for orderID, statements := range coinStatements {
-				amount, units := h.calculateOrderProfit(orderID, statements)
-				coinProfitAmount = coinProfitAmount.Add(amount)
-				coinOrderUnits = coinOrderUnits.Add(units)
-			}
-			h.formalizeProfit(good.ID, coinTypeID, coinProfitAmount, coinOrderUnits)
-		}
+		h.formalizeProfit(good.ID, good.CoinTypeID, profit[0], profit[1])
 	}
 }
 
@@ -191,48 +191,21 @@ func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 				AppGoodID string
 			}{}
 			if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
-				logger.Sugar().Errorw(
-					"getStatements",
-					"IOExtra", statement.IOExtra,
-					"Error", err,
-				)
 				continue
 			}
 			order, ok := h.orders[e.OrderID]
 			if !ok {
-				logger.Sugar().Errorw(
-					"getStatements",
-					"OrderID", e.OrderID,
-					"Error", "Invalid order",
-				)
 				continue
 			}
 			if order.AppGoodID != e.AppGoodID {
-				logger.Sugar().Errorw(
-					"getStatements",
-					"OrderAppGoodID", order.AppGoodID,
-					"OrderGoodID", order.GoodID,
-					"StatementAppGoodID", e.AppGoodID,
-					"Error", "Invalid statement",
-				)
 				continue
 			}
-			goodStatements, ok := h.statements[order.AppGoodID]
-			if !ok {
-				goodStatements = map[string]map[string][]*statementmwpb.Statement{}
-			}
-			coinStatements, ok := goodStatements[order.CoinTypeID]
-			if !ok {
-				coinStatements = map[string][]*statementmwpb.Statement{}
-			}
-			orderStatements, ok := coinStatements[order.ID]
+			orderStatements, ok := h.statements[order.ID]
 			if !ok {
 				orderStatements = []*statementmwpb.Statement{}
 			}
 			orderStatements = append(orderStatements, statement)
-			coinStatements[order.ID] = orderStatements
-			goodStatements[order.CoinTypeID] = coinStatements
-			h.statements[order.AppGoodID] = goodStatements
+			h.statements[order.ID] = orderStatements
 		}
 		offset += limit
 	}
@@ -256,7 +229,7 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		Handler:    h,
 		appCoins:   map[string]*appcoinmwpb.Coin{},
 		orders:     map[string]*ordermwpb.Order{},
-		statements: map[string]map[string]map[string][]*statementmwpb.Statement{},
+		statements: map[string][]*statementmwpb.Statement{},
 		appGoods:   goodMap,
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
