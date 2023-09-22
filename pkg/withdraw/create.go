@@ -214,6 +214,7 @@ func (h *createHandler) checkWithdrawFeeAmount(ctx context.Context) error {
 		if h.withdrawAmount.Cmp(feeAmount) <= 0 {
 			return fmt.Errorf("invalid amount")
 		}
+		return nil
 	}
 
 	curr, err := currencymwcli.GetCurrencyOnly(ctx, &currencymwpb.Conds{
