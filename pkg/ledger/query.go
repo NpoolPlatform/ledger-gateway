@@ -139,6 +139,8 @@ func (h *queryHandler) formalize(ledger *ledgermwpb.Ledger, coin *appcoinmwpb.Co
 		Spendable:    ledger.Spendable,
 		PhoneNO:      user.PhoneNO,
 		EmailAddress: user.EmailAddress,
+		UserID:       user.ID,
+		AppID:        user.AppID,
 	})
 }
 
