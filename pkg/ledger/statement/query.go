@@ -72,6 +72,8 @@ func (h *queryHandler) formalize() {
 		}
 
 		h.infos = append(h.infos, &npool.Statement{
+			ID:           statement.ID,
+			AppID:        statement.AppID,
 			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.CoinName,
 			DisplayNames: coin.DisplayNames,
