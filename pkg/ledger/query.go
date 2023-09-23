@@ -3,22 +3,17 @@ package ledger
 import (
 	"context"
 
-	"github.com/shopspring/decimal"
-
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
+	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
+	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger"
-
 	ledgermwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger"
 
-	ledgermwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger"
-
-	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-
-	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-
-	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+	"github.com/shopspring/decimal"
 )
 
 type queryHandler struct {
@@ -62,6 +57,9 @@ func (h *queryHandler) getLedgers(ctx context.Context, conds *ledgermwpb.Conds, 
 
 func (h *queryHandler) getAppUsers(ctx context.Context) error {
 	userIDs := []string{}
+	if h.UserID != nil {
+		userIDs = append(userIDs, *h.UserID)
+	}
 	for userID := range h.ledgers {
 		userIDs = append(userIDs, userID)
 	}
