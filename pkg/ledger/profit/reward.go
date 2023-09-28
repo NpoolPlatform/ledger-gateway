@@ -118,6 +118,9 @@ func (h *rewardHandler) formalize() {
 		if !ok {
 			continue
 		}
+		if order.AppGoodID != e.AppGoodID {
+			continue
+		}
 
 		rewardAmount, err := decimal.NewFromString(statement.Amount)
 		if err != nil {
