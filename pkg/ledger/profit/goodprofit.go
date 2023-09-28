@@ -3,7 +3,6 @@ package profit
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appgoodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/good"
@@ -30,6 +29,7 @@ type goodProfitHandler struct {
 	appGoods    map[string]*appgoodmwpb.Good
 	orders      map[string]*ordermwpb.Order
 	coinTypeIDs []string
+	total       uint32
 }
 
 func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount, units decimal.Decimal) {
@@ -78,7 +78,6 @@ func (h *goodProfitHandler) formalize() {
 		profit[0] = profit[0].Add(amount)
 		profit[1] = profit[1].Add(units)
 		profits[good.ID] = profit
-		fmt.Printf("good id %v order id %v profit %v units %v\n", good.ID, order.ID, amount, units)
 	}
 
 	for _, good := range h.appGoods {
@@ -129,14 +128,21 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 	return nil
 }
 
-func (h *Handler) getAppGoods(ctx context.Context) ([]*appgoodmwpb.Good, uint32, error) {
+func (h *goodProfitHandler) getAppGoods(ctx context.Context) error {
 	goods, total, err := appgoodmwcli.GetGoods(ctx, &appgoodmwpb.Conds{
 		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 	}, h.Offset, h.Limit)
 	if err != nil {
-		return nil, 0, err
+		return err
 	}
-	return goods, total, nil
+	if len(goods) == 0 {
+		return nil
+	}
+	h.total = total
+	for _, good := range goods {
+		h.appGoods[good.ID] = good
+	}
+	return nil
 }
 
 func (h *goodProfitHandler) getAppCoins(ctx context.Context) error {
@@ -203,24 +209,18 @@ func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 }
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
-	goods, total, err := h.getAppGoods(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(goods) == 0 {
-		return nil, total, nil
-	}
-	goodMap := map[string]*appgoodmwpb.Good{}
-	for _, good := range goods {
-		goodMap[good.ID] = good
-	}
-
 	handler := &goodProfitHandler{
 		Handler:    h,
 		appCoins:   map[string]*appcoinmwpb.Coin{},
 		orders:     map[string]*ordermwpb.Order{},
 		statements: map[string][]*statementmwpb.Statement{},
-		appGoods:   goodMap,
+		appGoods:   map[string]*appgoodmwpb.Good{},
+	}
+	if err := handler.getAppGoods(ctx); err != nil {
+		return nil, 0, err
+	}
+	if len(handler.appGoods) == 0 {
+		return nil, handler.total, nil
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
@@ -232,5 +232,5 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		return nil, 0, err
 	}
 	handler.formalize()
-	return handler.infos, total, nil
+	return handler.infos, handler.total, nil
 }
