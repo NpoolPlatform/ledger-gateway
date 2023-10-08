@@ -72,7 +72,7 @@ func (h *goodProfitHandler) formalize() {
 		}
 		profit, ok := profits[good.ID]
 		if !ok {
-			profit = make([]decimal.Decimal, 2) //nolint
+			profit = make([]decimal.Decimal, 2)
 		}
 		units := decimal.RequireFromString(order.Units)
 		profit[0] = profit[0].Add(amount)
