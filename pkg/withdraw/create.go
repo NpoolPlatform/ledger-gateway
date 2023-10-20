@@ -218,7 +218,7 @@ func (h *createHandler) checkWithdrawFeeAmount(ctx context.Context) error {
 	}
 
 	curr, err := currencymwcli.GetCurrencyOnly(ctx, &currencymwpb.Conds{
-		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: h.coin.ID},
+		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: h.coin.EntID},
 	})
 	if err != nil {
 		return err
