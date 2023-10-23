@@ -56,9 +56,7 @@ func migrateReviewID(ctx context.Context, tx *ent.Tx) error {
 	reviews := map[string]*reviewmwpb.Review{}
 	for {
 		infos, _, err := reviewmwcli.GetReviews(ctx, &reviewmwpb.Conds{
-			ObjectType: &basetypes.Int32Val{
-				Op: cruder.EQ, Value: int32(reviewtypes.ReviewObjectType_ObjectWithdrawal),
-			},
+			ObjectType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(reviewtypes.ReviewObjectType_ObjectWithdrawal)},
 		}, offset, limit)
 		if err != nil {
 			return err
@@ -78,7 +76,7 @@ func migrateReviewID(ctx context.Context, tx *ent.Tx) error {
 		if !ok {
 			continue
 		}
-		reviewID := uuid.MustParse(review.ID)
+		reviewID := uuid.MustParse(review.EntID)
 
 		if _, err := tx.
 			Withdraw.
