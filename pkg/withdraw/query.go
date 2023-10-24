@@ -27,19 +27,19 @@ type queryHandler struct {
 }
 
 func (h *queryHandler) getAccounts(ctx context.Context) error {
-	accountIDs := []string{}
+	ids := []string{}
 	for _, withdraw := range h.withdraws {
-		accountIDs = append(accountIDs, withdraw.AccountID)
+		ids = append(ids, withdraw.AccountID)
 	}
 	conds := &useraccmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UsedFor:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(basetypes.AccountUsedFor_UserWithdraw)},
-		AccountIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: accountIDs},
+		AccountIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
 	}
 	if h.UserID != nil {
 		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
 	}
-	accounts, _, err := useraccmwcli.GetAccounts(ctx, conds, 0, int32(len(accountIDs)))
+	accounts, _, err := useraccmwcli.GetAccounts(ctx, conds, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
@@ -50,14 +50,14 @@ func (h *queryHandler) getAccounts(ctx context.Context) error {
 }
 
 func (h *queryHandler) getCoins(ctx context.Context) error {
-	coinTypeIDs := []string{}
+	ids := []string{}
 	for _, withdraw := range h.withdraws {
-		coinTypeIDs = append(coinTypeIDs, withdraw.CoinTypeID)
+		ids = append(ids, withdraw.CoinTypeID)
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
-	}, 0, int32(len(coinTypeIDs)))
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
@@ -68,16 +68,16 @@ func (h *queryHandler) getCoins(ctx context.Context) error {
 }
 
 func (h *queryHandler) getReviews(ctx context.Context) error {
-	reviewIDs := []string{}
+	ids := []string{}
 	for _, withdraw := range h.withdraws {
-		reviewIDs = append(reviewIDs, withdraw.ReviewID)
+		ids = append(ids, withdraw.ReviewID)
 	}
 
 	reviews, _, err := reviewmwcli.GetReviews(ctx, &review.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		EntIDs:     &basetypes.StringSliceVal{Op: cruder.EQ, Value: reviewIDs},
+		EntIDs:     &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
 		ObjectType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(reviewtypes.ReviewObjectType_ObjectWithdrawal)},
-	}, 0, int32(len(reviewIDs)))
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
