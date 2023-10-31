@@ -5,7 +5,6 @@ import (
 
 	useraccmwcli "github.com/NpoolPlatform/account-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	servicename "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 	withdrawmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	useraccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/user"
@@ -14,6 +13,7 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw"
 	withdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw"
+	"github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewmwcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 )
 
@@ -27,19 +27,19 @@ type queryHandler struct {
 }
 
 func (h *queryHandler) getAccounts(ctx context.Context) error {
-	accountIDs := []string{}
+	ids := []string{}
 	for _, withdraw := range h.withdraws {
-		accountIDs = append(accountIDs, withdraw.AccountID)
+		ids = append(ids, withdraw.AccountID)
 	}
 	conds := &useraccmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UsedFor:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(basetypes.AccountUsedFor_UserWithdraw)},
-		AccountIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: accountIDs},
+		AccountIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
 	}
 	if h.UserID != nil {
 		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
 	}
-	accounts, _, err := useraccmwcli.GetAccounts(ctx, conds, 0, int32(len(accountIDs)))
+	accounts, _, err := useraccmwcli.GetAccounts(ctx, conds, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
@@ -50,14 +50,14 @@ func (h *queryHandler) getAccounts(ctx context.Context) error {
 }
 
 func (h *queryHandler) getCoins(ctx context.Context) error {
-	coinTypeIDs := []string{}
+	ids := []string{}
 	for _, withdraw := range h.withdraws {
-		coinTypeIDs = append(coinTypeIDs, withdraw.CoinTypeID)
+		ids = append(ids, withdraw.CoinTypeID)
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
-	}, 0, int32(len(coinTypeIDs)))
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
@@ -68,17 +68,16 @@ func (h *queryHandler) getCoins(ctx context.Context) error {
 }
 
 func (h *queryHandler) getReviews(ctx context.Context) error {
-	withdrawIDs := []string{}
+	ids := []string{}
 	for _, withdraw := range h.withdraws {
-		withdrawIDs = append(withdrawIDs, withdraw.ID)
+		ids = append(ids, withdraw.ReviewID)
 	}
-	reviews, err := reviewmwcli.GetObjectReviews(
-		ctx,
-		*h.AppID,
-		servicename.ServiceDomain,
-		withdrawIDs,
-		reviewtypes.ReviewObjectType_ObjectWithdrawal,
-	)
+
+	reviews, _, err := reviewmwcli.GetReviews(ctx, &review.Conds{
+		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		EntIDs:     &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
+		ObjectType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(reviewtypes.ReviewObjectType_ObjectWithdrawal)},
+	}, 0, int32(len(ids)))
 	if err != nil {
 		return err
 	}
