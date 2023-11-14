@@ -210,7 +210,7 @@ func (h *createHandler) checkWithdrawFeeAmount(ctx context.Context) error {
 		return fmt.Errorf("invalid fee amount")
 	}
 
-	if !h.appCoin.WithdrawFeeByStableUSD {
+	if !h.appCoin.WithdrawFeeByStableUSD || h.appCoin.StableUSD {
 		if h.withdrawAmount.Cmp(feeAmount) <= 0 {
 			return fmt.Errorf("invalid amount")
 		}
@@ -222,6 +222,9 @@ func (h *createHandler) checkWithdrawFeeAmount(ctx context.Context) error {
 	})
 	if err != nil {
 		return err
+	}
+	if curr == nil {
+		return fmt.Errorf("invalid currency")
 	}
 	value, err := decimal.NewFromString(curr.MarketValueLow)
 	if err != nil {
