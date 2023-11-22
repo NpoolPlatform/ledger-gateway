@@ -48,14 +48,14 @@ func (h *queryHandler) getAppUsers(ctx context.Context) error {
 	}
 
 	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
-		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
+		EntIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
 	}, 0, int32(len(userIDs)))
 	if err != nil {
 		return err
 	}
 
 	for _, user := range users {
-		h.appuser[user.ID] = user
+		h.appuser[user.EntID] = user
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func (h *queryHandler) formalize() {
 			IOExtra:      statement.IOExtra,
 			Amount:       statement.Amount,
 			CreatedAt:    statement.CreatedAt,
-			UserID:       user.ID,
+			UserID:       user.EntID,
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
 		})
