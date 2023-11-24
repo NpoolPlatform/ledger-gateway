@@ -21,8 +21,8 @@ func (s *Server) CreateTransfer(ctx context.Context, in *npool.CreateTransferReq
 		transfer1.WithUserID(&in.AppID, &in.UserID, true),
 		transfer1.WithAccountType(&in.AccountType, true),
 		transfer1.WithVerificationCode(&in.VerificationCode, true),
-		transfer1.WithCoinTypeID(&in.AppID, &in.CoinTypeID, true),
-		transfer1.WithTargetUserID(&in.AppID, &in.TargetUserID, true),
+		transfer1.WithCoinTypeID(&in.CoinTypeID, true),
+		transfer1.WithTargetUserID(&in.TargetUserID, true),
 		transfer1.WithAmount(&in.Amount, true),
 	)
 	if err != nil {
