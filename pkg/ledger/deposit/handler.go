@@ -50,7 +50,6 @@ func WithAppID(appID *string, must bool) func(context.Context, *Handler) error {
 	}
 }
 
-//nolint
 func WithUserID(userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if userID == nil {
@@ -93,7 +92,6 @@ func WithTargetAppID(appID *string, must bool) func(context.Context, *Handler) e
 	}
 }
 
-//nolint
 func WithTargetUserID(userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if userID == nil {
