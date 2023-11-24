@@ -107,6 +107,7 @@ func (h *queryHandler) formalize() {
 
 		h.infos = append(h.infos, &npool.Withdraw{
 			ID:            withdraw.ID,
+			EntID:         withdraw.EntID,
 			AppID:         withdraw.AppID,
 			UserID:        withdraw.UserID,
 			CoinTypeID:    withdraw.CoinTypeID,
@@ -119,7 +120,7 @@ func (h *queryHandler) formalize() {
 			Address:       address,
 			AddressLabels: labels,
 			State:         withdraw.State,
-			Message:       h.reviewMessages[withdraw.ID],
+			Message:       h.reviewMessages[withdraw.EntID],
 		})
 	}
 }
@@ -163,7 +164,7 @@ func (h *Handler) GetWithdraws(ctx context.Context) ([]*npool.Withdraw, uint32, 
 }
 
 func (h *Handler) GetWithdraw(ctx context.Context) (*npool.Withdraw, error) {
-	withdraw, err := withdrawmwcli.GetWithdraw(ctx, *h.ID)
+	withdraw, err := withdrawmwcli.GetWithdraw(ctx, *h.EntID)
 	if err != nil {
 		return nil, err
 	}
