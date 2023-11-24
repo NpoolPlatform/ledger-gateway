@@ -11,6 +11,7 @@ import (
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 
+	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
@@ -18,7 +19,31 @@ import (
 	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 )
 
+type createHandler struct {
+	*Handler
+}
+
+func (h *createHandler) checkUser(ctx context.Context) error {
+	if h.UserID == nil {
+		return nil
+	}
+	user, err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("invalid user")
+	}
+	return nil
+}
+
 func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
+	handler := &createHandler{
+		Handler: h,
+	}
+	if err := handler.checkUser(ctx); err != nil {
+		return nil, err
+	}
 	coin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.TargetAppID},
 		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
