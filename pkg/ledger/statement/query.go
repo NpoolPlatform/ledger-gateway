@@ -2,6 +2,7 @@ package statement
 
 import (
 	"context"
+	"fmt"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
@@ -20,6 +21,20 @@ type queryHandler struct {
 	appcoin    map[string]*appcoinmwpb.Coin
 	appuser    map[string]*appusermwpb.User
 	infos      []*npool.Statement
+}
+
+func (h *Handler) checkUser(ctx context.Context) error {
+	if h.UserID == nil {
+		return nil
+	}
+	user, err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("invalid user")
+	}
+	return nil
 }
 
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
@@ -92,6 +107,9 @@ func (h *queryHandler) formalize() {
 }
 
 func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32, error) {
+	if err := h.checkUser(ctx); err != nil {
+		return nil, 0, err
+	}
 	conds := &statementmwpb.Conds{}
 	if h.AppID != nil {
 		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
