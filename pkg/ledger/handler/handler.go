@@ -6,7 +6,6 @@ import (
 	"time"
 
 	appcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/app"
-	appusercli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	"github.com/google/uuid"
 )
@@ -57,7 +56,7 @@ func WithAppID(appID *string, must bool) func(context.Context, *Handler) error {
 	}
 }
 
-func WithUserID(appID, userID *string, must bool) func(context.Context, *Handler) error {
+func WithUserID(userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if userID == nil {
 			if must {
@@ -69,14 +68,6 @@ func WithUserID(appID, userID *string, must bool) func(context.Context, *Handler
 		if err != nil {
 			return err
 		}
-		exist, err := appusercli.ExistUser(ctx, *appID, *userID)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return fmt.Errorf("invalid user")
-		}
-
 		h.UserID = userID
 		return nil
 	}
