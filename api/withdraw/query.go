@@ -17,7 +17,7 @@ func (s *Server) GetWithdraws(ctx context.Context, in *npool.GetWithdrawsRequest
 	handler, err := withdraw1.NewHandler(
 		ctx,
 		withdraw1.WithAppID(&in.AppID, true),
-		withdraw1.WithUserID(&in.AppID, &in.UserID, true),
+		withdraw1.WithUserID(&in.UserID, true),
 		withdraw1.WithOffset(in.Offset),
 		withdraw1.WithLimit(in.Limit),
 	)
