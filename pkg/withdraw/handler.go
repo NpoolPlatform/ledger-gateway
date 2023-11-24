@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	appmwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/app"
-	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 
@@ -90,23 +89,18 @@ func WithAppID(appID *string, must bool) func(context.Context, *Handler) error {
 	}
 }
 
-func WithUserID(appID, userID *string, must bool) func(context.Context, *Handler) error {
+func WithUserID(userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
-		if appID == nil || userID == nil {
+		if userID == nil {
+			if must {
+				return fmt.Errorf("invalid user id")
+			}
 			return nil
 		}
 		_, err := uuid.Parse(*userID)
 		if err != nil {
 			return err
 		}
-		exist, err := appusermwcli.ExistUser(ctx, *appID, *userID)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return fmt.Errorf("invalid user")
-		}
-
 		h.UserID = userID
 		return nil
 	}
