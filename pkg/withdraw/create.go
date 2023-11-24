@@ -272,12 +272,12 @@ func (h *Handler) CreateWithdraw(ctx context.Context) (*npool.Withdraw, error) {
 	}
 
 	id := uuid.NewString()
-	if h.ID == nil {
-		h.ID = &id
+	if h.EntID == nil {
+		h.EntID = &id
 	}
 
 	if _, err := withdrawmwcli.CreateWithdraw(ctx, &withdrawmwpb.WithdrawReq{
-		ID:         h.ID,
+		EntID:      h.EntID,
 		AppID:      h.AppID,
 		UserID:     h.UserID,
 		CoinTypeID: h.CoinTypeID,
