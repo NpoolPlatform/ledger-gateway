@@ -2,6 +2,7 @@ package ledger
 
 import (
 	"context"
+	"fmt"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
@@ -24,6 +25,20 @@ type queryHandler struct {
 	infos        []*npool.Ledger
 	totalLedgers uint32
 	totalCoins   uint32
+}
+
+func (h *queryHandler) checkUser(ctx context.Context) error {
+	if h.UserID == nil {
+		return nil
+	}
+	user, err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("invalid user")
+	}
+	return nil
 }
 
 func (h *queryHandler) getAppCoins(ctx context.Context, conds *appcoinmwpb.Conds, offset, limit int32) error {
@@ -139,6 +154,8 @@ func (h *queryHandler) formalize(ledger *ledgermwpb.Ledger, coin *appcoinmwpb.Co
 		EmailAddress: user.EmailAddress,
 		UserID:       user.ID,
 		AppID:        user.AppID,
+		ID:           ledger.ID,
+		EntID:        ledger.EntID,
 	})
 }
 
@@ -199,6 +216,9 @@ func (h *Handler) GetLedgers(ctx context.Context) ([]*npool.Ledger, uint32, erro
 		ledgers:  map[string]map[string]*ledgermwpb.Ledger{},
 		appCoins: map[string]*appcoinmwpb.Coin{},
 		appUsers: map[string]*appusermwpb.User{},
+	}
+	if err := handler.checkUser(ctx); err != nil {
+		return nil, 0, err
 	}
 	if h.UserID == nil {
 		if err := handler.prepareAppLedgers(ctx); err != nil {
