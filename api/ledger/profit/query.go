@@ -16,7 +16,7 @@ func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*
 	handler, err := profit1.NewHandler(
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
-		handler1.WithUserID(&in.AppID, &in.UserID, true),
+		handler1.WithUserID(&in.UserID, true),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)
@@ -50,7 +50,7 @@ func (s *Server) GetIntervalProfits(ctx context.Context, in *npool.GetIntervalPr
 	handler, err := profit1.NewHandler(
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
-		handler1.WithUserID(&in.AppID, &in.UserID, true),
+		handler1.WithUserID(&in.UserID, true),
 		handler1.WithStartAt(in.StartAt),
 		handler1.WithEndAt(in.EndAt),
 		handler1.WithOffset(in.Offset),
@@ -86,7 +86,7 @@ func (s *Server) GetGoodProfits(ctx context.Context, in *npool.GetGoodProfitsReq
 	handler, err := profit1.NewHandler(
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
-		handler1.WithUserID(&in.AppID, &in.UserID, true),
+		handler1.WithUserID(&in.UserID, true),
 		handler1.WithStartAt(in.StartAt),
 		handler1.WithEndAt(in.EndAt),
 		handler1.WithOffset(in.Offset),
@@ -122,7 +122,7 @@ func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningReward
 	handler, err := profit1.NewHandler(
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
-		handler1.WithUserID(&in.AppID, &in.UserID, true),
+		handler1.WithUserID(&in.UserID, true),
 		handler1.WithStartAt(in.StartAt),
 		handler1.WithEndAt(in.EndAt),
 		handler1.WithOffset(in.Offset),
