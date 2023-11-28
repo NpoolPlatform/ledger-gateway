@@ -77,7 +77,7 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 		}
 
 		for _, order := range orders {
-			h.orders[order.ID] = order
+			h.orders[order.EntID] = order
 		}
 		offset += limit
 	}
