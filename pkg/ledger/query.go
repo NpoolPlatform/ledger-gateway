@@ -64,13 +64,13 @@ func (h *queryHandler) getAppUsers(ctx context.Context) error {
 		userIDs = append(userIDs, userID)
 	}
 	users, _, err := usermwcli.GetUsers(ctx, &appusermwpb.Conds{
-		IDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
+		EntIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: userIDs},
 	}, 0, int32(len(userIDs)))
 	if err != nil {
 		return err
 	}
 	for _, user := range users {
-		h.appUsers[user.ID] = user
+		h.appUsers[user.EntID] = user
 	}
 	return nil
 }
@@ -137,7 +137,7 @@ func (h *queryHandler) formalize(ledger *ledgermwpb.Ledger, coin *appcoinmwpb.Co
 		Spendable:    ledger.Spendable,
 		PhoneNO:      user.PhoneNO,
 		EmailAddress: user.EmailAddress,
-		UserID:       user.ID,
+		UserID:       user.EntID,
 		AppID:        user.AppID,
 	})
 }
@@ -187,7 +187,7 @@ func (h *queryHandler) formalizeUserLedgers() {
 			Spendable:    decimal.NewFromInt(0).String(),
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
-			UserID:       user.ID,
+			UserID:       user.EntID,
 			AppID:        user.AppID,
 		})
 	}
