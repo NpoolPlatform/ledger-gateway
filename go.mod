@@ -14,7 +14,7 @@ require (
 	github.com/NpoolPlatform/message v0.0.0-20231130082520-4b6d4de73964
 	github.com/NpoolPlatform/order-middleware v0.0.0-20231011072313-c0f26bd2b58c
 	github.com/NpoolPlatform/review-middleware v0.0.0-20231031085621-a1ee14e144fd
-	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20231130023745-fe7e3a58a9f0
+	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20231201062049-852b1487d4a9
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
