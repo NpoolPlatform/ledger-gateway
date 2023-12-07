@@ -67,7 +67,7 @@ func (h *goodProfitHandler) formalize() {
 			continue
 		}
 		amount := decimal.NewFromInt(0)
-		for _, statement := range h.statements[order.ID] {
+		for _, statement := range h.statements[order.EntID] {
 			amount = amount.Add(decimal.RequireFromString(statement.Amount))
 		}
 		profit, ok := profits[good.ID]
@@ -122,7 +122,7 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 		}
 
 		for _, order := range orders {
-			h.orders[order.ID] = order
+			h.orders[order.EntID] = order
 		}
 		offset += limit
 	}
@@ -197,12 +197,12 @@ func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 			if order.AppGoodID != e.AppGoodID {
 				continue
 			}
-			orderStatements, ok := h.statements[order.ID]
+			orderStatements, ok := h.statements[order.EntID]
 			if !ok {
 				orderStatements = []*statementmwpb.Statement{}
 			}
 			orderStatements = append(orderStatements, statement)
-			h.statements[order.ID] = orderStatements
+			h.statements[order.EntID] = orderStatements
 		}
 		offset += limit
 	}
