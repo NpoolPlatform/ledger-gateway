@@ -88,6 +88,7 @@ func (h *queryHandler) formalize() {
 
 		h.infos = append(h.infos, &npool.Statement{
 			ID:           statement.ID,
+			EntID:        statement.EntID,
 			AppID:        statement.AppID,
 			CoinTypeID:   coin.CoinTypeID,
 			CoinName:     coin.CoinName,
