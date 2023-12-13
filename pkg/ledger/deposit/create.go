@@ -14,6 +14,7 @@ import (
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 
+	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/statement"
 	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
@@ -21,6 +22,7 @@ import (
 
 type createHandler struct {
 	*Handler
+	user *appusermwpb.User
 }
 
 func (h *createHandler) checkUser(ctx context.Context) error {
@@ -34,6 +36,7 @@ func (h *createHandler) checkUser(ctx context.Context) error {
 	if user == nil {
 		return fmt.Errorf("invalid user")
 	}
+	h.user = user
 	return nil
 }
 
@@ -85,6 +88,10 @@ func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 	}
 
 	return &npool.Statement{
+		ID:           info.ID,
+		EntID:        info.EntID,
+		UserID:       info.UserID,
+		EmailAddress: handler.user.EmailAddress,
 		CoinTypeID:   *h.CoinTypeID,
 		CoinName:     coin.Name,
 		DisplayNames: coin.DisplayNames,
