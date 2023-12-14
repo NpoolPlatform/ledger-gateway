@@ -5,17 +5,11 @@ import (
 	"fmt"
 
 	appcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/app"
-	appusercli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
-	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
-	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
-	"github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
 type Handler struct {
-	ID           *string
 	AppID        *string
 	UserID       *string
 	CoinTypeID   *string
@@ -56,8 +50,7 @@ func WithAppID(appID *string, must bool) func(context.Context, *Handler) error {
 	}
 }
 
-//nolint
-func WithUserID(appID, userID *string, must bool) func(context.Context, *Handler) error {
+func WithUserID(userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if userID == nil {
 			if must {
@@ -68,14 +61,6 @@ func WithUserID(appID, userID *string, must bool) func(context.Context, *Handler
 		_, err := uuid.Parse(*userID)
 		if err != nil {
 			return err
-		}
-
-		exist, err := appusercli.ExistUser(ctx, *appID, *userID)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return fmt.Errorf("invalid app id or user id")
 		}
 		h.UserID = userID
 		return nil
@@ -107,8 +92,7 @@ func WithTargetAppID(appID *string, must bool) func(context.Context, *Handler) e
 	}
 }
 
-//nolint
-func WithTargetUserID(appID, userID *string, must bool) func(context.Context, *Handler) error {
+func WithTargetUserID(userID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if userID == nil {
 			if must {
@@ -116,24 +100,12 @@ func WithTargetUserID(appID, userID *string, must bool) func(context.Context, *H
 			}
 			return nil
 		}
-		_, err := uuid.Parse(*userID)
-		if err != nil {
-			return err
-		}
-
-		exist, err := appusercli.ExistUser(ctx, *appID, *userID)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return fmt.Errorf("invalid app id or user id")
-		}
 		h.TargetUserID = userID
 		return nil
 	}
 }
 
-func WithCoinTypeID(appID, coinTypeID *string, must bool) func(context.Context, *Handler) error {
+func WithCoinTypeID(coinTypeID *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if coinTypeID == nil {
 			if must {
@@ -144,17 +116,6 @@ func WithCoinTypeID(appID, coinTypeID *string, must bool) func(context.Context, 
 		_, err := uuid.Parse(*coinTypeID)
 		if err != nil {
 			return err
-		}
-
-		exist, err := appcoinmwcli.ExistCoinConds(ctx, &coin.Conds{
-			AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *appID},
-			CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *coinTypeID},
-		})
-		if err != nil {
-			return err
-		}
-		if !exist {
-			return fmt.Errorf("coin not exist %v", *coinTypeID)
 		}
 		h.CoinTypeID = coinTypeID
 		return nil

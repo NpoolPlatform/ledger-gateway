@@ -16,7 +16,7 @@ func (s *Server) GetLedgers(ctx context.Context, in *npool.GetLedgersRequest) (*
 	handler, err := ledger1.NewHandler(
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
-		handler1.WithUserID(&in.AppID, &in.UserID, true),
+		handler1.WithUserID(&in.UserID, true),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)

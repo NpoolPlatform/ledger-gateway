@@ -18,10 +18,10 @@ func (s *Server) CreateAppUserDeposit(ctx context.Context, in *npool.CreateAppUs
 	handler, err := deposit1.NewHandler(
 		ctx,
 		deposit1.WithAppID(&in.AppID, true),
-		deposit1.WithUserID(&in.AppID, &in.UserID, true),
-		deposit1.WithCoinTypeID(&in.TargetAppID, &in.CoinTypeID, true),
+		deposit1.WithUserID(&in.UserID, true),
+		deposit1.WithCoinTypeID(&in.CoinTypeID, true),
 		deposit1.WithTargetAppID(&in.TargetAppID, true),
-		deposit1.WithTargetUserID(&in.TargetAppID, &in.TargetUserID, true),
+		deposit1.WithTargetUserID(&in.TargetUserID, true),
 		deposit1.WithAmount(&in.Amount, true),
 	)
 	if err != nil {
