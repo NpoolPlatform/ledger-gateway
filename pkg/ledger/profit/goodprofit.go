@@ -70,7 +70,7 @@ func (h *goodProfitHandler) formalize() {
 		for _, statement := range h.statements[order.EntID] {
 			amount = amount.Add(decimal.RequireFromString(statement.Amount))
 		}
-		profit, ok := profits[good.ID]
+		profit, ok := profits[good.EntID]
 		if !ok {
 			const defaultLength = 2
 			profit = make([]decimal.Decimal, defaultLength)
@@ -78,16 +78,16 @@ func (h *goodProfitHandler) formalize() {
 		units := decimal.RequireFromString(order.Units)
 		profit[0] = profit[0].Add(amount)
 		profit[1] = profit[1].Add(units)
-		profits[good.ID] = profit
+		profits[good.EntID] = profit
 	}
 
 	for _, good := range h.appGoods {
-		profit, ok := profits[good.ID]
+		profit, ok := profits[good.EntID]
 		if !ok {
-			h.formalizeProfit(good.ID, good.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
+			h.formalizeProfit(good.EntID, good.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
 			continue
 		}
-		h.formalizeProfit(good.ID, good.CoinTypeID, profit[0], profit[1])
+		h.formalizeProfit(good.EntID, good.CoinTypeID, profit[0], profit[1])
 	}
 }
 
@@ -141,7 +141,7 @@ func (h *goodProfitHandler) getAppGoods(ctx context.Context) error {
 	}
 	h.total = total
 	for _, good := range goods {
-		h.appGoods[good.ID] = good
+		h.appGoods[good.EntID] = good
 	}
 	return nil
 }
