@@ -5,17 +5,17 @@ import (
 	"fmt"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
-	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
 	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
+	couponcoinmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/coin"
 	ledgergwname "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 	ledgermwname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 	reviewtypes "github.com/NpoolPlatform/message/npool/basetypes/review/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
-	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
+	couponcoinmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
 	reviewmwpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
@@ -28,7 +28,7 @@ import (
 type createHandler struct {
 	*Handler
 	user                  *usermwpb.User
-	appCoin               *appcoinmwpb.Coin
+	couponCoin            *couponcoinmwpb.CouponCoin
 	RequestTimeoutSeconds int64
 }
 
@@ -65,17 +65,17 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 }
 
 func (h *createHandler) getCoin(ctx context.Context) error {
-	appCoin, err := appcoinmwcli.GetCoinOnly(ctx, &appcoinmwpb.Conds{
-		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
+	info, err := couponcoinmwcli.GetCouponCoinOnly(ctx, &couponcoinmwpb.Conds{
+		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CouponID},
 	})
 	if err != nil {
 		return err
 	}
-	if appCoin == nil {
-		return fmt.Errorf("appcoin not found %v", *h.CoinTypeID)
+	if info == nil {
+		return fmt.Errorf("couponcoin not found")
 	}
-	h.appCoin = appCoin
+	h.couponCoin = info
 	return nil
 }
 
