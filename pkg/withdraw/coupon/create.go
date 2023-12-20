@@ -27,8 +27,8 @@ import (
 
 type createHandler struct {
 	*Handler
+	reviewID              *string
 	user                  *usermwpb.User
-	couponCoin            *couponcoinmwpb.CouponCoin
 	RequestTimeoutSeconds int64
 }
 
@@ -75,7 +75,7 @@ func (h *createHandler) getCoin(ctx context.Context) error {
 	if info == nil {
 		return fmt.Errorf("couponcoin not found")
 	}
-	h.couponCoin = info
+	h.CoinTypeID = &info.CoinTypeID
 	return nil
 }
 
@@ -87,6 +87,7 @@ func (h *createHandler) withCreateCouponWithdraw(dispose *dtmcli.SagaDispose) {
 		CoinTypeID: h.CoinTypeID,
 		CouponID:   h.CouponID,
 		Amount:     h.Amount,
+		ReviewID:   h.reviewID,
 	}
 	dispose.Add(
 		ledgermwname.ServiceDomain,
@@ -99,11 +100,10 @@ func (h *createHandler) withCreateCouponWithdraw(dispose *dtmcli.SagaDispose) {
 }
 
 func (h *createHandler) withCreateReview(dispose *dtmcli.SagaDispose) {
-	id := uuid.NewString()
 	objectType := reviewtypes.ReviewObjectType_ObjectCouponRandomCash
 	serviceDomain := ledgergwname.ServiceDomain
 	req := &reviewmwpb.ReviewReq{
-		EntID:      &id,
+		EntID:      h.reviewID,
 		AppID:      h.AppID,
 		ObjectID:   h.EntID,
 		ObjectType: &objectType,
@@ -137,6 +137,10 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 	id := uuid.NewString()
 	if h.EntID == nil {
 		h.EntID = &id
+	}
+	reviewID := uuid.NewString()
+	if handler.reviewID == nil {
+		handler.reviewID = &reviewID
 	}
 
 	sagaDispose := dtmcli.NewSagaDispose(dtmimp.TransOptions{
