@@ -11,15 +11,15 @@ import (
 )
 
 type Handler struct {
-	ID         *uint32
-	EntID      *string
-	AppID      *string
-	UserID     *string
-	CoinTypeID *string
-	CouponID   *string
-	Amount     *string
-	Offset     int32
-	Limit      int32
+	ID          *uint32
+	EntID       *string
+	AppID       *string
+	UserID      *string
+	CoinTypeID  *string
+	AllocatedID *string
+	Amount      *string
+	Offset      int32
+	Limit       int32
 }
 
 func NewHandler(ctx context.Context, options ...func(context.Context, *Handler) error) (*Handler, error) {
@@ -101,18 +101,18 @@ func WithUserID(userID *string, must bool) func(context.Context, *Handler) error
 	}
 }
 
-func WithCouponID(id *string, must bool) func(context.Context, *Handler) error {
+func WithAllocatedID(id *string, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		if id == nil {
 			if must {
-				return fmt.Errorf("invalid coupon id")
+				return fmt.Errorf("invalid allocated id")
 			}
 			return nil
 		}
 		if _, err := uuid.Parse(*id); err != nil {
 			return err
 		}
-		h.CouponID = id
+		h.AllocatedID = id
 		return nil
 	}
 }

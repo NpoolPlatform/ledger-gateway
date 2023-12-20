@@ -17,7 +17,7 @@ func (s *Server) CreateCouponWithdraw(ctx context.Context, in *npool.CreateCoupo
 		ctx,
 		couponwithdraw1.WithAppID(&in.AppID, true),
 		couponwithdraw1.WithUserID(&in.UserID, true),
-		couponwithdraw1.WithCouponID(&in.CouponID, true),
+		couponwithdraw1.WithAllocatedID(&in.AllocatedID, true),
 	)
 	if err != nil {
 		logger.Sugar().Errorw(
