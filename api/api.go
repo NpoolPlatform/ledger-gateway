@@ -11,6 +11,7 @@ import (
 	statement "github.com/NpoolPlatform/ledger-gateway/api/ledger/statement"
 	transfer "github.com/NpoolPlatform/ledger-gateway/api/ledger/transfer"
 	withdraw "github.com/NpoolPlatform/ledger-gateway/api/withdraw"
+	couponwithdraw "github.com/NpoolPlatform/ledger-gateway/api/withdraw/coupon"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
@@ -28,6 +29,7 @@ func Register(server grpc.ServiceRegistrar) {
 	profit.Register(server)
 	statement.Register(server)
 	withdraw.Register(server)
+	couponwithdraw.Register(server)
 }
 
 func RegisterGateway(mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) error {
@@ -50,6 +52,9 @@ func RegisterGateway(mux *runtime.ServeMux, endpoint string, opts []grpc.DialOpt
 		return err
 	}
 	if err := withdraw.RegisterGateway(mux, endpoint, opts); err != nil {
+		return err
+	}
+	if err := couponwithdraw.RegisterGateway(mux, endpoint, opts); err != nil {
 		return err
 	}
 	return nil
