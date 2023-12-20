@@ -30,6 +30,7 @@ type createHandler struct {
 	reviewID              *string
 	user                  *usermwpb.User
 	RequestTimeoutSeconds int64
+	couponID              *string
 }
 
 func (h *createHandler) checkUser(ctx context.Context) error {
@@ -49,10 +50,10 @@ func (h *createHandler) checkUser(ctx context.Context) error {
 
 func (h *createHandler) checkCoupon(ctx context.Context) error {
 	allocated, err := allocatedmwcli.GetCouponOnly(ctx, &allocatedmwpb.Conds{
-		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CouponID},
-		Used:     &basetypes.BoolVal{Op: cruder.EQ, Value: false},
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		EntID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AllocatedID},
+		Used:   &basetypes.BoolVal{Op: cruder.EQ, Value: false},
 	})
 	if err != nil {
 		return err
@@ -61,13 +62,14 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 		return fmt.Errorf("invalid coupon")
 	}
 	h.Amount = &allocated.Denomination
+	h.couponID = &allocated.CouponID
 	return nil
 }
 
 func (h *createHandler) getCoin(ctx context.Context) error {
 	info, err := couponcoinmwcli.GetCouponCoinOnly(ctx, &couponcoinmwpb.Conds{
 		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CouponID},
+		CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.couponID},
 	})
 	if err != nil {
 		return err
@@ -81,13 +83,13 @@ func (h *createHandler) getCoin(ctx context.Context) error {
 
 func (h *createHandler) withCreateCouponWithdraw(dispose *dtmcli.SagaDispose) {
 	req := &couponwithdrawmwpb.CouponWithdrawReq{
-		EntID:      h.EntID,
-		AppID:      h.AppID,
-		UserID:     h.UserID,
-		CoinTypeID: h.CoinTypeID,
-		CouponID:   h.CouponID,
-		Amount:     h.Amount,
-		ReviewID:   h.reviewID,
+		EntID:       h.EntID,
+		AppID:       h.AppID,
+		UserID:      h.UserID,
+		CoinTypeID:  h.CoinTypeID,
+		AllocatedID: h.AllocatedID,
+		Amount:      h.Amount,
+		ReviewID:    h.reviewID,
 	}
 	dispose.Add(
 		ledgermwname.ServiceDomain,
