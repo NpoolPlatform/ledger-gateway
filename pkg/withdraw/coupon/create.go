@@ -65,7 +65,7 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 	return nil
 }
 
-func (h *createHandler) getAppCoin(ctx context.Context) error {
+func (h *createHandler) getCouponCoin(ctx context.Context) error {
 	info, err := couponcoinmwcli.GetCouponCoinOnly(ctx, &couponcoinmwpb.Conds{
 		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CouponID},
@@ -130,7 +130,7 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 	if err := handler.checkCoupon(ctx); err != nil {
 		return nil, err
 	}
-	if err := handler.getAppCoin(ctx); err != nil {
+	if err := handler.getCouponCoin(ctx); err != nil {
 		return nil, err
 	}
 
