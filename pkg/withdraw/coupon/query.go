@@ -18,7 +18,7 @@ import (
 type queryHandler struct {
 	*Handler
 	couponwithdraws []*couponwithdrawmwpb.CouponWithdraw
-	appCoins        map[string]*appcoinmwpb.Coin
+	appcoins        map[string]*appcoinmwpb.Coin
 	reviewMessages  map[string]string
 	infos           []*npool.CouponWithdraw
 }
@@ -36,7 +36,7 @@ func (h *queryHandler) getAppCoins(ctx context.Context) error {
 		return err
 	}
 	for _, coin := range coins {
-		h.appCoins[coin.CoinTypeID] = coin
+		h.appcoins[coin.CoinTypeID] = coin
 	}
 	return nil
 }
@@ -65,7 +65,7 @@ func (h *queryHandler) getReviews(ctx context.Context) error {
 
 func (h *queryHandler) formalize() {
 	for _, withdraw := range h.couponwithdraws {
-		coin, ok := h.appCoins[withdraw.CoinTypeID]
+		coin, ok := h.appcoins[withdraw.CoinTypeID]
 		if !ok {
 			continue
 		}
@@ -106,7 +106,7 @@ func (h *Handler) GetCouponWithdraws(ctx context.Context) ([]*npool.CouponWithdr
 	handler := &queryHandler{
 		Handler:         h,
 		couponwithdraws: withdraws,
-		appCoins:        map[string]*appcoinmwpb.Coin{},
+		appcoins:        map[string]*appcoinmwpb.Coin{},
 		reviewMessages:  map[string]string{},
 	}
 
@@ -133,7 +133,7 @@ func (h *Handler) GetCouponWithdraw(ctx context.Context) (*npool.CouponWithdraw,
 	handler := &queryHandler{
 		Handler:         h,
 		couponwithdraws: []*couponwithdrawmwpb.CouponWithdraw{withdraw},
-		appCoins:        map[string]*appcoinmwpb.Coin{},
+		appcoins:        map[string]*appcoinmwpb.Coin{},
 		reviewMessages:  map[string]string{},
 	}
 
