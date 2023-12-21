@@ -6,7 +6,6 @@ import (
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	couponwithdrawmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw/coupon"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
-	useraccmwpb "github.com/NpoolPlatform/message/npool/account/mw/v1/user"
 	reviewtypes "github.com/NpoolPlatform/message/npool/basetypes/review/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
@@ -19,13 +18,12 @@ import (
 type queryHandler struct {
 	*Handler
 	couponwithdraws []*couponwithdrawmwpb.CouponWithdraw
-	accounts        map[string]*useraccmwpb.Account
 	appCoins        map[string]*appcoinmwpb.Coin
 	reviewMessages  map[string]string
 	infos           []*npool.CouponWithdraw
 }
 
-func (h *queryHandler) getCoins(ctx context.Context) error {
+func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	ids := []string{}
 	for _, withdraw := range h.couponwithdraws {
 		ids = append(ids, withdraw.CoinTypeID)
@@ -112,7 +110,7 @@ func (h *Handler) GetCouponWithdraws(ctx context.Context) ([]*npool.CouponWithdr
 		reviewMessages:  map[string]string{},
 	}
 
-	if err := handler.getCoins(ctx); err != nil {
+	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getReviews(ctx); err != nil {
@@ -135,12 +133,11 @@ func (h *Handler) GetCouponWithdraw(ctx context.Context) (*npool.CouponWithdraw,
 	handler := &queryHandler{
 		Handler:         h,
 		couponwithdraws: []*couponwithdrawmwpb.CouponWithdraw{withdraw},
-		accounts:        map[string]*useraccmwpb.Account{},
 		appCoins:        map[string]*appcoinmwpb.Coin{},
 		reviewMessages:  map[string]string{},
 	}
 
-	if err := handler.getCoins(ctx); err != nil {
+	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, err
 	}
 	if err := handler.getReviews(ctx); err != nil {
