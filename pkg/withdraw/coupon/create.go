@@ -3,9 +3,11 @@ package coupon
 import (
 	"context"
 	"fmt"
+	"time"
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
+	timedef "github.com/NpoolPlatform/go-service-framework/pkg/const/time"
 	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
 	couponcoinmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/coin"
 	ledgergwname "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
@@ -60,6 +62,12 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 	if allocated == nil {
 		return fmt.Errorf("invalid coupon")
 	}
+
+	now := uint32(time.Now().Unix())
+	if now < allocated.StartAt || now > allocated.EndAt {
+		return fmt.Errorf("coupon can not be withdraw in current time")
+	}
+
 	h.Amount = &allocated.Denomination
 	h.CouponID = &allocated.CouponID
 	return nil
