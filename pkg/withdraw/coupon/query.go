@@ -15,7 +15,6 @@ import (
 	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
-	"github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewmwpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewmwcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 )
@@ -88,7 +87,7 @@ func (h *queryHandler) getReviews(ctx context.Context) error {
 		ids = append(ids, withdraw.ReviewID)
 	}
 
-	reviews, _, err := reviewmwcli.GetReviews(ctx, &review.Conds{
+	reviews, _, err := reviewmwcli.GetReviews(ctx, &reviewmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		EntIDs:     &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
 		ObjectType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(reviewtypes.ReviewObjectType_ObjectCouponRandomCash)},
@@ -116,14 +115,14 @@ func (h *queryHandler) formalize() {
 		if !ok {
 			continue
 		}
-		review, ok := h.reviews[cw.ReviewID]
+		_review, ok := h.reviews[cw.ReviewID]
 		if !ok {
 			continue
 		}
 
 		message := ""
-		if review.State == reviewtypes.ReviewState_Rejected {
-			message = review.Message
+		if _review.State == reviewtypes.ReviewState_Rejected {
+			message = _review.Message
 		}
 
 		h.infos = append(h.infos, &npool.CouponWithdraw{
@@ -140,7 +139,7 @@ func (h *queryHandler) formalize() {
 			State:         cw.State,
 			Message:       message,
 			ReviewID:      cw.ReviewID,
-			ReviewUintID:  review.ID,
+			ReviewUintID:  _review.ID,
 			AllocatedID:   cw.AllocatedID,
 			CouponID:      allocated.CouponID,
 			CouponName:    allocated.CouponName,
