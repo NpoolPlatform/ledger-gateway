@@ -129,7 +129,6 @@ func (h *queryHandler) formalize() {
 			CoinLogo:      coin.Logo,
 			CoinUnit:      coin.Unit,
 			Amount:        cw.Amount,
-			CreatedAt:     cw.CreatedAt,
 			State:         cw.State,
 			Message:       h.reviewMessages[cw.EntID],
 			AllocatedID:   cw.AllocatedID,
@@ -138,6 +137,8 @@ func (h *queryHandler) formalize() {
 			CouponMessage: allocated.Message,
 			PhoneNO:       appuser.PhoneNO,
 			EmailAddress:  appuser.EmailAddress,
+			CreatedAt:     cw.CreatedAt,
+			UpdatedAt:     cw.UpdatedAt,
 		})
 	}
 }
