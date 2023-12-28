@@ -172,6 +172,12 @@ func (h *Handler) GetCouponWithdraws(ctx context.Context) ([]*npool.CouponWithdr
 	if err := handler.getReviews(ctx); err != nil {
 		return nil, 0, err
 	}
+	if err := handler.getAllocateds(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getAppUsers(ctx); err != nil {
+		return nil, 0, err
+	}
 
 	handler.formalize()
 	return handler.infos, total, nil
@@ -201,6 +207,13 @@ func (h *Handler) GetCouponWithdraw(ctx context.Context) (*npool.CouponWithdraw,
 	if err := handler.getReviews(ctx); err != nil {
 		return nil, err
 	}
+	if err := handler.getAllocateds(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.getAppUsers(ctx); err != nil {
+		return nil, err
+	}
+
 	handler.formalize()
 	if len(handler.infos) == 0 {
 		return nil, nil
