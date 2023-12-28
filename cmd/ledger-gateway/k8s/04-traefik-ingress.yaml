@@ -81,6 +81,18 @@ spec:
             backend:
               serviceName: ledger-gateway
               servicePort: 50410
+          - path: /api/ledger/v1/create/couponwithdraw
+            backend:
+              serviceName: ledger-gateway
+              servicePort: 50410
+          - path: /api/ledger/v1/get/couponwithdraws
+            backend:
+              serviceName: ledger-gateway
+              servicePort: 50410
+          - path: /api/ledger/v1/get/app/couponwithdraws
+            backend:
+              serviceName: ledger-gateway
+              servicePort: 50410
           - path: /api/ledger/v1/create
             backend:
               serviceName: ledger-gateway
