@@ -3,12 +3,16 @@ package coupon
 import (
 	"context"
 
+	appusermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
 	couponwithdrawmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/withdraw/coupon"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+	appusermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 	reviewtypes "github.com/NpoolPlatform/message/npool/basetypes/review/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
+	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
 	"github.com/NpoolPlatform/message/npool/review/mw/v2/review"
@@ -19,8 +23,44 @@ type queryHandler struct {
 	*Handler
 	couponwithdraws []*couponwithdrawmwpb.CouponWithdraw
 	appcoins        map[string]*appcoinmwpb.Coin
+	appusers        map[string]*appusermwpb.User
+	allocateds      map[string]*allocatedmwpb.Coupon
 	reviewMessages  map[string]string
 	infos           []*npool.CouponWithdraw
+}
+
+func (h *queryHandler) getAppUsers(ctx context.Context) error {
+	ids := []string{}
+	for _, cw := range h.couponwithdraws {
+		ids = append(ids, cw.UserID)
+	}
+	infos, _, err := appusermwcli.GetUsers(ctx, &appusermwpb.Conds{
+		EntIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
+	}, 0, int32(len(ids)))
+	if err != nil {
+		return err
+	}
+	for _, info := range infos {
+		h.appusers[info.EntID] = info
+	}
+	return nil
+}
+
+func (h *queryHandler) getAllocateds(ctx context.Context) error {
+	ids := []string{}
+	for _, cw := range h.couponwithdraws {
+		ids = append(ids, cw.AllocatedID)
+	}
+	allocateds, _, err := allocatedmwcli.GetCoupons(ctx, &allocatedmwpb.Conds{
+		EntIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
+	}, 0, int32(len(ids)))
+	if err != nil {
+		return err
+	}
+	for _, al := range allocateds {
+		h.allocateds[al.EntID] = al
+	}
+	return nil
 }
 
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
@@ -64,26 +104,40 @@ func (h *queryHandler) getReviews(ctx context.Context) error {
 }
 
 func (h *queryHandler) formalize() {
-	for _, withdraw := range h.couponwithdraws {
-		coin, ok := h.appcoins[withdraw.CoinTypeID]
+	for _, cw := range h.couponwithdraws {
+		coin, ok := h.appcoins[cw.CoinTypeID]
+		if !ok {
+			continue
+		}
+		allocated, ok := h.allocateds[cw.AllocatedID]
+		if !ok {
+			continue
+		}
+		appuser, ok := h.appusers[cw.UserID]
 		if !ok {
 			continue
 		}
 
 		h.infos = append(h.infos, &npool.CouponWithdraw{
-			ID:           withdraw.ID,
-			EntID:        withdraw.EntID,
-			AppID:        withdraw.AppID,
-			UserID:       withdraw.UserID,
-			CoinTypeID:   withdraw.CoinTypeID,
-			CoinName:     coin.CoinName,
-			DisplayNames: coin.DisplayNames,
-			CoinLogo:     coin.Logo,
-			CoinUnit:     coin.Unit,
-			Amount:       withdraw.Amount,
-			CreatedAt:    withdraw.CreatedAt,
-			State:        withdraw.State,
-			Message:      h.reviewMessages[withdraw.EntID],
+			ID:            cw.ID,
+			EntID:         cw.EntID,
+			AppID:         cw.AppID,
+			UserID:        cw.UserID,
+			CoinTypeID:    cw.CoinTypeID,
+			CoinName:      coin.CoinName,
+			DisplayNames:  coin.DisplayNames,
+			CoinLogo:      coin.Logo,
+			CoinUnit:      coin.Unit,
+			Amount:        cw.Amount,
+			CreatedAt:     cw.CreatedAt,
+			State:         cw.State,
+			Message:       h.reviewMessages[cw.EntID],
+			AllocatedID:   cw.AllocatedID,
+			CouponID:      allocated.CouponID,
+			CouponName:    allocated.CouponName,
+			CouponMessage: allocated.Message,
+			PhoneNO:       appuser.PhoneNO,
+			EmailAddress:  appuser.EmailAddress,
 		})
 	}
 }
@@ -107,6 +161,8 @@ func (h *Handler) GetCouponWithdraws(ctx context.Context) ([]*npool.CouponWithdr
 		Handler:         h,
 		couponwithdraws: withdraws,
 		appcoins:        map[string]*appcoinmwpb.Coin{},
+		allocateds:      map[string]*allocatedmwpb.Coupon{},
+		appusers:        map[string]*appusermwpb.User{},
 		reviewMessages:  map[string]string{},
 	}
 
@@ -134,6 +190,8 @@ func (h *Handler) GetCouponWithdraw(ctx context.Context) (*npool.CouponWithdraw,
 		Handler:         h,
 		couponwithdraws: []*couponwithdrawmwpb.CouponWithdraw{withdraw},
 		appcoins:        map[string]*appcoinmwpb.Coin{},
+		allocateds:      map[string]*allocatedmwpb.Coupon{},
+		appusers:        map[string]*appusermwpb.User{},
 		reviewMessages:  map[string]string{},
 	}
 
