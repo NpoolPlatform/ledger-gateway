@@ -76,24 +76,3 @@ func (s *Server) GetAppCouponWithdraws(ctx context.Context, in *npool.GetAppCoup
 		Total: total,
 	}, nil
 }
-
-func (s *Server) GetNAppCouponWithdraws(ctx context.Context, in *npool.GetNAppCouponWithdrawsRequest) (*npool.GetNAppCouponWithdrawsResponse, error) {
-	resp, err := s.GetAppCouponWithdraws(ctx, &npool.GetAppCouponWithdrawsRequest{
-		AppID:  in.TargetAppID,
-		Offset: in.Offset,
-		Limit:  in.Limit,
-	})
-	if err != nil {
-		logger.Sugar().Errorw(
-			"GetAppCouponWithdraws",
-			"In", in,
-			"Error", err,
-		)
-		return &npool.GetNAppCouponWithdrawsResponse{}, status.Error(codes.Aborted, err.Error())
-	}
-
-	return &npool.GetNAppCouponWithdrawsResponse{
-		Infos: resp.Infos,
-		Total: resp.Total,
-	}, nil
-}
