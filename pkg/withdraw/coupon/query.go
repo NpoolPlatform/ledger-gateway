@@ -16,6 +16,7 @@ import (
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
 	"github.com/NpoolPlatform/message/npool/review/mw/v2/review"
+	reviewmwpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewmwcli "github.com/NpoolPlatform/review-middleware/pkg/client/review"
 )
 
@@ -25,7 +26,7 @@ type queryHandler struct {
 	appcoins        map[string]*appcoinmwpb.Coin
 	appusers        map[string]*appusermwpb.User
 	allocateds      map[string]*allocatedmwpb.Coupon
-	reviewMessages  map[string]string
+	reviews         map[string]*reviewmwpb.Review
 	infos           []*npool.CouponWithdraw
 }
 
@@ -96,9 +97,7 @@ func (h *queryHandler) getReviews(ctx context.Context) error {
 		return err
 	}
 	for _, r := range reviews {
-		if r.State == reviewtypes.ReviewState_Rejected {
-			h.reviewMessages[r.ObjectID] = r.Message
-		}
+		h.reviews[r.EntID] = r
 	}
 	return nil
 }
@@ -117,6 +116,15 @@ func (h *queryHandler) formalize() {
 		if !ok {
 			continue
 		}
+		review, ok := h.reviews[cw.ReviewID]
+		if !ok {
+			continue
+		}
+
+		message := ""
+		if review.State == reviewtypes.ReviewState_Rejected {
+			message = review.Message
+		}
 
 		h.infos = append(h.infos, &npool.CouponWithdraw{
 			ID:            cw.ID,
@@ -130,8 +138,9 @@ func (h *queryHandler) formalize() {
 			CoinUnit:      coin.Unit,
 			Amount:        cw.Amount,
 			State:         cw.State,
-			Message:       h.reviewMessages[cw.EntID],
+			Message:       message,
 			ReviewID:      cw.ReviewID,
+			ReviewUintID:  review.ID,
 			AllocatedID:   cw.AllocatedID,
 			CouponID:      allocated.CouponID,
 			CouponName:    allocated.CouponName,
@@ -165,7 +174,7 @@ func (h *Handler) GetCouponWithdraws(ctx context.Context) ([]*npool.CouponWithdr
 		appcoins:        map[string]*appcoinmwpb.Coin{},
 		allocateds:      map[string]*allocatedmwpb.Coupon{},
 		appusers:        map[string]*appusermwpb.User{},
-		reviewMessages:  map[string]string{},
+		reviews:         map[string]*reviewmwpb.Review{},
 	}
 
 	if err := handler.getAppCoins(ctx); err != nil {
@@ -200,7 +209,7 @@ func (h *Handler) GetCouponWithdraw(ctx context.Context) (*npool.CouponWithdraw,
 		appcoins:        map[string]*appcoinmwpb.Coin{},
 		allocateds:      map[string]*allocatedmwpb.Coupon{},
 		appusers:        map[string]*appusermwpb.User{},
-		reviewMessages:  map[string]string{},
+		reviews:         map[string]*reviewmwpb.Review{},
 	}
 
 	if err := handler.getAppCoins(ctx); err != nil {
