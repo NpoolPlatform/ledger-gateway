@@ -131,6 +131,7 @@ func (h *queryHandler) formalize() {
 			Amount:        cw.Amount,
 			State:         cw.State,
 			Message:       h.reviewMessages[cw.EntID],
+			ReviewID:      cw.ReviewID,
 			AllocatedID:   cw.AllocatedID,
 			CouponID:      allocated.CouponID,
 			CouponName:    allocated.CouponName,
