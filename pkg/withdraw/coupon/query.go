@@ -90,7 +90,7 @@ func (h *queryHandler) getReviews(ctx context.Context) error {
 	reviews, _, err := reviewmwcli.GetReviews(ctx, &reviewmwpb.Conds{
 		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		EntIDs:     &basetypes.StringSliceVal{Op: cruder.IN, Value: ids},
-		ObjectType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(reviewtypes.ReviewObjectType_ObjectCouponRandomCash)},
+		ObjectType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(reviewtypes.ReviewObjectType_ObjectRandomCouponCash)},
 	}, 0, int32(len(ids)))
 	if err != nil {
 		return err
