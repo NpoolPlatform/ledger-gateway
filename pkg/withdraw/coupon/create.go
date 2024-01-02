@@ -108,7 +108,7 @@ func (h *createHandler) withCreateCouponWithdraw(dispose *dtmcli.SagaDispose) {
 }
 
 func (h *createHandler) withCreateReview(dispose *dtmcli.SagaDispose) {
-	objectType := reviewtypes.ReviewObjectType_ObjectCouponRandomCash
+	objectType := reviewtypes.ReviewObjectType_ObjectRandomCouponCash
 	serviceDomain := ledgergwname.ServiceDomain
 	req := &reviewmwpb.ReviewReq{
 		EntID:      h.ReviewID,
