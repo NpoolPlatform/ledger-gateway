@@ -74,8 +74,7 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 
 func (h *createHandler) getCouponCoin(ctx context.Context) error {
 	info, err := couponcoinmwcli.GetCouponCoinOnly(ctx, &couponcoinmwpb.Conds{
-		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CouponID},
+		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 	})
 	if err != nil {
 		return err
