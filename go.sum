@@ -62,6 +62,7 @@ github.com/NpoolPlatform/go-service-framework v0.0.0-20230930023319-e48074d9472e
 github.com/NpoolPlatform/go-service-framework v0.0.0-20230930023319-e48074d9472e/go.mod h1:Kh7DMkWnYOMHxEKq7QfJqbxm1HaUPkhTNN74lfHQxyE=
 github.com/NpoolPlatform/good-middleware v0.0.0-20231221030302-2e4c9171b07b h1:YBlNAVMScrwEHWqYwBDBbC/jZGtZOa2IDO2eI1p6ALk=
 github.com/NpoolPlatform/good-middleware v0.0.0-20231221030302-2e4c9171b07b/go.mod h1:kKs4EhUVVX1LUH82douAgt2OkGD5rW87Jc7DPO+gUPs=
+<<<<<<< HEAD
 github.com/NpoolPlatform/inspire-middleware v0.0.0-20240108100136-a7f8f4b4c6dc h1:wje3iXehCo3CRA+RnkZgU5ItSzuxhhAKPsRgTuItVtQ=
 github.com/NpoolPlatform/inspire-middleware v0.0.0-20240108100136-a7f8f4b4c6dc/go.mod h1:eq+noSy8lO4FafVPL/ObS/dr3Ck8n8xMwizLo2vpsyg=
 github.com/NpoolPlatform/ledger-middleware v0.0.0-20240108100325-6208a538cb21 h1:KHTWpxmhPrAdXF5/kKYShXiSlWSrPnjizN4I9sWKGN0=
@@ -70,6 +71,16 @@ github.com/NpoolPlatform/libent-cruder v0.0.0-20231008051607-f64457cf6ab6 h1:zbM
 github.com/NpoolPlatform/libent-cruder v0.0.0-20231008051607-f64457cf6ab6/go.mod h1:EXCihQpRNNyWaPu1IphiZFLTyyUK/CJMZdW4My7y48Q=
 github.com/NpoolPlatform/message v0.0.0-20240108094749-e66662761398 h1:xHXG62A4KIKvS44HiZ4lzAVT1h87fqCwrWE39r+rQ28=
 github.com/NpoolPlatform/message v0.0.0-20240108094749-e66662761398/go.mod h1:PxJpF0vSSOke+NJskbRBRQ2fK2K3SRe8zaEja+GxSHk=
+=======
+github.com/NpoolPlatform/inspire-middleware v0.0.0-20240103072925-de86346a4f5d h1:Qz+n196Xk1cjQXbjh0QO96ydtsF1nG4suyK4ccBIPQA=
+github.com/NpoolPlatform/inspire-middleware v0.0.0-20240103072925-de86346a4f5d/go.mod h1:8g42ArxB9oCjAQVLtbSe8yeyu+h1pdrhOifPpGg6wRs=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20231228095239-939d4d04d313 h1:RsTfRRo6xA0Dkhmd27CfrxSuFsJ2A/9Yn79UpStb6kE=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20231228095239-939d4d04d313/go.mod h1:OAcRUMBvlLAPv/9Rgsa41k8Oq/b9nYVOAFU7IxWLYJM=
+github.com/NpoolPlatform/libent-cruder v0.0.0-20231008051607-f64457cf6ab6 h1:zbM3Zq0qObWEiw+wYJihNFOsBfXey8mBgAhT7HzGB8Y=
+github.com/NpoolPlatform/libent-cruder v0.0.0-20231008051607-f64457cf6ab6/go.mod h1:EXCihQpRNNyWaPu1IphiZFLTyyUK/CJMZdW4My7y48Q=
+github.com/NpoolPlatform/message v0.0.0-20240103072811-32c54156cc86 h1:w/maW0YrKnh6kRh4iaJ4gifg3f3oUwklfq0pnXwWgM0=
+github.com/NpoolPlatform/message v0.0.0-20240103072811-32c54156cc86/go.mod h1:PxJpF0vSSOke+NJskbRBRQ2fK2K3SRe8zaEja+GxSHk=
+>>>>>>> 175c38a (add control)
 github.com/NpoolPlatform/order-middleware v0.0.0-20231207022847-d562f0898e06 h1:uJGd9iPnFBu80NU9zxGhAAlWxTo5ZsloP0oRwNTAtXg=
 github.com/NpoolPlatform/order-middleware v0.0.0-20231207022847-d562f0898e06/go.mod h1:lncl3mV4Bd8gjnRnYPlnf8d5mtPpUIaNT+3rYejUYwU=
 github.com/NpoolPlatform/review-middleware v0.0.0-20240108100223-106962e5a9c2 h1:qXBRJjUzscoz2Sn2ceEmjweHVXZIqGBw2SgJDu/Tk2k=

@@ -9,23 +9,29 @@ import (
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
 	couponmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon"
 	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
+	cashcontrolmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/cashcontrol"
 	couponcoinmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/coin"
+	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	ledgergwname "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 	ledgermwname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
 	inspiretypes "github.com/NpoolPlatform/message/npool/basetypes/inspire/v1"
+	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	reviewtypes "github.com/NpoolPlatform/message/npool/basetypes/review/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
+	cashcontrolmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/app/cashcontrol"
 	couponcoinmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
+	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	reviewmwpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
+	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 	reviewsvcname "github.com/NpoolPlatform/review-middleware/pkg/servicename"
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
-
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 type createHandler struct {
@@ -35,7 +41,7 @@ type createHandler struct {
 	user     *usermwpb.User
 }
 
-func (h *createHandler) checkUser(ctx context.Context) error {
+func (h *createHandler) getUser(ctx context.Context) error {
 	user, err := usermwcli.GetUser(ctx, *h.AppID, *h.UserID)
 	if err != nil {
 		return err
@@ -43,10 +49,56 @@ func (h *createHandler) checkUser(ctx context.Context) error {
 	if user == nil {
 		return fmt.Errorf("invalid user")
 	}
-	if user.State != basetypes.KycState_Approved {
+	h.user = user
+	return nil
+}
+
+func (h *createHandler) checkKyc(ctx context.Context) error {
+	if h.user.State != basetypes.KycState_Approved {
 		return fmt.Errorf("kyc not approved")
 	}
-	h.user = user
+	return nil
+}
+
+func (h *createHandler) checkCreditThreshold(ctx context.Context, value string) error {
+	credits, err := decimal.NewFromString(h.user.ActionCredits)
+	if err != nil {
+		return err
+	}
+	if credits.Cmp(decimal.RequireFromString(value)) < 0 {
+		return fmt.Errorf("credits not enough")
+	}
+	return nil
+}
+
+func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value string) error {
+	return nil
+}
+
+func (h *createHandler) checkOrderThreshold(ctx context.Context, value string) error {
+	total, err := ordermwcli.CountOrders(ctx, &ordermwpb.Conds{
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
+			uint32(ordertypes.OrderState_OrderStatePaid),
+			uint32(ordertypes.OrderState_OrderStateInService),
+			uint32(ordertypes.OrderState_OrderStateExpired),
+		}},
+	})
+	if err != nil {
+		return err
+	}
+
+	_total := decimal.NewFromInt32(int32(total))
+	_value := decimal.RequireFromString(value)
+	if _value.Cmp(decimal.RequireFromString("0")) == 0 { // first order
+		if !_total.Equal(decimal.RequireFromString("0")) {
+			return fmt.Errorf("you have already purchased")
+		}
+	}
+	if _total.Cmp(_value) < 0 {
+		return fmt.Errorf("not enough orders")
+	}
 	return nil
 }
 
@@ -108,6 +160,51 @@ func (h *createHandler) getCouponCoin(ctx context.Context) error {
 	return nil
 }
 
+func (h *createHandler) checkoutCouponControl(ctx context.Context) error {
+	coupon, err := couponmwcli.GetCoupon(ctx, *h.CouponID)
+	if err != nil {
+		return err
+	}
+	if coupon == nil {
+		return fmt.Errorf("invalid coupon")
+	}
+
+	offset := int32(0)
+	limit := constant.DefaultRowLimit
+	for {
+		controls, _, err := cashcontrolmwcli.GetCashControls(ctx, &cashcontrolmwpb.Conds{
+			AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+			CouponID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CouponID},
+		}, offset, limit)
+		if err != nil {
+			return err
+		}
+		if len(controls) == 0 {
+			return nil
+		}
+
+		for _, control := range controls {
+			var err error
+			switch control.ControlType {
+			case inspiretypes.ControlType_KycApproved:
+				err = h.checkKyc(ctx)
+			case inspiretypes.ControlType_CreditThreshold:
+				err = h.checkCreditThreshold(ctx, control.Value)
+			case inspiretypes.ControlType_OrderThreshold:
+				err = h.checkOrderThreshold(ctx, control.Value)
+			case inspiretypes.ControlType_PaymentAmountThreshold:
+				err = h.checkPaymentAmountThreshold(ctx, control.Value)
+			default:
+				return fmt.Errorf("invalid control type")
+			}
+			if err != nil {
+				return err
+			}
+		}
+		offset += limit
+	}
+}
+
 func (h *createHandler) withCreateCouponWithdraw(dispose *dtmcli.SagaDispose) {
 	req := &couponwithdrawmwpb.CouponWithdrawReq{
 		EntID:       h.EntID,
@@ -152,7 +249,7 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 	handler := &createHandler{
 		Handler: h,
 	}
-	if err := handler.checkUser(ctx); err != nil {
+	if err := handler.getUser(ctx); err != nil {
 		return nil, err
 	}
 	if err := handler.checkAllocated(ctx); err != nil {
@@ -162,6 +259,9 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 		return nil, err
 	}
 	if err := handler.getCouponCoin(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkoutCouponControl(ctx); err != nil {
 		return nil, err
 	}
 
