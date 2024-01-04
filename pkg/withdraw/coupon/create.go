@@ -53,14 +53,14 @@ func (h *createHandler) getUser(ctx context.Context) error {
 	return nil
 }
 
-func (h *createHandler) checkKyc(ctx context.Context) error {
+func (h *createHandler) checkKyc() error {
 	if h.user.State != basetypes.KycState_Approved {
 		return fmt.Errorf("kyc not approved")
 	}
 	return nil
 }
 
-func (h *createHandler) checkCreditThreshold(ctx context.Context, value string) error {
+func (h *createHandler) checkCreditThreshold(value string) error {
 	credits, err := decimal.NewFromString(h.user.ActionCredits)
 	if err != nil {
 		return err
@@ -72,6 +72,21 @@ func (h *createHandler) checkCreditThreshold(ctx context.Context, value string) 
 }
 
 func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value string) error {
+	amounts, err := ordermwcli.SumOrderPaymentAmounts(ctx, &ordermwpb.Conds{
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
+			uint32(ordertypes.OrderState_OrderStatePaid),
+			uint32(ordertypes.OrderState_OrderStateInService),
+			uint32(ordertypes.OrderState_OrderStateExpired),
+		}},
+	})
+	if err != nil {
+		return err
+	}
+	if decimal.RequireFromString(amounts).Cmp(decimal.RequireFromString(value)) < 0 {
+		return fmt.Errorf("payment amounts not enough")
+	}
 	return nil
 }
 
@@ -184,12 +199,15 @@ func (h *createHandler) checkoutCouponControl(ctx context.Context) error {
 		}
 
 		for _, control := range controls {
+			if _, err := decimal.NewFromString(control.Value); err != nil {
+				return err
+			}
 			var err error
 			switch control.ControlType {
 			case inspiretypes.ControlType_KycApproved:
-				err = h.checkKyc(ctx)
+				err = h.checkKyc()
 			case inspiretypes.ControlType_CreditThreshold:
-				err = h.checkCreditThreshold(ctx, control.Value)
+				err = h.checkCreditThreshold(control.Value)
 			case inspiretypes.ControlType_OrderThreshold:
 				err = h.checkOrderThreshold(ctx, control.Value)
 			case inspiretypes.ControlType_PaymentAmountThreshold:
