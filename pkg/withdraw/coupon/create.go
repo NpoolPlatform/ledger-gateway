@@ -24,7 +24,6 @@ import (
 	reviewmwpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewsvcname "github.com/NpoolPlatform/review-middleware/pkg/servicename"
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
-	"github.com/shopspring/decimal"
 
 	"github.com/google/uuid"
 )
@@ -64,6 +63,12 @@ func (h *createHandler) checkAllocated(ctx context.Context) error {
 	if allocated == nil {
 		return fmt.Errorf("invalid coupon")
 	}
+	if !allocated.Cashable {
+		return fmt.Errorf("permission denied")
+	}
+	if allocated.CouponType != inspiretypes.CouponType_FixAmount {
+		return fmt.Errorf("invaild coupon type")
+	}
 
 	now := uint32(time.Now().Unix())
 	if now < allocated.StartAt || now > allocated.EndAt {
@@ -85,13 +90,6 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 	}
 	if coupon.CouponType != inspiretypes.CouponType_FixAmount {
 		return fmt.Errorf("invaild coupon type")
-	}
-	probability, err := decimal.NewFromString(coupon.CashableProbability)
-	if err != nil {
-		return err
-	}
-	if probability.Cmp(decimal.NewFromInt(0)) <= 0 {
-		return fmt.Errorf("invalid cashable probability")
 	}
 	return nil
 }
