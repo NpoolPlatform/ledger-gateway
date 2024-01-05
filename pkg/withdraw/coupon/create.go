@@ -7,12 +7,14 @@ import (
 
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
+	couponmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon"
 	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
 	couponcoinmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/coin"
 	ledgergwname "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 	ledgermwname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	inspiretypes "github.com/NpoolPlatform/message/npool/basetypes/inspire/v1"
 	reviewtypes "github.com/NpoolPlatform/message/npool/basetypes/review/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
@@ -22,6 +24,7 @@ import (
 	reviewmwpb "github.com/NpoolPlatform/message/npool/review/mw/v2/review"
 	reviewsvcname "github.com/NpoolPlatform/review-middleware/pkg/servicename"
 	"github.com/dtm-labs/dtm/client/dtmcli/dtmimp"
+	"github.com/shopspring/decimal"
 
 	"github.com/google/uuid"
 )
@@ -48,7 +51,7 @@ func (h *createHandler) checkUser(ctx context.Context) error {
 	return nil
 }
 
-func (h *createHandler) checkCoupon(ctx context.Context) error {
+func (h *createHandler) checkAllocated(ctx context.Context) error {
 	allocated, err := allocatedmwcli.GetCouponOnly(ctx, &allocatedmwpb.Conds{
 		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
@@ -69,6 +72,27 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 
 	h.Amount = &allocated.Denomination
 	h.CouponID = &allocated.CouponID
+	return nil
+}
+
+func (h *createHandler) checkCoupon(ctx context.Context) error {
+	coupon, err := couponmwcli.GetCoupon(ctx, *h.CouponID)
+	if err != nil {
+		return err
+	}
+	if coupon == nil {
+		return fmt.Errorf("invalid coupon")
+	}
+	if coupon.CouponType != inspiretypes.CouponType_FixAmount {
+		return fmt.Errorf("invaild coupon type")
+	}
+	probability, err := decimal.NewFromString(coupon.CashableProbability)
+	if err != nil {
+		return err
+	}
+	if probability.Cmp(decimal.NewFromInt(0)) <= 0 {
+		return fmt.Errorf("invalid cashable probability")
+	}
 	return nil
 }
 
@@ -131,6 +155,9 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 		Handler: h,
 	}
 	if err := handler.checkUser(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.checkAllocated(ctx); err != nil {
 		return nil, err
 	}
 	if err := handler.checkCoupon(ctx); err != nil {
