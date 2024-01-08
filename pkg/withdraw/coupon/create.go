@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	appmwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/app"
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
 	couponmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon"
@@ -39,6 +40,20 @@ type createHandler struct {
 	ReviewID *string
 	CouponID *string
 	user     *usermwpb.User
+}
+
+func (h *createHandler) getApp(ctx context.Context) error {
+	app, err := appmwcli.GetApp(ctx, *h.AppID)
+	if err != nil {
+		return err
+	}
+	if app == nil {
+		return fmt.Errorf("invalid app")
+	}
+	if !app.CouponWithdrawEnable {
+		return fmt.Errorf("permission denied")
+	}
+	return nil
 }
 
 func (h *createHandler) getUser(ctx context.Context) error {
@@ -266,6 +281,9 @@ func (h *createHandler) withCreateReview(dispose *dtmcli.SagaDispose) {
 func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdraw, error) {
 	handler := &createHandler{
 		Handler: h,
+	}
+	if err := handler.getApp(ctx); err != nil {
+		return nil, err
 	}
 	if err := handler.getUser(ctx); err != nil {
 		return nil, err
