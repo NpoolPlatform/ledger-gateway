@@ -65,73 +65,6 @@ func (h *createHandler) getUser(ctx context.Context) error {
 		return fmt.Errorf("invalid user")
 	}
 	h.user = user
-<<<<<<< HEAD
-=======
-	return nil
-}
-
-func (h *createHandler) checkKyc() error {
-	if h.user.State != basetypes.KycState_Approved {
-		return fmt.Errorf("kyc not approved")
-	}
-	return nil
-}
-
-func (h *createHandler) checkCreditThreshold(value string) error {
-	credits, err := decimal.NewFromString(h.user.ActionCredits)
-	if err != nil {
-		return err
-	}
-	if credits.Cmp(decimal.RequireFromString(value)) < 0 {
-		return fmt.Errorf("credits not enough")
-	}
-	return nil
-}
-
-func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value string) error {
-	amounts, err := ordermwcli.SumOrderPaymentAmounts(ctx, &ordermwpb.Conds{
-		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
-			uint32(ordertypes.OrderState_OrderStatePaid),
-			uint32(ordertypes.OrderState_OrderStateInService),
-			uint32(ordertypes.OrderState_OrderStateExpired),
-		}},
-	})
-	if err != nil {
-		return err
-	}
-	if decimal.RequireFromString(amounts).Cmp(decimal.RequireFromString(value)) < 0 {
-		return fmt.Errorf("payment amounts not enough")
-	}
-	return nil
-}
-
-func (h *createHandler) checkOrderThreshold(ctx context.Context, value string) error {
-	total, err := ordermwcli.CountOrders(ctx, &ordermwpb.Conds{
-		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
-			uint32(ordertypes.OrderState_OrderStatePaid),
-			uint32(ordertypes.OrderState_OrderStateInService),
-			uint32(ordertypes.OrderState_OrderStateExpired),
-		}},
-	})
-	if err != nil {
-		return err
-	}
-
-	_total := decimal.NewFromInt32(int32(total))
-	_value := decimal.RequireFromString(value)
-	if _value.Cmp(decimal.RequireFromString("0")) == 0 { // first order
-		if !_total.Equal(decimal.RequireFromString("0")) {
-			return fmt.Errorf("you have already purchased")
-		}
-	}
-	if _total.Cmp(_value) < 0 {
-		return fmt.Errorf("not enough orders")
-	}
->>>>>>> 991b9cf9a3165cb196cb6296f51a11dbf44a3d8a
 	return nil
 }
 
@@ -353,12 +286,9 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 		return nil, err
 	}
 	if err := handler.getUser(ctx); err != nil {
-<<<<<<< HEAD
 		return nil, err
 	}
 	if err := handler.checkAllocated(ctx); err != nil {
-=======
->>>>>>> 991b9cf9a3165cb196cb6296f51a11dbf44a3d8a
 		return nil, err
 	}
 	if err := handler.checkCoupon(ctx); err != nil {
