@@ -87,9 +87,10 @@ func (h *createHandler) checkCreditThreshold(value string) error {
 }
 
 func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value string) error {
-	amounts, err := ordermwcli.SumOrderPaymentAmounts(ctx, &ordermwpb.Conds{
-		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+	amounts, err := ordermwcli.SumOrderPaymentAmounts(ctx, &ordermwpb.Conds{ //nolint
+		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ordertypes.OrderType_Normal)},
 		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
 			uint32(ordertypes.OrderState_OrderStatePaid),
 			uint32(ordertypes.OrderState_OrderStateInService),
@@ -106,9 +107,10 @@ func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value s
 }
 
 func (h *createHandler) checkOrderThreshold(ctx context.Context, value string) error {
-	total, err := ordermwcli.CountOrders(ctx, &ordermwpb.Conds{
-		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+	total, err := ordermwcli.CountOrders(ctx, &ordermwpb.Conds{ //nolint
+		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ordertypes.OrderType_Normal)},
 		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
 			uint32(ordertypes.OrderState_OrderStatePaid),
 			uint32(ordertypes.OrderState_OrderStateInService),
@@ -191,14 +193,6 @@ func (h *createHandler) getCouponCoin(ctx context.Context) error {
 }
 
 func (h *createHandler) checkoutCouponControl(ctx context.Context) error {
-	coupon, err := couponmwcli.GetCoupon(ctx, *h.CouponID)
-	if err != nil {
-		return err
-	}
-	if coupon == nil {
-		return fmt.Errorf("invalid coupon")
-	}
-
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
 	for {
