@@ -88,9 +88,10 @@ func (h *createHandler) checkCreditThreshold(value string) error {
 
 func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value string) error {
 	amounts, err := ordermwcli.SumOrderPaymentAmounts(ctx, &ordermwpb.Conds{ //nolint
-		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		OrderType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ordertypes.OrderType_Normal)},
+		AppID:         &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:        &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		ParentOrderID: &basetypes.StringVal{Op: cruder.EQ, Value: uuid.Nil.String()},
+		OrderType:     &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ordertypes.OrderType_Normal)},
 		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
 			uint32(ordertypes.OrderState_OrderStatePaid),
 			uint32(ordertypes.OrderState_OrderStateInService),
@@ -108,9 +109,10 @@ func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value s
 
 func (h *createHandler) checkOrderThreshold(ctx context.Context, value string) error {
 	total, err := ordermwcli.CountOrders(ctx, &ordermwpb.Conds{ //nolint
-		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		OrderType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ordertypes.OrderType_Normal)},
+		AppID:         &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:        &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		ParentOrderID: &basetypes.StringVal{Op: cruder.EQ, Value: uuid.Nil.String()},
+		OrderType:     &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ordertypes.OrderType_Normal)},
 		OrderStates: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
 			uint32(ordertypes.OrderState_OrderStatePaid),
 			uint32(ordertypes.OrderState_OrderStateInService),
