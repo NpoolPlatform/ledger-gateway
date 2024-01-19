@@ -194,7 +194,7 @@ func (h *createHandler) getCouponCoin(ctx context.Context) error {
 	return nil
 }
 
-func (h *createHandler) checkoutCouponControl(ctx context.Context) error {
+func (h *createHandler) checkCouponControl(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
 	for {
@@ -293,7 +293,7 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 	if err := handler.getCouponCoin(ctx); err != nil {
 		return nil, err
 	}
-	if err := handler.checkoutCouponControl(ctx); err != nil {
+	if err := handler.checkCouponControl(ctx); err != nil {
 		return nil, err
 	}
 
