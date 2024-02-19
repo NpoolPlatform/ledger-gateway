@@ -107,7 +107,7 @@ func (h *queryHandler) prepareAppLedgers(ctx context.Context) error {
 	conds := &appcoinmwpb.Conds{
 		AppID:          &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		CoinTypeIDs:    &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
-		EnableSimulate: &basetypes.BoolVal{Op: cruder.IN, Value: enableSimulate},
+		EnableSimulate: &basetypes.BoolVal{Op: cruder.EQ, Value: enableSimulate},
 	}
 	// Get ledger coins
 	if err := h.getAppCoins(ctx, conds, 0, int32(len(coinTypeIDs))); err != nil {
@@ -121,7 +121,7 @@ func (h *queryHandler) prepareUserLedgers(ctx context.Context) error {
 	enableSimulate := true
 	if err := h.getAppCoins(ctx, &appcoinmwpb.Conds{
 		AppID:          &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		EnableSimulate: &basetypes.BoolVal{Op: cruder.IN, Value: enableSimulate},
+		EnableSimulate: &basetypes.BoolVal{Op: cruder.EQ, Value: enableSimulate},
 	}, h.Offset, h.Limit); err != nil {
 		return err
 	}
