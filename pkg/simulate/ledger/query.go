@@ -118,8 +118,10 @@ func (h *queryHandler) prepareAppLedgers(ctx context.Context) error {
 
 func (h *queryHandler) prepareUserLedgers(ctx context.Context) error {
 	// Get offset/limit coins
+	enableSimulate := true
 	if err := h.getAppCoins(ctx, &appcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		AppID:          &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		EnableSimulate: &basetypes.BoolVal{Op: cruder.IN, Value: enableSimulate},
 	}, h.Offset, h.Limit); err != nil {
 		return err
 	}
