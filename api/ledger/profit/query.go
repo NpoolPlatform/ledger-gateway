@@ -152,3 +152,39 @@ func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningReward
 		Total: total,
 	}, nil
 }
+
+//nolint
+func (s *Server) GetCashableSimulateProfitRewards(ctx context.Context, in *npool.GetCashableSimulateProfitRewardsRequest) (*npool.GetCashableSimulateProfitRewardsResponse, error) {
+	handler, err := profit1.NewHandler(
+		ctx,
+		handler1.WithAppID(&in.AppID, true),
+		handler1.WithUserID(&in.UserID, true),
+		handler1.WithStartAt(in.StartAt),
+		handler1.WithEndAt(in.EndAt),
+		handler1.WithOffset(in.Offset),
+		handler1.WithLimit(in.Limit),
+	)
+	if err != nil {
+		logger.Sugar().Errorw(
+			"GetCashableSimulateProfitRewards",
+			"In", in,
+			"Error", err,
+		)
+		return &npool.GetCashableSimulateProfitRewardsResponse{}, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	infos, total, err := handler.GetCashableSimulateProfitRewards(ctx)
+	if err != nil {
+		logger.Sugar().Errorw(
+			"GetCashableSimulateProfitRewards",
+			"In", in,
+			"Error", err,
+		)
+		return &npool.GetCashableSimulateProfitRewardsResponse{}, status.Error(codes.Internal, err.Error())
+	}
+
+	return &npool.GetCashableSimulateProfitRewardsResponse{
+		Infos: infos,
+		Total: total,
+	}, nil
+}
