@@ -103,6 +103,7 @@ func (h *queryHandler) formalize() {
 			UserID:       user.EntID,
 			PhoneNO:      user.PhoneNO,
 			EmailAddress: user.EmailAddress,
+			Cashable:     statement.Cashable,
 		})
 	}
 }
