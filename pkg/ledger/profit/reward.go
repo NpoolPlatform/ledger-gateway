@@ -84,34 +84,19 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 	return nil
 }
 
-//nolint:dupl
 func (h *rewardHandler) getStatements(ctx context.Context) error {
-	statements, total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
+	conds := &statementmwpb.Conds{
 		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
 		IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_MiningBenefit)},
 		StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 		EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-	}, h.Offset, h.Limit)
-	if err != nil {
-		return err
 	}
-	h.statements = statements
-	h.total = total
-	return nil
-}
-
-//nolint:dupl
-func (h *rewardHandler) getCashableSimualteProfitStatements(ctx context.Context) error {
-	statements, total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
-		IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_RandomCashableSimulateProfit)},
-		StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-		EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-	}, h.Offset, h.Limit)
+	if h.CashableSimulateReward != nil && *h.CashableSimulateReward {
+		conds.IOSubType = &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_RandomCashableSimulateProfit)}
+	}
+	statements, total, err := statementcli.GetStatements(ctx, conds, h.Offset, h.Limit)
 	if err != nil {
 		return err
 	}
@@ -172,7 +157,6 @@ func (h *rewardHandler) formalize() {
 	}
 }
 
-//nolint:dupl
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
 	handler := &rewardHandler{
 		Handler:    h,
@@ -181,31 +165,6 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 		statements: []*statementmwpb.Statement{},
 	}
 	if err := handler.getStatements(ctx); err != nil {
-		return nil, 0, err
-	}
-	if len(handler.statements) == 0 {
-		return nil, handler.total, nil
-	}
-	if err := handler.getOrders(ctx); err != nil {
-		return nil, 0, err
-	}
-	if err := handler.getAppCoins(ctx); err != nil {
-		return nil, 0, err
-	}
-
-	handler.formalize()
-	return handler.infos, handler.total, nil
-}
-
-//nolint:dupl
-func (h *Handler) GetCashableSimulateProfitRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
-	handler := &rewardHandler{
-		Handler:    h,
-		appCoins:   map[string]*appcoinmwpb.Coin{},
-		orders:     map[string]*ordermwpb.Order{},
-		statements: []*statementmwpb.Statement{},
-	}
-	if err := handler.getCashableSimualteProfitStatements(ctx); err != nil {
 		return nil, 0, err
 	}
 	if len(handler.statements) == 0 {
