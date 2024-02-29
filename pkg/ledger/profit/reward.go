@@ -86,15 +86,19 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 
 func (h *rewardHandler) getStatements(ctx context.Context) error {
 	conds := &statementmwpb.Conds{
-		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
-		IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_MiningBenefit)},
-		StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-		EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+		AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		IOType:  &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
+		StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+		EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
 	}
-	if h.CashableSimulateReward != nil && *h.CashableSimulateReward {
-		conds.IOSubType = &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_RandomCashableSimulateProfit)}
+	if h.SimulateOnly != nil && *h.SimulateOnly {
+		conds.IOSubType = &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_SimulateMiningBenefit)}
+	} else {
+		conds.IOSubTypes = &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
+			uint32(types.IOSubType_MiningBenefit),
+			uint32(types.IOSubType_SimulateMiningBenefit),
+		}}
 	}
 	statements, total, err := statementcli.GetStatements(ctx, conds, h.Offset, h.Limit)
 	if err != nil {

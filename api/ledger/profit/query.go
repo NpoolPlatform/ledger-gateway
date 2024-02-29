@@ -124,7 +124,7 @@ func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningReward
 		handler1.WithUserID(&in.UserID, true),
 		handler1.WithStartAt(in.StartAt),
 		handler1.WithEndAt(in.EndAt),
-		handler1.WithCashableSimulateReward(in.CashableSimulateReward, false),
+		handler1.WithSimulateOnly(in.SimulateOnly, false),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)
