@@ -11,13 +11,12 @@ import (
 )
 
 type Handler struct {
-	AppID        *string
-	UserID       *string
-	StartAt      uint32
-	EndAt        uint32
-	SimulateOnly *bool
-	Offset       int32
-	Limit        int32
+	AppID   *string
+	UserID  *string
+	StartAt uint32
+	EndAt   uint32
+	Offset  int32
+	Limit   int32
 }
 
 func NewHandler(ctx context.Context, options ...interface{}) (*Handler, error) {
@@ -88,19 +87,6 @@ func WithEndAt(endAt uint32) func(context.Context, *Handler) error {
 			return nil
 		}
 		h.EndAt = endAt
-		return nil
-	}
-}
-
-func WithSimulateOnly(value *bool, must bool) func(context.Context, *Handler) error {
-	return func(ctx context.Context, h *Handler) error {
-		if value == nil {
-			if must {
-				return fmt.Errorf("invalid simulateonly")
-			}
-			return nil
-		}
-		h.SimulateOnly = value
 		return nil
 	}
 }

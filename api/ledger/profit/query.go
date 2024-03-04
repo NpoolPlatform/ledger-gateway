@@ -117,7 +117,6 @@ func (s *Server) GetGoodProfits(ctx context.Context, in *npool.GetGoodProfitsReq
 	}, nil
 }
 
-//nolint
 func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningRewardsRequest) (*npool.GetMiningRewardsResponse, error) {
 	handler, err := profit1.NewHandler(
 		ctx,
@@ -125,6 +124,7 @@ func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningReward
 		handler1.WithUserID(&in.UserID, true),
 		handler1.WithStartAt(in.StartAt),
 		handler1.WithEndAt(in.EndAt),
+		handler1.WithSimulateOnly(in.SimulateOnly, false),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)

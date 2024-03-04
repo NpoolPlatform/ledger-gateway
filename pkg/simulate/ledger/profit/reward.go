@@ -6,14 +6,14 @@ import (
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
-	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
+	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/simulate/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
-	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
-	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
+	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/simulate/ledger/profit"
+	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/simulate/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 	"github.com/shopspring/decimal"
@@ -47,7 +47,6 @@ func (h *rewardHandler) getAppCoins(ctx context.Context) error {
 	return nil
 }
 
-//nolint
 func (h *rewardHandler) getOrders(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
@@ -85,22 +84,14 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 }
 
 func (h *rewardHandler) getStatements(ctx context.Context) error {
-	conds := &statementmwpb.Conds{
-		AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		IOType:  &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
-		StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-		EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-	}
-	if h.SimulateOnly != nil && *h.SimulateOnly {
-		conds.IOSubType = &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_SimulateMiningBenefit)}
-	} else {
-		conds.IOSubTypes = &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
-			uint32(types.IOSubType_MiningBenefit),
-			uint32(types.IOSubType_SimulateMiningBenefit),
-		}}
-	}
-	statements, total, err := statementcli.GetStatements(ctx, conds, h.Offset, h.Limit)
+	statements, total, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
+		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
+		IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_MiningBenefit)},
+		StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
+		EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+	}, h.Offset, h.Limit)
 	if err != nil {
 		return err
 	}
