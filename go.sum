@@ -54,8 +54,8 @@ github.com/NpoolPlatform/appuser-middleware v0.0.0-20240119021359-948c8504d662 h
 github.com/NpoolPlatform/appuser-middleware v0.0.0-20240119021359-948c8504d662/go.mod h1:NiRL9uaGlrIqtQWQmKW2Zt33AkTTImg/AFSJNJf0BNE=
 github.com/NpoolPlatform/basal-middleware v0.0.0-20231015112137-254853c60eec h1:YftnEsNtCsUz3iAKsI2bwt7+AuA7Ygx3GfYV6h38s9U=
 github.com/NpoolPlatform/basal-middleware v0.0.0-20231015112137-254853c60eec/go.mod h1:WlyWMkHKHeW9PuST/CvRAw9pkhfrr/XS8VDISBaKdGA=
-github.com/NpoolPlatform/chain-middleware v0.0.0-20231020114413-49166aeb1ec8 h1:gifQeflRXIlVACEu2UzQ1iIMML8qYfkguMdDot1Mb54=
-github.com/NpoolPlatform/chain-middleware v0.0.0-20231020114413-49166aeb1ec8/go.mod h1:WdxtPO8aHFOAciBq0oi1lspIiIr4c83cqyQOEVjFe6o=
+github.com/NpoolPlatform/chain-middleware v0.0.0-20240228100535-eb1bcf896eb9 h1:/cQBa3g82/GqUqXOoja4yA0QCZJTnAts+vzaGMNpQCE=
+github.com/NpoolPlatform/chain-middleware v0.0.0-20240228100535-eb1bcf896eb9/go.mod h1:/Pch0A8N7ILWin0zulLmANYjuuwLOgIy7cnYnx87RSA=
 github.com/NpoolPlatform/dtm-cluster v0.0.0-20231011071916-859e5dcbf626 h1:qPhxD5Z8D3Z83mUqf0KedOmfND0IrATmYTmpF9vfdsQ=
 github.com/NpoolPlatform/dtm-cluster v0.0.0-20231011071916-859e5dcbf626/go.mod h1:jMTc5jotk+u13Ztzz7ITdEGgEy8V4lsxI0FdcPuVmbo=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20230930023319-e48074d9472e h1:onuKGDkR7ZDj5iXRY+e7SclNRo5OZF4/X4Dg0ZyqiRY=
@@ -480,9 +480,9 @@ github.com/subosito/gotenv v1.3.0/go.mod h1:YzJjq/33h7nrwdY+iHMhEOEEbW0ovIz0tB6t
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tidwall/pretty v1.2.0 h1:RWIZEg2iJ8/g6fDDYzMpobmaoGh5OLl4AXtGUGPcqCs=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
+github.com/ugorji/go v0.0.0-20190204201341-e444a5086c43 h1:nLURyLzmXqqnferXOGs9EA2kbhl/bks8vSyptHCxH34=
 github.com/ugorji/go v0.0.0-20190204201341-e444a5086c43/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
-github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
 github.com/urfave/cli/v2 v2.17.2-0.20221006022127-8f469abc00aa h1:5SqCsI/2Qya2bCzK15ozrqo2sZxkh0FHynJZOTVoV6Q=
 github.com/urfave/cli/v2 v2.17.2-0.20221006022127-8f469abc00aa/go.mod h1:1CNUng3PtjQMtRzJO4FMXBQvkGtuYRxxiR9xMa7jMwI=
 github.com/vmihailenco/msgpack/v4 v4.3.12/go.mod h1:gborTTJjAo/GWTqqRjrLCn9pgNN+NXzzngzBKDPIqw4=
