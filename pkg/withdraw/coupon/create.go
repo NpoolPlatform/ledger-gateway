@@ -7,23 +7,24 @@ import (
 
 	appmwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/app"
 	usermwcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/user"
+	usedformwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/coin/usedfor"
 	dtmcli "github.com/NpoolPlatform/dtm-cluster/pkg/dtm"
 	couponmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon"
 	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
 	cashcontrolmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/cashcontrol"
-	couponcoinmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	ledgergwname "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 	ledgermwname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
 	cruder "github.com/NpoolPlatform/libent-cruder/pkg/cruder"
 	usermwpb "github.com/NpoolPlatform/message/npool/appuser/mw/v1/user"
+	chaintypes "github.com/NpoolPlatform/message/npool/basetypes/chain/v1"
 	inspiretypes "github.com/NpoolPlatform/message/npool/basetypes/inspire/v1"
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	reviewtypes "github.com/NpoolPlatform/message/npool/basetypes/review/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+	usedformwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin/usedfor"
 	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
 	cashcontrolmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/app/cashcontrol"
-	couponcoinmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
@@ -181,16 +182,17 @@ func (h *createHandler) checkCoupon(ctx context.Context) error {
 }
 
 func (h *createHandler) getCouponCoin(ctx context.Context) error {
-	info, err := couponcoinmwcli.GetCouponCoinOnly(ctx, &couponcoinmwpb.Conds{
-		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-	})
+	coins, _, err := usedformwcli.GetCoinUsedFors(ctx, &usedformwpb.Conds{
+		UsedFor: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(chaintypes.CoinUsedFor_CoinUsedForCouponCash)},
+	}, 0, 2)
 	if err != nil {
 		return err
 	}
-	if info == nil {
-		return fmt.Errorf("couponcoin not found")
+	if len(coins) == 0 || len(coins) > 1 {
+		return fmt.Errorf("%v not satisfied", chaintypes.CoinUsedFor_CoinUsedForCouponCash.String())
 	}
-	h.CoinTypeID = &info.CoinTypeID
+
+	h.CoinTypeID = &coins[0].CoinTypeID
 	return nil
 }
 
