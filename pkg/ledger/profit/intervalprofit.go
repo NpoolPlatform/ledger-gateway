@@ -16,6 +16,8 @@ import (
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -31,6 +33,9 @@ type profitHandler struct {
 func (h *profitHandler) getStatements(ctx context.Context) error {
 	ids := []string{}
 	for _, coin := range h.appCoins {
+		if _, err := uuid.Parse(coin.CoinTypeID); err != nil {
+			continue
+		}
 		ids = append(ids, coin.CoinTypeID)
 	}
 	offset := int32(0)
