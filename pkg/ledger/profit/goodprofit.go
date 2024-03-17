@@ -18,6 +18,8 @@ import (
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -150,6 +152,9 @@ func (h *goodProfitHandler) getAppGoods(ctx context.Context) error {
 
 func (h *goodProfitHandler) getAppCoins(ctx context.Context) error {
 	for _, val := range h.appGoods {
+		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
+			continue
+		}
 		h.coinTypeIDs = append(h.coinTypeIDs, val.CoinTypeID)
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
