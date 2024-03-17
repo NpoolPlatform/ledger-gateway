@@ -23,7 +23,6 @@ type queryHandler struct {
 	infos    []*npool.Profit
 }
 
-//nolint
 func (h *queryHandler) getAppCoins(ctx context.Context) error {
 	coinTypeIDs := []string{}
 	for _, profit := range h.profits {
