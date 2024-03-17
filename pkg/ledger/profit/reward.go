@@ -28,7 +28,6 @@ type rewardHandler struct {
 	total      uint32
 }
 
-//nolint
 func (h *rewardHandler) getAppCoins(ctx context.Context) error {
 	ids := []string{}
 	for _, val := range h.statements {
