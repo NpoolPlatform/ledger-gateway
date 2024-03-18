@@ -45,6 +45,8 @@ spec:
       http: *http_rules
     - host: api.cryptomore.io
       http: *http_rules
+    - host: api.epool.tech
+      http: *http_rules
 
 ---
 
@@ -126,4 +128,6 @@ spec:
     - host: api.hk-cryptomore-production.npool.top
       http: *http_rules
     - host: api.cryptomore.io
+      http: *http_rules
+    - host: api.epool.tech
       http: *http_rules
