@@ -37,7 +37,7 @@ type goodProfitHandler struct {
 	total       uint32
 }
 
-func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount, units decimal.Decimal) {
+func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMainCoin bool, amount, units decimal.Decimal) {
 	good, ok := h.appGoods[appGoodID]
 	if !ok {
 		return
@@ -50,13 +50,15 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount
 	h.infos = append(h.infos, &npool.GoodProfit{
 		AppID:        *h.AppID,
 		UserID:       *h.UserID,
+		AppGoodID:    appGoodID,
+		AppGoodName:  good.AppGoodName,
+		GoodType:     good.GoodType,
 		CoinTypeID:   coinTypeID,
 		CoinName:     coin.Name,
 		DisplayNames: coin.DisplayNames,
 		CoinLogo:     coin.Logo,
 		CoinUnit:     coin.Unit,
-		AppGoodID:    appGoodID,
-		AppGoodName:  good.AppGoodName,
+		GoodMainCoin: goodMainCoin,
 		Units:        units.String(),
 		Incoming:     amount.String(),
 	})
@@ -93,17 +95,17 @@ func (h *goodProfitHandler) formalize() {
 		goodProfit, ok := profits[good.EntID]
 		if !ok {
 			for _, goodCoin := range goodCoins {
-				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
+				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0), decimal.NewFromInt(0))
 			}
 			continue
 		}
 		for _, goodCoin := range goodCoins {
 			coinProfit, ok := goodProfit[goodCoin.CoinTypeID]
 			if !ok {
-				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
+				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0), decimal.NewFromInt(0))
 				continue
 			}
-			h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, coinProfit[0], coinProfit[1])
+			h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, coinProfit[0], coinProfit[1])
 		}
 	}
 }
