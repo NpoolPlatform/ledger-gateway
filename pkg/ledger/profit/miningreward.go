@@ -85,11 +85,15 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 
 func (h *rewardHandler) getStatements(ctx context.Context) error {
 	conds := &statementmwpb.Conds{
-		AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		IOType:  &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
-		StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-		EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
+	}
+	if h.StartAt != nil {
+		conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.StartAt}
+	}
+	if h.EndAt != nil {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.EndAt}
 	}
 	if h.SimulateOnly != nil && *h.SimulateOnly {
 		conds.IOSubType = &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_SimulateMiningBenefit)}

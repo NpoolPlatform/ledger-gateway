@@ -1,3 +1,4 @@
+//nolint:dupl
 package profit
 
 import (
@@ -12,70 +13,36 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (s *Server) GetProfits(ctx context.Context, in *npool.GetProfitsRequest) (*npool.GetProfitsResponse, error) {
+func (s *Server) GetCoinProfits(ctx context.Context, in *npool.GetCoinProfitsRequest) (*npool.GetCoinProfitsResponse, error) {
 	handler, err := profit1.NewHandler(
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
 		handler1.WithUserID(&in.UserID, true),
+		handler1.WithStartAt(in.StartAt, false),
+		handler1.WithEndAt(in.EndAt, false),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)
 	if err != nil {
 		logger.Sugar().Errorw(
-			"GetProfits",
+			"GetCoinProfits",
 			"In", in,
 			"Error", err,
 		)
-		return &npool.GetProfitsResponse{}, status.Error(codes.InvalidArgument, err.Error())
+		return &npool.GetCoinProfitsResponse{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	infos, total, err := handler.GetProfits(ctx)
+	infos, total, err := handler.GetCoinProfits(ctx)
 	if err != nil {
 		logger.Sugar().Errorw(
-			"GetProfits",
+			"GetCoinProfits",
 			"In", in,
 			"Error", err,
 		)
-		return &npool.GetProfitsResponse{}, status.Error(codes.Internal, err.Error())
+		return &npool.GetCoinProfitsResponse{}, status.Error(codes.Internal, err.Error())
 	}
 
-	return &npool.GetProfitsResponse{
-		Infos: infos,
-		Total: total,
-	}, nil
-}
-
-//nolint
-func (s *Server) GetIntervalProfits(ctx context.Context, in *npool.GetIntervalProfitsRequest) (*npool.GetIntervalProfitsResponse, error) {
-	handler, err := profit1.NewHandler(
-		ctx,
-		handler1.WithAppID(&in.AppID, true),
-		handler1.WithUserID(&in.UserID, true),
-		handler1.WithStartAt(in.StartAt),
-		handler1.WithEndAt(in.EndAt),
-		handler1.WithOffset(in.Offset),
-		handler1.WithLimit(in.Limit),
-	)
-	if err != nil {
-		logger.Sugar().Errorw(
-			"GetIntervalProfits",
-			"In", in,
-			"Error", err,
-		)
-		return &npool.GetIntervalProfitsResponse{}, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	infos, total, err := handler.GetIntervalProfits(ctx)
-	if err != nil {
-		logger.Sugar().Errorw(
-			"GetIntervalProfits",
-			"In", in,
-			"Error", err,
-		)
-		return &npool.GetIntervalProfitsResponse{}, status.Error(codes.Internal, err.Error())
-	}
-
-	return &npool.GetIntervalProfitsResponse{
+	return &npool.GetCoinProfitsResponse{
 		Infos: infos,
 		Total: total,
 	}, nil
@@ -87,8 +54,8 @@ func (s *Server) GetGoodProfits(ctx context.Context, in *npool.GetGoodProfitsReq
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
 		handler1.WithUserID(&in.UserID, true),
-		handler1.WithStartAt(in.StartAt),
-		handler1.WithEndAt(in.EndAt),
+		handler1.WithStartAt(in.StartAt, false),
+		handler1.WithEndAt(in.EndAt, false),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),
 	)
@@ -122,8 +89,8 @@ func (s *Server) GetMiningRewards(ctx context.Context, in *npool.GetMiningReward
 		ctx,
 		handler1.WithAppID(&in.AppID, true),
 		handler1.WithUserID(&in.UserID, true),
-		handler1.WithStartAt(in.StartAt),
-		handler1.WithEndAt(in.EndAt),
+		handler1.WithStartAt(in.StartAt, false),
+		handler1.WithEndAt(in.EndAt, false),
 		handler1.WithSimulateOnly(in.SimulateOnly, false),
 		handler1.WithOffset(in.Offset),
 		handler1.WithLimit(in.Limit),

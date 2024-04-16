@@ -13,8 +13,8 @@ import (
 type Handler struct {
 	AppID        *string
 	UserID       *string
-	StartAt      uint32
-	EndAt        uint32
+	StartAt      *uint32
+	EndAt        *uint32
 	SimulateOnly *bool
 	Offset       int32
 	Limit        int32
@@ -74,17 +74,17 @@ func WithUserID(userID *string, must bool) func(context.Context, *Handler) error
 	}
 }
 
-func WithStartAt(startAt uint32) func(context.Context, *Handler) error {
+func WithStartAt(startAt *uint32, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
 		h.StartAt = startAt
 		return nil
 	}
 }
 
-func WithEndAt(endAt uint32) func(context.Context, *Handler) error {
+func WithEndAt(endAt *uint32, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
-		if endAt == 0 {
-			h.EndAt = uint32(time.Now().Unix())
+		if endAt == nil || *endAt == 0 {
+			h.EndAt = func() *uint32 { u := uint32(time.Now().Unix()); return &u }()
 			return nil
 		}
 		h.EndAt = endAt
