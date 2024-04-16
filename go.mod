@@ -9,11 +9,11 @@ require (
 	github.com/NpoolPlatform/chain-middleware v0.0.0-20240228100535-eb1bcf896eb9
 	github.com/NpoolPlatform/dtm-cluster v0.0.0-20231011071916-859e5dcbf626
 	github.com/NpoolPlatform/go-service-framework v0.0.0-20240406043308-5bc31e227d8e
-	github.com/NpoolPlatform/good-middleware v0.0.0-20240304020309-62b1a5735832
 	github.com/NpoolPlatform/inspire-middleware v0.0.0-20240423090602-a86ba4e22f49
-	github.com/NpoolPlatform/ledger-middleware v0.0.0-20240304030403-1e129dfe4e3f
-	github.com/NpoolPlatform/libent-cruder v0.0.0-20240323085036-7679b4818ce7
 	github.com/NpoolPlatform/message v0.0.0-20240423081421-ad76772e7ac0
+	github.com/NpoolPlatform/good-middleware v0.0.0-20240415120059-7ea8b1069444
+	github.com/NpoolPlatform/ledger-middleware v0.0.0-20240416085434-8f02bb279b18
+	github.com/NpoolPlatform/libent-cruder v0.0.0-20240323085036-7679b4818ce7
 	github.com/NpoolPlatform/order-middleware v0.0.0-20240304020155-1225d1f15992
 	github.com/NpoolPlatform/review-middleware v0.0.0-20240108100223-106962e5a9c2
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20231201062049-852b1487d4a9

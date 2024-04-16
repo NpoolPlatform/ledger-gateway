@@ -118,9 +118,11 @@ func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32
 	if h.UserID != nil {
 		conds.UserID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID}
 	}
-	conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt}
-	if h.EndAt != 0 {
-		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt}
+	if h.StartAt != nil {
+		conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.StartAt}
+	}
+	if h.EndAt != nil {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.EndAt}
 	}
 	statements, total, err := statementcli.GetStatements(ctx, conds, h.Offset, h.Limit)
 	if err != nil {
