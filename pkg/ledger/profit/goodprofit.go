@@ -37,7 +37,7 @@ type goodProfitHandler struct {
 	total       uint32
 }
 
-func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMainCoin bool, amount, units decimal.Decimal) {
+func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMainCoin bool, amount decimal.Decimal) {
 	good, ok := h.appGoods[appGoodID]
 	if !ok {
 		return
@@ -59,13 +59,12 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMa
 		CoinLogo:     coin.Logo,
 		CoinUnit:     coin.Unit,
 		GoodMainCoin: goodMainCoin,
-		Units:        units.String(),
 		Incoming:     amount.String(),
 	})
 }
 
 func (h *goodProfitHandler) formalize() {
-	profits := map[string]map[string][]decimal.Decimal{}
+	profits := map[string]map[string]decimal.Decimal{}
 	for _, order := range h.orders {
 		good, ok := h.appGoods[order.AppGoodID]
 		if !ok {
@@ -73,15 +72,11 @@ func (h *goodProfitHandler) formalize() {
 		}
 		goodProfit, ok := profits[good.EntID]
 		if !ok {
-			goodProfit = map[string][]decimal.Decimal{}
+			goodProfit = map[string]decimal.Decimal{}
 		}
 		for _, statement := range h.statements[order.EntID] {
-			coinProfit, ok := goodProfit[statement.CoinTypeID]
-			if !ok {
-				coinProfit = make([]decimal.Decimal, 2)
-			}
-			coinProfit[0] = coinProfit[0].Add(decimal.RequireFromString(statement.Amount))
-			coinProfit[1] = coinProfit[1].Add(decimal.RequireFromString(order.Units))
+			coinProfit := goodProfit[statement.CoinTypeID]
+			coinProfit = coinProfit.Add(decimal.RequireFromString(statement.Amount))
 			goodProfit[statement.CoinTypeID] = coinProfit
 		}
 		profits[good.EntID] = goodProfit
@@ -95,17 +90,17 @@ func (h *goodProfitHandler) formalize() {
 		goodProfit, ok := profits[good.EntID]
 		if !ok {
 			for _, goodCoin := range goodCoins {
-				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0), decimal.NewFromInt(0))
+				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0))
 			}
 			continue
 		}
 		for _, goodCoin := range goodCoins {
 			coinProfit, ok := goodProfit[goodCoin.CoinTypeID]
 			if !ok {
-				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0), decimal.NewFromInt(0))
+				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0))
 				continue
 			}
-			h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, coinProfit[0], coinProfit[1])
+			h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, coinProfit)
 		}
 	}
 }
@@ -129,7 +124,6 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
 				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
 				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
-				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
 				uint32(ordertypes.OrderState_OrderStateCanceled),
 			}},
 		}, offset, limit)
