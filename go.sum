@@ -58,6 +58,7 @@ github.com/NpoolPlatform/chain-middleware v0.0.0-20240228100535-eb1bcf896eb9 h1:
 github.com/NpoolPlatform/chain-middleware v0.0.0-20240228100535-eb1bcf896eb9/go.mod h1:/Pch0A8N7ILWin0zulLmANYjuuwLOgIy7cnYnx87RSA=
 github.com/NpoolPlatform/dtm-cluster v0.0.0-20231011071916-859e5dcbf626 h1:qPhxD5Z8D3Z83mUqf0KedOmfND0IrATmYTmpF9vfdsQ=
 github.com/NpoolPlatform/dtm-cluster v0.0.0-20231011071916-859e5dcbf626/go.mod h1:jMTc5jotk+u13Ztzz7ITdEGgEy8V4lsxI0FdcPuVmbo=
+<<<<<<< HEAD
 github.com/NpoolPlatform/go-service-framework v0.0.0-20240406043308-5bc31e227d8e h1:5/uNZ4rmCteobKS31vRgzTkdhP7gjupDjGvjdOoxkpU=
 github.com/NpoolPlatform/go-service-framework v0.0.0-20240406043308-5bc31e227d8e/go.mod h1:Kh7DMkWnYOMHxEKq7QfJqbxm1HaUPkhTNN74lfHQxyE=
 <<<<<<< HEAD
@@ -85,6 +86,22 @@ github.com/NpoolPlatform/message v0.0.0-20240416092419-a84321df83f9/go.mod h1:Px
 >>>>>>> Add ledger profit with new good coin
 github.com/NpoolPlatform/order-middleware v0.0.0-20240304020155-1225d1f15992 h1:I6XIVnpnxr2aRN+ymqJDVYcWLAsART44Rx5YOQToWyI=
 github.com/NpoolPlatform/order-middleware v0.0.0-20240304020155-1225d1f15992/go.mod h1:6hA3NMLbSNb3Bx+Nt39l2mBj6yMbx0grFpfCzTPxrQo=
+=======
+github.com/NpoolPlatform/go-service-framework v0.0.0-20240510075442-89278cb5cf47 h1:17FyjOnXXioSqcM4L7qa0ML/L2a0LEIODPiGTtDYR3o=
+github.com/NpoolPlatform/go-service-framework v0.0.0-20240510075442-89278cb5cf47/go.mod h1:8ZqSAAL4eLX/09HLWwDzQY0fMORy8nqHj3kwiUHEyS4=
+github.com/NpoolPlatform/good-middleware v0.0.0-20240523083730-20371999afeb h1:10TleSMVN324k6fge3eqj+VqSydWFixvISCDVfr/SBw=
+github.com/NpoolPlatform/good-middleware v0.0.0-20240523083730-20371999afeb/go.mod h1:H1k3PU7K5lISNqu/xL9il/0hw9F9FuJn92cj7DC0np8=
+github.com/NpoolPlatform/inspire-middleware v0.0.0-20240523075812-7d427e466af3 h1:GRBtNF0m3iHxi/6+54u4HmojLub+ZuLs6gDCBxRZFmc=
+github.com/NpoolPlatform/inspire-middleware v0.0.0-20240523075812-7d427e466af3/go.mod h1:124dUaWVtN2VwTqeGw1SJoxdC6rYFa/WHgUWTykuaCE=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20240416085434-8f02bb279b18 h1:sktmOeFSeoAcTK7ZCEian3y3MI8uxHQ90llmNqptpiY=
+github.com/NpoolPlatform/ledger-middleware v0.0.0-20240416085434-8f02bb279b18/go.mod h1:4DYH+liWcbBGAoqYSYeSA439xtJEOueDoTTVsVfjRag=
+github.com/NpoolPlatform/libent-cruder v0.0.0-20240514082633-598d5fc7b1e3 h1:/KSPKS4kVn031QTPpdxjPnp+Yykmde25Zya0krZdk/Y=
+github.com/NpoolPlatform/libent-cruder v0.0.0-20240514082633-598d5fc7b1e3/go.mod h1:EXCihQpRNNyWaPu1IphiZFLTyyUK/CJMZdW4My7y48Q=
+github.com/NpoolPlatform/message v0.0.0-20240523081631-c60db8df0e15 h1:LFv9o0hfOu+lml9m9zOBto5ThimyUT/GVV/5ufxYFMA=
+github.com/NpoolPlatform/message v0.0.0-20240523081631-c60db8df0e15/go.mod h1:PxJpF0vSSOke+NJskbRBRQ2fK2K3SRe8zaEja+GxSHk=
+github.com/NpoolPlatform/order-middleware v0.0.0-20240523081008-575a141677cc h1:4tyQWCIo/Tihjm0eB5lG/wuJyVpuOe6zsDLbgeBQwlc=
+github.com/NpoolPlatform/order-middleware v0.0.0-20240523081008-575a141677cc/go.mod h1:I487IZI/JCQrGYq6Rtf5easpNjlsLASaGnw07QcRs5s=
+>>>>>>> Update middleware commit
 github.com/NpoolPlatform/review-middleware v0.0.0-20240108100223-106962e5a9c2 h1:qXBRJjUzscoz2Sn2ceEmjweHVXZIqGBw2SgJDu/Tk2k=
 github.com/NpoolPlatform/review-middleware v0.0.0-20240108100223-106962e5a9c2/go.mod h1:31T/JYYgE/9w5uHYXqbrd9/a5DU0NEaV5CxBeBOBAHQ=
 github.com/NpoolPlatform/sphinx-proxy v0.0.0-20231201062049-852b1487d4a9 h1:TljSgLyyHCAi/8cCOCf8WyOenmnbDJvqku627x4udyo=
