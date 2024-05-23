@@ -88,7 +88,7 @@ func (h *createHandler) checkCreditThreshold(value string) error {
 }
 
 func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value string) error {
-	amounts, err := ordermwcli.SumOrderPaymentAmounts(ctx, &ordermwpb.Conds{ //nolint
+	amount, err := ordermwcli.SumOrdersPaymentUSD(ctx, &ordermwpb.Conds{ //nolint
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		PaymentType: &basetypes.Uint32Val{Op: cruder.NEQ, Value: uint32(ordertypes.PaymentType_PayWithParentOrder)},
@@ -102,8 +102,8 @@ func (h *createHandler) checkPaymentAmountThreshold(ctx context.Context, value s
 	if err != nil {
 		return err
 	}
-	if decimal.RequireFromString(amounts).Cmp(decimal.RequireFromString(value)) < 0 {
-		return fmt.Errorf("payment amounts not enough")
+	if decimal.RequireFromString(amount).Cmp(decimal.RequireFromString(value)) < 0 {
+		return fmt.Errorf("not qualified")
 	}
 	return nil
 }
