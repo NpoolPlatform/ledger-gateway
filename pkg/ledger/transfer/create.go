@@ -30,8 +30,11 @@ import (
 	ledgermwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger"
 	statementpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 
+	"github.com/NpoolPlatform/go-service-framework/pkg/logger"
+	"github.com/NpoolPlatform/go-service-framework/pkg/pubsub"
 	ledgerpb "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
+	eventmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/event"
 )
 
 type createHandler struct {
@@ -40,6 +43,31 @@ type createHandler struct {
 	targetUser *appusermwpb.User
 	appcoin    *appcoinmwpb.Coin
 	info       *npool.Transfer
+}
+
+func (h *createHandler) rewardInternalTransfer() {
+	if err := pubsub.WithPublisher(func(publisher *pubsub.Publisher) error {
+		req := &eventmwpb.CalcluateEventRewardsRequest{
+			AppID:       *h.AppID,
+			UserID:      *h.UserID,
+			EventType:   basetypes.UsedFor_InternalTransfer,
+			Consecutive: 1,
+		}
+		return publisher.Update(
+			basetypes.MsgID_CalculateEventRewardReq.String(),
+			nil,
+			nil,
+			nil,
+			req,
+		)
+	}); err != nil {
+		logger.Sugar().Errorw(
+			"InternalTransfer",
+			"AppID", *h.AppID,
+			"UserID", h.UserID,
+			"Error", err,
+		)
+	}
 }
 
 func (h *createHandler) checkUser(ctx context.Context) error {
@@ -237,6 +265,8 @@ func (h *Handler) CreateTransfer(ctx context.Context) (*npool.Transfer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	handler.rewardInternalTransfer()
 
 	return &npool.Transfer{
 		CoinTypeID:         handler.appcoin.CoinTypeID,
