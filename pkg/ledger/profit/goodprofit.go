@@ -83,7 +83,7 @@ func (h *goodProfitHandler) formalize() {
 	}
 
 	for _, good := range h.appGoods {
-		goodCoins, ok := h.goodCoins[good.EntID]
+		goodCoins, ok := h.goodCoins[good.GoodID]
 		if !ok {
 			continue
 		}
@@ -267,10 +267,10 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	if len(handler.appGoods) == 0 {
 		return nil, handler.total, nil
 	}
-	if err := handler.getAppCoins(ctx); err != nil {
+	if err := handler.getGoodCoins(ctx); err != nil {
 		return nil, 0, err
 	}
-	if err := handler.getGoodCoins(ctx); err != nil {
+	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getOrders(ctx); err != nil {
