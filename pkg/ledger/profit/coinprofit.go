@@ -41,11 +41,18 @@ func (h *coinProfitHandler) getProfits(ctx context.Context) error {
 		}
 		return
 	}()
-	profits, _, err := profitmwcli.GetProfits(ctx, &profitmwpb.Conds{
+	conds := &profitmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: coinTypeIDs},
-	}, 0, int32(len(coinTypeIDs)))
+	}
+	if h.StartAt != nil {
+		conds.StartAt = &basetypes.Uint32Val{Op: cruder.GTE, Value: *h.StartAt}
+	}
+	if h.EndAt != nil {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.LTE, Value: *h.EndAt}
+	}
+	profits, _, err := profitmwcli.GetProfits(ctx, conds, 0, int32(len(coinTypeIDs)))
 	if err != nil {
 		return err
 	}
