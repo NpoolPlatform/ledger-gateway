@@ -204,10 +204,13 @@ func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
 	conds := &statementmwpb.Conds{
-		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		IOType:      &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ledgertypes.IOType_Incoming)},
-		IOSubType:   &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ledgertypes.IOSubType_MiningBenefit)},
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ledgertypes.IOType_Incoming)},
+		IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
+			uint32(ledgertypes.IOSubType_MiningBenefit),
+			uint32(ledgertypes.IOSubType_SimulateMiningBenefit),
+		}},
 		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: h.coinTypeIDs},
 	}
 	if h.StartAt != nil {
