@@ -4,6 +4,7 @@ import (
 	"context"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	"github.com/NpoolPlatform/go-service-framework/pkg/wlog"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	profitmwcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/profit"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
@@ -25,6 +26,13 @@ type coinProfitHandler struct {
 	profits     map[string]*profitmwpb.Profit
 	coinTypeIDs []string
 	total       uint32
+}
+
+func (h *coinProfitHandler) checkDurationAt() error {
+	if (h.StartAt != nil && h.EndAt != nil) && *h.EndAt > *h.StartAt {
+		return wlog.Errorf("invalid startat and endat")
+	}
+	return nil
 }
 
 //nolint:dupl
@@ -155,6 +163,9 @@ func (h *Handler) GetCoinProfits(ctx context.Context) ([]*npool.CoinProfit, uint
 		Handler:  h,
 		appCoins: []*appcoinmwpb.Coin{},
 		profits:  map[string]*profitmwpb.Profit{},
+	}
+	if err := handler.checkDurationAt(); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
