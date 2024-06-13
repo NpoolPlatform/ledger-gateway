@@ -200,6 +200,7 @@ func (h *goodProfitHandler) getGoodCoins(ctx context.Context) error {
 	return nil
 }
 
+//nolint:dupl
 func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit

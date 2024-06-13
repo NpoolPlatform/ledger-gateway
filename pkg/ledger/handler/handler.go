@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"time"
 
 	appcli "github.com/NpoolPlatform/appuser-middleware/pkg/client/app"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
@@ -83,10 +82,6 @@ func WithStartAt(startAt *uint32, must bool) func(context.Context, *Handler) err
 
 func WithEndAt(endAt *uint32, must bool) func(context.Context, *Handler) error {
 	return func(ctx context.Context, h *Handler) error {
-		if endAt == nil || *endAt == 0 {
-			h.EndAt = func() *uint32 { u := uint32(time.Now().Unix()); return &u }()
-			return nil
-		}
 		h.EndAt = endAt
 		return nil
 	}
