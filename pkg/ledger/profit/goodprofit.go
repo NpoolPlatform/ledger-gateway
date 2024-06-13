@@ -265,6 +265,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		appGoods:   map[string]*appgoodmwpb.Good{},
 		goodCoins:  map[string][]*goodcoinmwpb.GoodCoin{},
 	}
+	if err := h.CheckStartEndAt(); err != nil {
+		return nil, 0, err
+	}
 	if err := handler.getAppGoods(ctx); err != nil {
 		return nil, 0, err
 	}

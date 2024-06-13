@@ -111,6 +111,9 @@ func (h *Handler) GetStatements(ctx context.Context) ([]*npool.Statement, uint32
 	if err := h.checkUser(ctx); err != nil {
 		return nil, 0, err
 	}
+	if err := h.CheckStartEndAt(); err != nil {
+		return nil, 0, err
+	}
 	conds := &statementmwpb.Conds{}
 	if h.AppID != nil {
 		conds.AppID = &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID}
