@@ -87,7 +87,7 @@ func (h *rewardHandler) getStatements(ctx context.Context) error {
 		AppID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 		UserID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 		IOType:    &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
-		IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_MiningBenefit)},
+		IOSubType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_SimulateMiningBenefit)},
 		StartAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
 		EndAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
 	}, h.Offset, h.Limit)
