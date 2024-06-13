@@ -3,6 +3,7 @@ package profit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
@@ -151,12 +152,22 @@ func (h *rewardHandler) formalize() {
 	}
 }
 
+func (h *rewardHandler) checkStartEndAt() error {
+	if h.StartAt > h.EndAt {
+		return fmt.Errorf("invalid startat and endat")
+	}
+	return nil
+}
+
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
 	handler := &rewardHandler{
 		Handler:           h,
 		appCoins:          map[string]*appcoinmwpb.Coin{},
 		powerRentalOrders: map[string]*powerrentalordermwpb.PowerRentalOrder{},
 		statements:        []*statementmwpb.Statement{},
+	}
+	if err := handler.checkStartEndAt(); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err
