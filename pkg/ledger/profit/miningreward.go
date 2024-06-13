@@ -204,6 +204,9 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 		statements:        []*statementmwpb.Statement{},
 		powerRentalOrders: map[string]*powerrentalordermwpb.PowerRentalOrder{},
 	}
+	if err := h.CheckStartEndAt(); err != nil {
+		return nil, 0, err
+	}
 	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err
 	}
