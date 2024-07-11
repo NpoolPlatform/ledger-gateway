@@ -8,6 +8,7 @@ import (
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+	goodtypes "github.com/NpoolPlatform/message/npool/basetypes/good/v1"
 	types "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
@@ -15,17 +16,20 @@ import (
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
+	powerrentalordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/powerrental"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+	powerrentalordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/powerrental"
 	"github.com/shopspring/decimal"
 )
 
 type rewardHandler struct {
 	*Handler
-	statements []*statementmwpb.Statement
-	appCoins   map[string]*appcoinmwpb.Coin
-	orders     map[string]*ordermwpb.Order
-	infos      []*npool.MiningReward
-	total      uint32
+	statements        []*statementmwpb.Statement
+	appCoins          map[string]*appcoinmwpb.Coin
+	orders            map[string]*ordermwpb.Order
+	infos             []*npool.MiningReward
+	powerRentalOrders map[string]*powerrentalordermwpb.PowerRentalOrder
+	total             uint32
 }
 
 func (h *rewardHandler) getAppCoins(ctx context.Context) error {
@@ -46,6 +50,7 @@ func (h *rewardHandler) getAppCoins(ctx context.Context) error {
 	return nil
 }
 
+// TODO: here we should get orders which is in statement extra
 //nolint
 func (h *rewardHandler) getOrders(ctx context.Context) error {
 	offset := int32(0)
@@ -65,7 +70,6 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
 				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
 				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
-				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
 				uint32(ordertypes.OrderState_OrderStateCanceled),
 			}}}, offset, limit)
 		if err != nil {
@@ -83,13 +87,45 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 	return nil
 }
 
+func (h *rewardHandler) getPowerRentalOrders(ctx context.Context) error {
+	orderIDs := func() (uids []string) {
+		for orderID, order := range h.orders {
+			switch order.GoodType {
+			case goodtypes.GoodType_PowerRental:
+			case goodtypes.GoodType_LegacyPowerRental:
+			default:
+				continue
+			}
+			uids = append(uids, orderID)
+		}
+		return
+	}()
+	powerRentalOrders, _, err := powerrentalordermwcli.GetPowerRentalOrders(ctx, &powerrentalordermwpb.Conds{
+		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: orderIDs},
+	}, 0, int32(len(orderIDs)))
+	if err != nil {
+		return err
+	}
+	h.powerRentalOrders = map[string]*powerrentalordermwpb.PowerRentalOrder{}
+	for _, powerRentalOrder := range powerRentalOrders {
+		h.powerRentalOrders[powerRentalOrder.OrderID] = powerRentalOrder
+	}
+	return nil
+}
+
 func (h *rewardHandler) getStatements(ctx context.Context) error {
 	conds := &statementmwpb.Conds{
-		AppID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-		UserID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-		IOType:  &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
-		StartAt: &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-		EndAt:   &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOType_Incoming)},
+	}
+	if h.StartAt != nil {
+		conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.StartAt}
+	}
+	if h.EndAt != nil {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.EndAt}
 	}
 	if h.SimulateOnly != nil && *h.SimulateOnly {
 		conds.IOSubType = &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(types.IOSubType_SimulateMiningBenefit)}
@@ -121,11 +157,11 @@ func (h *rewardHandler) formalize() {
 		if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
 			continue
 		}
-		order, ok := h.orders[e.OrderID]
+		powerRentalOrder, ok := h.powerRentalOrders[e.OrderID]
 		if !ok {
 			continue
 		}
-		if order.AppGoodID != e.AppGoodID {
+		if powerRentalOrder.AppGoodID != e.AppGoodID {
 			continue
 		}
 
@@ -133,7 +169,7 @@ func (h *rewardHandler) formalize() {
 		if err != nil {
 			break
 		}
-		units, err := decimal.NewFromString(order.Units)
+		units, err := decimal.NewFromString(powerRentalOrder.Units)
 		if err != nil {
 			continue
 		}
@@ -151,7 +187,7 @@ func (h *rewardHandler) formalize() {
 			IOSubType:           statement.IOSubType,
 			RewardAmount:        statement.Amount,
 			RewardAmountPerUnit: rewardAmount.Div(units).String(),
-			Units:               order.Units,
+			Units:               powerRentalOrder.Units,
 			Extra:               statement.IOExtra,
 			AppGoodID:           e.AppGoodID,
 			OrderID:             e.OrderID,
@@ -162,10 +198,14 @@ func (h *rewardHandler) formalize() {
 
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
 	handler := &rewardHandler{
-		Handler:    h,
-		appCoins:   map[string]*appcoinmwpb.Coin{},
-		orders:     map[string]*ordermwpb.Order{},
-		statements: []*statementmwpb.Statement{},
+		Handler:           h,
+		appCoins:          map[string]*appcoinmwpb.Coin{},
+		orders:            map[string]*ordermwpb.Order{},
+		statements:        []*statementmwpb.Statement{},
+		powerRentalOrders: map[string]*powerrentalordermwpb.PowerRentalOrder{},
+	}
+	if err := h.CheckStartEndAt(); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err
@@ -174,6 +214,9 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 		return nil, handler.total, nil
 	}
 	if err := handler.getOrders(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getPowerRentalOrders(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
