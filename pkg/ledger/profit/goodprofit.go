@@ -10,6 +10,7 @@ import (
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+	goodtypes "github.com/NpoolPlatform/message/npool/basetypes/good/v1"
 	ledgertypes "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
@@ -19,7 +20,9 @@ import (
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
+	powerrentalordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/powerrental"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+	powerrentalordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/powerrental"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -27,14 +30,15 @@ import (
 
 type goodProfitHandler struct {
 	*Handler
-	infos       []*npool.GoodProfit
-	statements  map[string][]*statementmwpb.Statement
-	appCoins    map[string]*appcoinmwpb.Coin
-	appGoods    map[string]*appgoodmwpb.Good
-	goodCoins   map[string][]*goodcoinmwpb.GoodCoin
-	orders      map[string]*ordermwpb.Order
-	coinTypeIDs []string
-	total       uint32
+	infos             []*npool.GoodProfit
+	statements        map[string][]*statementmwpb.Statement
+	appCoins          map[string]*appcoinmwpb.Coin
+	appGoods          map[string]*appgoodmwpb.Good
+	goodCoins         map[string][]*goodcoinmwpb.GoodCoin
+	orders            map[string]*ordermwpb.Order
+	powerRentalOrders []*powerrentalordermwpb.PowerRentalOrder
+	coinTypeIDs       []string
+	total             uint32
 }
 
 func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMainCoin bool, amount decimal.Decimal) {
@@ -45,6 +49,17 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMa
 	coin, ok := h.appCoins[coinTypeID]
 	if !ok {
 		return
+	}
+
+	units := decimal.NewFromInt(0)
+	for _, powerRentalOrder := range h.powerRentalOrders {
+		if powerRentalOrder.AppGoodID == appGoodID {
+			_units, err := decimal.NewFromString(powerRentalOrder.Units)
+			if err != nil {
+				return
+			}
+			units = units.Add(_units)
+		}
 	}
 
 	h.infos = append(h.infos, &npool.GoodProfit{
@@ -59,6 +74,7 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMa
 		CoinLogo:     coin.Logo,
 		CoinUnit:     coin.Unit,
 		GoodMainCoin: goodMainCoin,
+		Units:        units.String(),
 		Incoming:     amount.String(),
 	})
 }
@@ -139,6 +155,31 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 		}
 		offset += limit
 	}
+	return nil
+}
+
+func (h *goodProfitHandler) getPowerRentalOrders(ctx context.Context) error {
+	orderIDs := func() (uids []string) {
+		for orderID, order := range h.orders {
+			switch order.GoodType {
+			case goodtypes.GoodType_PowerRental:
+			case goodtypes.GoodType_LegacyPowerRental:
+			default:
+				continue
+			}
+			uids = append(uids, orderID)
+		}
+		return
+	}()
+	powerRentalOrders, _, err := powerrentalordermwcli.GetPowerRentalOrders(ctx, &powerrentalordermwpb.Conds{
+		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: orderIDs},
+	}, 0, int32(len(orderIDs)))
+	if err != nil {
+		return err
+	}
+	h.powerRentalOrders = powerRentalOrders
 	return nil
 }
 
@@ -281,6 +322,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 		return nil, 0, err
 	}
 	if err := handler.getOrders(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getPowerRentalOrders(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getStatements(ctx); err != nil {
