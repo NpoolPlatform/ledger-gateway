@@ -6,6 +6,7 @@ import (
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appgoodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/good"
+	apppowerrentalmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/powerrental"
 	goodcoinmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/good/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
@@ -16,6 +17,7 @@ import (
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
+	apppowerrentalmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/powerrental"
 	goodcoinmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/good/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
@@ -34,6 +36,7 @@ type goodProfitHandler struct {
 	statements        map[string][]*statementmwpb.Statement
 	appCoins          map[string]*appcoinmwpb.Coin
 	appGoods          map[string]*appgoodmwpb.Good
+	appPowerRentals   map[string]*apppowerrentalmwpb.PowerRental
 	goodCoins         map[string][]*goodcoinmwpb.GoodCoin
 	orders            map[string]*ordermwpb.Order
 	powerRentalOrders []*powerrentalordermwpb.PowerRentalOrder
@@ -62,7 +65,7 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMa
 		}
 	}
 
-	h.infos = append(h.infos, &npool.GoodProfit{
+	info := &npool.GoodProfit{
 		AppID:        *h.AppID,
 		UserID:       *h.UserID,
 		AppGoodID:    appGoodID,
@@ -76,7 +79,10 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMa
 		GoodMainCoin: goodMainCoin,
 		Units:        units.String(),
 		Incoming:     amount.String(),
-	})
+	}
+	if appPowerRental, ok := h.appPowerRentals[appGoodID]; ok {
+		info.GoodQuantityUnit = appPowerRental.QuantityUnit
+	}
 }
 
 func (h *goodProfitHandler) formalize() {
@@ -200,6 +206,31 @@ func (h *goodProfitHandler) getAppGoods(ctx context.Context) error {
 	return nil
 }
 
+func (h *goodProfitHandler) getAppPowerRentals(ctx context.Context) error {
+	appGoodIDs := func() (_appGoodIDs []string) {
+		for _, appGood := range h.appGoods {
+			switch appGood.GoodType {
+			case goodtypes.GoodType_PowerRental:
+			case goodtypes.GoodType_LegacyPowerRental:
+			default:
+				continue
+			}
+			_appGoodIDs = append(_appGoodIDs, appGood.EntID)
+		}
+		return
+	}()
+	appPowerRentals, _, err := apppowerrentalmwcli.GetPowerRentals(ctx, &apppowerrentalmwpb.Conds{
+		AppGoodIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: appGoodIDs},
+	}, 0, int32(len(appGoodIDs)))
+	if err != nil {
+		return err
+	}
+	for _, appPowerRental := range appPowerRentals {
+		h.appPowerRentals[appPowerRental.AppGoodID] = appPowerRental
+	}
+	return nil
+}
+
 func (h *goodProfitHandler) getAppCoins(ctx context.Context) error {
 	for _, goodCoins := range h.goodCoins {
 		for _, goodCoin := range goodCoins {
@@ -299,12 +330,13 @@ func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	handler := &goodProfitHandler{
-		Handler:    h,
-		appCoins:   map[string]*appcoinmwpb.Coin{},
-		orders:     map[string]*ordermwpb.Order{},
-		statements: map[string][]*statementmwpb.Statement{},
-		appGoods:   map[string]*appgoodmwpb.Good{},
-		goodCoins:  map[string][]*goodcoinmwpb.GoodCoin{},
+		Handler:         h,
+		appCoins:        map[string]*appcoinmwpb.Coin{},
+		orders:          map[string]*ordermwpb.Order{},
+		statements:      map[string][]*statementmwpb.Statement{},
+		appGoods:        map[string]*appgoodmwpb.Good{},
+		appPowerRentals: map[string]*apppowerrentalmwpb.PowerRental{},
+		goodCoins:       map[string][]*goodcoinmwpb.GoodCoin{},
 	}
 	if err := h.CheckStartEndAt(); err != nil {
 		return nil, 0, err
@@ -314,6 +346,9 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	}
 	if len(handler.appGoods) == 0 {
 		return nil, handler.total, nil
+	}
+	if err := handler.getAppPowerRentals(ctx); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getGoodCoins(ctx); err != nil {
 		return nil, 0, err
