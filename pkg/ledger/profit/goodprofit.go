@@ -83,6 +83,7 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMa
 	if appPowerRental, ok := h.appPowerRentals[appGoodID]; ok {
 		info.GoodQuantityUnit = appPowerRental.QuantityUnit
 	}
+	h.infos = append(h.infos, info)
 }
 
 func (h *goodProfitHandler) formalize() {
