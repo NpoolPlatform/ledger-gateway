@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
+	apppowerrentalmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/powerrental"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
@@ -13,12 +14,14 @@ import (
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
+	apppowerrentalmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/powerrental"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
 	powerrentalordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/powerrental"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
 	powerrentalordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/powerrental"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -29,6 +32,7 @@ type rewardHandler struct {
 	orders            map[string]*ordermwpb.Order
 	infos             []*npool.MiningReward
 	powerRentalOrders map[string]*powerrentalordermwpb.PowerRentalOrder
+	appPowerRentals   map[string]*apppowerrentalmwpb.PowerRental
 	total             uint32
 }
 
@@ -46,6 +50,33 @@ func (h *rewardHandler) getAppCoins(ctx context.Context) error {
 	}
 	for _, coin := range coins {
 		h.appCoins[coin.CoinTypeID] = coin
+	}
+	return nil
+}
+
+func (h *rewardHandler) getAppPowerRentals(ctx context.Context) error {
+	appPowerRentals, _, err := apppowerrentalmwcli.GetPowerRentals(ctx, &apppowerrentalmwpb.Conds{
+		AppID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		AppGoodIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: func() (appGoodIDs []string) {
+			for _, statement := range h.statements {
+				e := struct {
+					OrderID   string
+					AppGoodID string
+				}{}
+				if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
+					continue
+				}
+				appGoodIDs = append(appGoodIDs, e.AppGoodID)
+			}
+			return
+		}()},
+	}, 0, int32(len(h.statements)))
+	if err != nil {
+		return err
+	}
+	h.appPowerRentals = map[string]*apppowerrentalmwpb.PowerRental{}
+	for _, appPowerRental := range appPowerRentals {
+		h.appPowerRentals[appPowerRental.AppGoodID] = appPowerRental
 	}
 	return nil
 }
@@ -174,10 +205,16 @@ func (h *rewardHandler) formalize() {
 			continue
 		}
 
+		appPowerRental, ok := h.appPowerRentals[e.AppGoodID]
+		if !ok {
+			continue
+		}
+
 		h.infos = append(h.infos, &npool.MiningReward{
 			ID:                  statement.ID,
 			EntID:               statement.EntID,
 			AppID:               statement.AppID,
+			AppGoodName:         appPowerRental.AppGoodName,
 			UserID:              statement.UserID,
 			CoinTypeID:          statement.CoinTypeID,
 			CoinName:            coin.Name,
@@ -220,6 +257,9 @@ func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, 
 		return nil, 0, err
 	}
 	if err := handler.getAppCoins(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getAppPowerRentals(ctx); err != nil {
 		return nil, 0, err
 	}
 
