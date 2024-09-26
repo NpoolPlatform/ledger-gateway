@@ -6,18 +6,25 @@ import (
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	appgoodmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/good"
+	apppowerrentalmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/app/powerrental"
+	goodcoinmwcli "github.com/NpoolPlatform/good-middleware/pkg/client/good/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	statementcli "github.com/NpoolPlatform/ledger-middleware/pkg/client/ledger/statement"
 	"github.com/NpoolPlatform/libent-cruder/pkg/cruder"
+	goodtypes "github.com/NpoolPlatform/message/npool/basetypes/good/v1"
 	ledgertypes "github.com/NpoolPlatform/message/npool/basetypes/ledger/v1"
 	ordertypes "github.com/NpoolPlatform/message/npool/basetypes/order/v1"
 	basetypes "github.com/NpoolPlatform/message/npool/basetypes/v1"
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	appgoodmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/good"
+	apppowerrentalmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/app/powerrental"
+	goodcoinmwpb "github.com/NpoolPlatform/message/npool/good/mw/v1/good/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/ledger/profit"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/ledger/statement"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
+	powerrentalordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/powerrental"
 	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+	powerrentalordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/powerrental"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -25,16 +32,19 @@ import (
 
 type goodProfitHandler struct {
 	*Handler
-	infos       []*npool.GoodProfit
-	statements  map[string][]*statementmwpb.Statement
-	appCoins    map[string]*appcoinmwpb.Coin
-	appGoods    map[string]*appgoodmwpb.Good
-	orders      map[string]*ordermwpb.Order
-	coinTypeIDs []string
-	total       uint32
+	infos             []*npool.GoodProfit
+	statements        map[string][]*statementmwpb.Statement
+	appCoins          map[string]*appcoinmwpb.Coin
+	appGoods          map[string]*appgoodmwpb.Good
+	appPowerRentals   map[string]*apppowerrentalmwpb.PowerRental
+	goodCoins         map[string][]*goodcoinmwpb.GoodCoin
+	orders            map[string]*ordermwpb.Order
+	powerRentalOrders []*powerrentalordermwpb.PowerRentalOrder
+	coinTypeIDs       []string
+	total             uint32
 }
 
-func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount, units decimal.Decimal) {
+func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, goodMainCoin bool, amount decimal.Decimal) {
 	good, ok := h.appGoods[appGoodID]
 	if !ok {
 		return
@@ -44,54 +54,77 @@ func (h *goodProfitHandler) formalizeProfit(appGoodID, coinTypeID string, amount
 		return
 	}
 
-	h.infos = append(h.infos, &npool.GoodProfit{
-		AppID:            *h.AppID,
-		UserID:           *h.UserID,
-		CoinTypeID:       good.CoinTypeID,
-		CoinName:         coin.Name,
-		DisplayNames:     coin.DisplayNames,
-		CoinLogo:         coin.Logo,
-		CoinUnit:         coin.Unit,
-		AppGoodID:        appGoodID,
-		GoodName:         good.GoodName,
-		GoodUnit:         good.QuantityUnit,
-		MaxOrderDuration: good.MaxOrderDuration,
-		MinOrderDuration: good.MinOrderDuration,
-		DurationType:     good.DurationType,
-		Units:            units.String(),
-		Incoming:         amount.String(),
-	})
+	units := decimal.NewFromInt(0)
+	for _, powerRentalOrder := range h.powerRentalOrders {
+		if powerRentalOrder.AppGoodID == appGoodID {
+			_units, err := decimal.NewFromString(powerRentalOrder.Units)
+			if err != nil {
+				return
+			}
+			units = units.Add(_units)
+		}
+	}
+
+	info := &npool.GoodProfit{
+		AppID:        *h.AppID,
+		UserID:       *h.UserID,
+		AppGoodID:    appGoodID,
+		AppGoodName:  good.AppGoodName,
+		GoodType:     good.GoodType,
+		CoinTypeID:   coinTypeID,
+		CoinName:     coin.Name,
+		DisplayNames: coin.DisplayNames,
+		CoinLogo:     coin.Logo,
+		CoinUnit:     coin.Unit,
+		GoodMainCoin: goodMainCoin,
+		Units:        units.String(),
+		Incoming:     amount.String(),
+	}
+	if appPowerRental, ok := h.appPowerRentals[appGoodID]; ok {
+		info.GoodQuantityUnit = appPowerRental.QuantityUnit
+	}
+	h.infos = append(h.infos, info)
 }
 
 func (h *goodProfitHandler) formalize() {
-	profits := map[string][]decimal.Decimal{}
+	profits := map[string]map[string]decimal.Decimal{}
 	for _, order := range h.orders {
 		good, ok := h.appGoods[order.AppGoodID]
 		if !ok {
 			continue
 		}
-		amount := decimal.NewFromInt(0)
-		for _, statement := range h.statements[order.EntID] {
-			amount = amount.Add(decimal.RequireFromString(statement.Amount))
-		}
-		profit, ok := profits[good.EntID]
+		goodProfit, ok := profits[good.EntID]
 		if !ok {
-			const defaultLength = 2
-			profit = make([]decimal.Decimal, defaultLength)
+			goodProfit = map[string]decimal.Decimal{}
 		}
-		units := decimal.RequireFromString(order.Units)
-		profit[0] = profit[0].Add(amount)
-		profit[1] = profit[1].Add(units)
-		profits[good.EntID] = profit
+		for _, statement := range h.statements[order.EntID] {
+			coinProfit := goodProfit[statement.CoinTypeID]
+			coinProfit = coinProfit.Add(decimal.RequireFromString(statement.Amount))
+			goodProfit[statement.CoinTypeID] = coinProfit
+		}
+		profits[good.EntID] = goodProfit
 	}
 
 	for _, good := range h.appGoods {
-		profit, ok := profits[good.EntID]
+		goodCoins, ok := h.goodCoins[good.GoodID]
 		if !ok {
-			h.formalizeProfit(good.EntID, good.CoinTypeID, decimal.NewFromInt(0), decimal.NewFromInt(0))
 			continue
 		}
-		h.formalizeProfit(good.EntID, good.CoinTypeID, profit[0], profit[1])
+		goodProfit, ok := profits[good.EntID]
+		if !ok {
+			for _, goodCoin := range goodCoins {
+				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0))
+			}
+			continue
+		}
+		for _, goodCoin := range goodCoins {
+			coinProfit, ok := goodProfit[goodCoin.CoinTypeID]
+			if !ok {
+				h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, decimal.NewFromInt(0))
+				continue
+			}
+			h.formalizeProfit(good.EntID, goodCoin.CoinTypeID, goodCoin.Main, coinProfit)
+		}
 	}
 }
 
@@ -114,7 +147,6 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
 				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
 				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
-				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
 				uint32(ordertypes.OrderState_OrderStateCanceled),
 			}},
 		}, offset, limit)
@@ -130,6 +162,31 @@ func (h *goodProfitHandler) getOrders(ctx context.Context) error {
 		}
 		offset += limit
 	}
+	return nil
+}
+
+func (h *goodProfitHandler) getPowerRentalOrders(ctx context.Context) error {
+	orderIDs := func() (uids []string) {
+		for orderID, order := range h.orders {
+			switch order.GoodType {
+			case goodtypes.GoodType_PowerRental:
+			case goodtypes.GoodType_LegacyPowerRental:
+			default:
+				continue
+			}
+			uids = append(uids, orderID)
+		}
+		return
+	}()
+	powerRentalOrders, _, err := powerrentalordermwcli.GetPowerRentalOrders(ctx, &powerrentalordermwpb.Conds{
+		AppID:    &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID:   &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		OrderIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: orderIDs},
+	}, 0, int32(len(orderIDs)))
+	if err != nil {
+		return err
+	}
+	h.powerRentalOrders = powerRentalOrders
 	return nil
 }
 
@@ -150,12 +207,39 @@ func (h *goodProfitHandler) getAppGoods(ctx context.Context) error {
 	return nil
 }
 
-func (h *goodProfitHandler) getAppCoins(ctx context.Context) error {
-	for _, val := range h.appGoods {
-		if _, err := uuid.Parse(val.CoinTypeID); err != nil {
-			continue
+func (h *goodProfitHandler) getAppPowerRentals(ctx context.Context) error {
+	appGoodIDs := func() (_appGoodIDs []string) {
+		for _, appGood := range h.appGoods {
+			switch appGood.GoodType {
+			case goodtypes.GoodType_PowerRental:
+			case goodtypes.GoodType_LegacyPowerRental:
+			default:
+				continue
+			}
+			_appGoodIDs = append(_appGoodIDs, appGood.EntID)
 		}
-		h.coinTypeIDs = append(h.coinTypeIDs, val.CoinTypeID)
+		return
+	}()
+	appPowerRentals, _, err := apppowerrentalmwcli.GetPowerRentals(ctx, &apppowerrentalmwpb.Conds{
+		AppGoodIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: appGoodIDs},
+	}, 0, int32(len(appGoodIDs)))
+	if err != nil {
+		return err
+	}
+	for _, appPowerRental := range appPowerRentals {
+		h.appPowerRentals[appPowerRental.AppGoodID] = appPowerRental
+	}
+	return nil
+}
+
+func (h *goodProfitHandler) getAppCoins(ctx context.Context) error {
+	for _, goodCoins := range h.goodCoins {
+		for _, goodCoin := range goodCoins {
+			if _, err := uuid.Parse(goodCoin.CoinTypeID); err != nil {
+				continue
+			}
+			h.coinTypeIDs = append(h.coinTypeIDs, goodCoin.CoinTypeID)
+		}
 	}
 	coins, _, err := appcoinmwcli.GetCoins(ctx, &appcoinmwpb.Conds{
 		AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
@@ -170,19 +254,48 @@ func (h *goodProfitHandler) getAppCoins(ctx context.Context) error {
 	return nil
 }
 
+func (h *goodProfitHandler) getGoodCoins(ctx context.Context) error {
+	goodIDs := func() (_goodIDs []string) {
+		for _, appGood := range h.appGoods {
+			_goodIDs = append(_goodIDs, appGood.GoodID)
+		}
+		return
+	}()
+	goodCoins, _, err := goodcoinmwcli.GetGoodCoins(ctx, &goodcoinmwpb.Conds{
+		GoodIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: goodIDs},
+	}, 0, int32(len(goodIDs)))
+	if err != nil {
+		return err
+	}
+	for _, goodCoin := range goodCoins {
+		h.goodCoins[goodCoin.GoodID] = append(h.goodCoins[goodCoin.GoodID], goodCoin)
+	}
+	return nil
+}
+
+//nolint:dupl
 func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
+	conds := &statementmwpb.Conds{
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+		IOType: &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ledgertypes.IOType_Incoming)},
+		IOSubTypes: &basetypes.Uint32SliceVal{Op: cruder.IN, Value: []uint32{
+			uint32(ledgertypes.IOSubType_MiningBenefit),
+			uint32(ledgertypes.IOSubType_SimulateMiningBenefit),
+		}},
+		CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: h.coinTypeIDs},
+	}
+	if h.StartAt != nil {
+		conds.StartAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.StartAt}
+	}
+	if h.EndAt != nil {
+		conds.EndAt = &basetypes.Uint32Val{Op: cruder.EQ, Value: *h.EndAt}
+	}
+
 	for {
-		statements, _, err := statementcli.GetStatements(ctx, &statementmwpb.Conds{
-			AppID:       &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
-			UserID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
-			IOType:      &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ledgertypes.IOType_Incoming)},
-			IOSubType:   &basetypes.Uint32Val{Op: cruder.EQ, Value: uint32(ledgertypes.IOSubType_MiningBenefit)},
-			StartAt:     &basetypes.Uint32Val{Op: cruder.EQ, Value: h.StartAt},
-			EndAt:       &basetypes.Uint32Val{Op: cruder.EQ, Value: h.EndAt},
-			CoinTypeIDs: &basetypes.StringSliceVal{Op: cruder.IN, Value: h.coinTypeIDs},
-		}, offset, limit)
+		statements, _, err := statementcli.GetStatements(ctx, conds, offset, limit)
 		if err != nil {
 			return err
 		}
@@ -218,11 +331,16 @@ func (h *goodProfitHandler) getStatements(ctx context.Context) error {
 
 func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint32, error) {
 	handler := &goodProfitHandler{
-		Handler:    h,
-		appCoins:   map[string]*appcoinmwpb.Coin{},
-		orders:     map[string]*ordermwpb.Order{},
-		statements: map[string][]*statementmwpb.Statement{},
-		appGoods:   map[string]*appgoodmwpb.Good{},
+		Handler:         h,
+		appCoins:        map[string]*appcoinmwpb.Coin{},
+		orders:          map[string]*ordermwpb.Order{},
+		statements:      map[string][]*statementmwpb.Statement{},
+		appGoods:        map[string]*appgoodmwpb.Good{},
+		appPowerRentals: map[string]*apppowerrentalmwpb.PowerRental{},
+		goodCoins:       map[string][]*goodcoinmwpb.GoodCoin{},
+	}
+	if err := h.CheckStartEndAt(); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getAppGoods(ctx); err != nil {
 		return nil, 0, err
@@ -230,10 +348,19 @@ func (h *Handler) GetGoodProfits(ctx context.Context) ([]*npool.GoodProfit, uint
 	if len(handler.appGoods) == 0 {
 		return nil, handler.total, nil
 	}
+	if err := handler.getAppPowerRentals(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getGoodCoins(ctx); err != nil {
+		return nil, 0, err
+	}
 	if err := handler.getAppCoins(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getOrders(ctx); err != nil {
+		return nil, 0, err
+	}
+	if err := handler.getPowerRentalOrders(ctx); err != nil {
 		return nil, 0, err
 	}
 	if err := handler.getStatements(ctx); err != nil {

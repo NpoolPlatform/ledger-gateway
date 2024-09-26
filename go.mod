@@ -3,18 +3,18 @@ module github.com/NpoolPlatform/ledger-gateway
 go 1.17
 
 require (
-	github.com/NpoolPlatform/account-middleware v0.0.0-20231205074056-0cc5ad44fac5
+	github.com/NpoolPlatform/account-middleware v0.0.0-20240711084532-91d043378264
 	github.com/NpoolPlatform/appuser-middleware v0.0.0-20240119021359-948c8504d662
 	github.com/NpoolPlatform/basal-middleware v0.0.0-20231015112137-254853c60eec
-	github.com/NpoolPlatform/chain-middleware v0.0.0-20240228100535-eb1bcf896eb9
+	github.com/NpoolPlatform/chain-middleware v0.0.0-20240711085642-93249f191575
 	github.com/NpoolPlatform/dtm-cluster v0.0.0-20231011071916-859e5dcbf626
-	github.com/NpoolPlatform/go-service-framework v0.0.0-20240506105743-2d908f31ffab
-	github.com/NpoolPlatform/good-middleware v0.0.0-20240304020309-62b1a5735832
-	github.com/NpoolPlatform/inspire-middleware v0.0.0-20240531094057-78d58b0165c3
-	github.com/NpoolPlatform/ledger-middleware v0.0.0-20240304030403-1e129dfe4e3f
-	github.com/NpoolPlatform/libent-cruder v0.0.0-20240323085036-7679b4818ce7
-	github.com/NpoolPlatform/message v0.0.0-20240531092543-513c80d5fac9
-	github.com/NpoolPlatform/order-middleware v0.0.0-20240304020155-1225d1f15992
+	github.com/NpoolPlatform/go-service-framework v0.0.0-20240510075442-89278cb5cf47
+	github.com/NpoolPlatform/good-middleware v0.0.0-20240711084810-89bd6b946526
+	github.com/NpoolPlatform/inspire-middleware v0.0.0-20240711084912-bda64205c476
+	github.com/NpoolPlatform/ledger-middleware v0.0.0-20240711091502-eaf1d4c83d6d
+	github.com/NpoolPlatform/libent-cruder v0.0.0-20240514082633-598d5fc7b1e3
+	github.com/NpoolPlatform/message v0.0.0-20240717090046-b7cf76bc3fff
+	github.com/NpoolPlatform/order-middleware v0.0.0-20240711091705-d8489ca569a2
 	github.com/NpoolPlatform/review-middleware v0.0.0-20240108100223-106962e5a9c2
 	github.com/NpoolPlatform/sphinx-proxy v0.0.0-20231201062049-852b1487d4a9
 	github.com/dtm-labs/dtm v1.17.1

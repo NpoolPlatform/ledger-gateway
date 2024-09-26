@@ -3,6 +3,7 @@ package profit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	appcoinmwcli "github.com/NpoolPlatform/chain-middleware/pkg/client/app/coin"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
@@ -14,18 +15,18 @@ import (
 	appcoinmwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/app/coin"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/simulate/ledger/profit"
 	statementmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/simulate/ledger/statement"
-	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
-	ordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/order"
+	powerrentalordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/powerrental"
+	powerrentalordermwcli "github.com/NpoolPlatform/order-middleware/pkg/client/powerrental"
 	"github.com/shopspring/decimal"
 )
 
 type rewardHandler struct {
 	*Handler
-	statements []*statementmwpb.Statement
-	appCoins   map[string]*appcoinmwpb.Coin
-	orders     map[string]*ordermwpb.Order
-	infos      []*npool.MiningReward
-	total      uint32
+	statements        []*statementmwpb.Statement
+	appCoins          map[string]*appcoinmwpb.Coin
+	powerRentalOrders map[string]*powerrentalordermwpb.PowerRentalOrder
+	infos             []*npool.MiningReward
+	total             uint32
 }
 
 //nolint
@@ -51,7 +52,7 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 	offset := int32(0)
 	limit := constant.DefaultRowLimit
 	for {
-		orders, _, err := ordermwcli.GetOrders(ctx, &ordermwpb.Conds{
+		powerRentalOrders, _, err := powerrentalordermwcli.GetPowerRentalOrders(ctx, &powerrentalordermwpb.Conds{
 			AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
 			UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
 			OrderStates: &basetypes.Uint32SliceVal{Op: cruder.NIN, Value: []uint32{
@@ -65,18 +66,17 @@ func (h *rewardHandler) getOrders(ctx context.Context) error {
 				uint32(ordertypes.OrderState_OrderStateReturnCanceledBalance),
 				uint32(ordertypes.OrderState_OrderStateCanceledTransferBookKeeping),
 				uint32(ordertypes.OrderState_OrderStateCancelUnlockPaymentAccount),
-				uint32(ordertypes.OrderState_OrderStateUpdateCanceledChilds),
 				uint32(ordertypes.OrderState_OrderStateCanceled),
 			}}}, offset, limit)
 		if err != nil {
 			return err
 		}
-		if len(orders) == 0 {
+		if len(powerRentalOrders) == 0 {
 			break
 		}
 
-		for _, order := range orders {
-			h.orders[order.EntID] = order
+		for _, order := range powerRentalOrders {
+			h.powerRentalOrders[order.OrderID] = order
 		}
 		offset += limit
 	}
@@ -113,7 +113,7 @@ func (h *rewardHandler) formalize() {
 		if err := json.Unmarshal([]byte(statement.IOExtra), &e); err != nil {
 			continue
 		}
-		order, ok := h.orders[e.OrderID]
+		order, ok := h.powerRentalOrders[e.OrderID]
 		if !ok {
 			continue
 		}
@@ -152,12 +152,22 @@ func (h *rewardHandler) formalize() {
 	}
 }
 
+func (h *rewardHandler) checkStartEndAt() error {
+	if h.StartAt > h.EndAt {
+		return fmt.Errorf("invalid startat and endat")
+	}
+	return nil
+}
+
 func (h *Handler) GetMiningRewards(ctx context.Context) ([]*npool.MiningReward, uint32, error) {
 	handler := &rewardHandler{
-		Handler:    h,
-		appCoins:   map[string]*appcoinmwpb.Coin{},
-		orders:     map[string]*ordermwpb.Order{},
-		statements: []*statementmwpb.Statement{},
+		Handler:           h,
+		appCoins:          map[string]*appcoinmwpb.Coin{},
+		powerRentalOrders: map[string]*powerrentalordermwpb.PowerRentalOrder{},
+		statements:        []*statementmwpb.Statement{},
+	}
+	if err := handler.checkStartEndAt(); err != nil {
+		return nil, 0, err
 	}
 	if err := handler.getStatements(ctx); err != nil {
 		return nil, 0, err

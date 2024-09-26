@@ -71,7 +71,7 @@ func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 
 	ioType := ledgerpb.IOType_Incoming
 	ioSubtype := ledgerpb.IOSubType_Deposit
-	info, err := ledgermwcli.CreateStatement(ctx, &statementpb.StatementReq{
+	if _, err := ledgermwcli.CreateStatement(ctx, &statementpb.StatementReq{
 		AppID:      h.TargetAppID,
 		UserID:     h.TargetUserID,
 		CoinTypeID: h.CoinTypeID,
@@ -79,28 +79,37 @@ func (h *Handler) CreateDeposit(ctx context.Context) (*npool.Statement, error) {
 		IOSubType:  &ioSubtype,
 		Amount:     h.Amount,
 		IOExtra:    &ioExtra,
+	}); err != nil {
+		return nil, err
+	}
+
+	statement, err := ledgermwcli.GetStatementOnly(ctx, &statementpb.Conds{
+		AppID:      &basetypes.StringVal{Op: cruder.EQ, Value: *h.TargetAppID},
+		UserID:     &basetypes.StringVal{Op: cruder.EQ, Value: *h.TargetUserID},
+		CoinTypeID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.CoinTypeID},
+		IOExtra:    &basetypes.StringVal{Op: cruder.LIKE, Value: ioExtra},
 	})
 	if err != nil {
 		return nil, err
 	}
-	if info == nil {
-		return nil, nil
+	if statement == nil {
+		return nil, fmt.Errorf("fail get statement")
 	}
 
 	return &npool.Statement{
-		ID:           info.ID,
-		EntID:        info.EntID,
-		UserID:       info.UserID,
+		ID:           statement.ID,
+		EntID:        statement.EntID,
+		UserID:       statement.UserID,
 		EmailAddress: handler.user.EmailAddress,
 		CoinTypeID:   *h.CoinTypeID,
 		CoinName:     coin.Name,
 		DisplayNames: coin.DisplayNames,
 		CoinLogo:     coin.Logo,
 		CoinUnit:     coin.Unit,
-		IOType:       info.IOType,
-		IOSubType:    info.IOSubType,
-		Amount:       info.Amount,
-		IOExtra:      info.IOExtra,
-		CreatedAt:    info.CreatedAt,
+		IOType:       statement.IOType,
+		IOSubType:    statement.IOSubType,
+		Amount:       statement.Amount,
+		IOExtra:      statement.IOExtra,
+		CreatedAt:    statement.CreatedAt,
 	}, nil
 }
