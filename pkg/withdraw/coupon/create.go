@@ -12,6 +12,7 @@ import (
 	couponmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon"
 	allocatedmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/allocated"
 	cashcontrolmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/coupon/app/cashcontrol"
+	userrewardmwcli "github.com/NpoolPlatform/inspire-middleware/pkg/client/user/reward"
 	constant "github.com/NpoolPlatform/ledger-gateway/pkg/const"
 	ledgergwname "github.com/NpoolPlatform/ledger-gateway/pkg/servicename"
 	ledgermwname "github.com/NpoolPlatform/ledger-middleware/pkg/servicename"
@@ -25,6 +26,7 @@ import (
 	usedformwpb "github.com/NpoolPlatform/message/npool/chain/mw/v1/coin/usedfor"
 	allocatedmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/allocated"
 	cashcontrolmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/coupon/app/cashcontrol"
+	userrewardmwpb "github.com/NpoolPlatform/message/npool/inspire/mw/v1/user/reward"
 	npool "github.com/NpoolPlatform/message/npool/ledger/gw/v1/withdraw/coupon"
 	couponwithdrawmwpb "github.com/NpoolPlatform/message/npool/ledger/mw/v2/withdraw/coupon"
 	ordermwpb "github.com/NpoolPlatform/message/npool/order/mw/v1/order"
@@ -38,9 +40,10 @@ import (
 
 type createHandler struct {
 	*Handler
-	ReviewID *string
-	CouponID *string
-	user     *usermwpb.User
+	ReviewID   *string
+	CouponID   *string
+	user       *usermwpb.User
+	userReward *userrewardmwpb.UserReward
 }
 
 func (h *createHandler) getApp(ctx context.Context) error {
@@ -69,6 +72,21 @@ func (h *createHandler) getUser(ctx context.Context) error {
 	return nil
 }
 
+func (h *createHandler) getUserReward(ctx context.Context) error {
+	userReward, err := userrewardmwcli.GetUserRewardOnly(ctx, &userrewardmwpb.Conds{
+		AppID:  &basetypes.StringVal{Op: cruder.EQ, Value: *h.AppID},
+		UserID: &basetypes.StringVal{Op: cruder.EQ, Value: *h.UserID},
+	})
+	if err != nil {
+		return err
+	}
+	if userReward == nil {
+		return fmt.Errorf("invalid userreward")
+	}
+	h.userReward = userReward
+	return nil
+}
+
 func (h *createHandler) checkKyc() error {
 	if h.user.State != basetypes.KycState_Approved {
 		return fmt.Errorf("kyc not approved")
@@ -77,7 +95,7 @@ func (h *createHandler) checkKyc() error {
 }
 
 func (h *createHandler) checkCreditThreshold(value string) error {
-	credits, err := decimal.NewFromString(h.user.ActionCredits)
+	credits, err := decimal.NewFromString(h.userReward.ActionCredits)
 	if err != nil {
 		return err
 	}
@@ -284,6 +302,9 @@ func (h *Handler) CreateCouponWithdraw(ctx context.Context) (*npool.CouponWithdr
 		return nil, err
 	}
 	if err := handler.getUser(ctx); err != nil {
+		return nil, err
+	}
+	if err := handler.getUserReward(ctx); err != nil {
 		return nil, err
 	}
 	if err := handler.checkAllocated(ctx); err != nil {
